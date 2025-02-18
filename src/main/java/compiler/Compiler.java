@@ -8,12 +8,12 @@ import compiler.Lexer.Lexer;
 import java.io.StringReader;
 
 public class Compiler {
-    public static void main(String[] args) {
+    public static void main(String[] args) throws Exception {
         System.out.println("Hello from the compiler !");
-        String input = "var x int = 2;";
+        String input = "var x int = 2;\nvar y float = 3.14;";
         StringReader reader = new StringReader(input);
         Lexer lexer = new Lexer(reader);
-        for (int i = 0; i < 100; i++) {
+        for (int i = 0; i < input.length(); i++) {
             System.out.println(lexer.getNextSymbol());
         }
 

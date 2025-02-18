@@ -15,16 +15,22 @@ public enum TokenTypes {
 
     // Base types
     INT,
+    INT_LITERAL,
     FLOAT,
+    FLOAT_LITERAL,
     BOOL,
+    BOOL_TRUE,
+    BOOL_FALSE,
     STRING,
+    STRING_LITERAL,
 
     // Operations
     PLUS,
     MINUS,
     MULTIPLY,
     DIVIDE,
-    EQUAL,
+    ASSIGN,
+    EQUAL_EQUAL,
     NOT_EQUAL,
     LESS_THAN,
     GREATER_THAN,
@@ -36,6 +42,7 @@ public enum TokenTypes {
     NOT,
 
     // Special Keywords
+    REC,
     FUN,
     FINAL,
     RETURN,
@@ -43,6 +50,19 @@ public enum TokenTypes {
     OF,
     DOT,
     COMMA,
+    VOID,
+
+    // built-in functions
+    CHR,
+    LEN,
+    FLOOR,
+    READ_INT,
+    READ_FLOAT,
+    READ_STRING,
+    WRITE_INT,
+    WRITE_FLOAT,
+    WRITE,
+    WRITELN,
 
     // Control structures
     FOR,
@@ -50,5 +70,4 @@ public enum TokenTypes {
     IF,
     ELSE,
     FREE,
-
 }

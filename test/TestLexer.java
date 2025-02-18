@@ -7,11 +7,11 @@ import compiler.Lexer.Lexer;
 public class TestLexer {
     
     @Test
-    public void test() {
+    public void test() throws Exception {
         String input = "var x int = 2;";
         StringReader reader = new StringReader(input);
         Lexer lexer = new Lexer(reader);
-        assertNotNull(lexer.getNextSymbol());
+         assertNotNull(lexer.getNextSymbol());
     }
 
 }

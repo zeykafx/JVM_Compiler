@@ -2,6 +2,7 @@ package compiler.Lexer;
 
 public enum TokenTypes {
     IDENTIFIER,
+    VAR,
     LEFT_PAR,
     RIGHT_PAR,
     LEFT_BRACKET,

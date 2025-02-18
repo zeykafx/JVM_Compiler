@@ -13,8 +13,12 @@ public class Compiler {
         String input = "var x int = 2;\nvar y float = 3.14;";
         StringReader reader = new StringReader(input);
         Lexer lexer = new Lexer(reader);
-        for (int i = 0; i < input.length(); i++) {
-            System.out.println(lexer.getNextSymbol());
+        while (true) {
+            var symbol = lexer.getNextSymbol();
+            System.out.println(symbol);
+            if (symbol.type == compiler.Lexer.TokenTypes.EOF) {
+                break;
+            }
         }
 
     }

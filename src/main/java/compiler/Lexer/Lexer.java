@@ -167,6 +167,7 @@ public class Lexer {
         String identifier = str.toString();
         switch (identifier) {
             case "final": return new Symbol(TokenTypes.FINAL, identifier, startLine);
+            case "var": return new Symbol(TokenTypes.VAR, identifier, startLine);
             case "rec": return new Symbol(TokenTypes.REC, identifier, startLine);
             case "int": return new Symbol(TokenTypes.INT, identifier, startLine);
             case "float": return new Symbol(TokenTypes.FLOAT, identifier, startLine);

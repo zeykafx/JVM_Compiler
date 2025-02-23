@@ -15,6 +15,7 @@ public class Lexer {
         this.currentChar = readChar();
     }
 
+    /// Read the next character from the input
     private int readChar() {
         try {
             int c = input.read();
@@ -24,10 +25,11 @@ public class Lexer {
                 return -1; // EOF
             }
         } catch (IOException e) {
-            return -1; // IO error are like EOF i guess
+            return -1; // we treat IO error like EOF I guess
         }
     }
 
+    /// Peek the next character without consuming it
     private int peekChar() {
         try {
             int c = input.read();
@@ -37,7 +39,52 @@ public class Lexer {
             return -1;
         }
     }
-    
+
+
+    /// Skip whitespaces and comments until we find something else
+    private void skipWhitespaceAndComments() {
+        while (true) {
+            if (Character.isWhitespace(currentChar)) {
+                skipWhitespace();
+            } else if (currentChar == '$') {
+                skipComment();
+            } else {
+                break;
+            }
+        }
+    }
+
+
+    /// Skip all whitespace characters
+    private void skipWhitespace() {
+
+        while (Character.isWhitespace(currentChar)) {
+            if (currentChar == '\n') {
+                line++;
+            }
+            moveCurrentChar();
+        }
+    }
+
+    ///  Skip comment
+    private void skipComment() {
+        while (currentChar != '\n' && currentChar != -1) {
+            moveCurrentChar();
+        }
+        if (currentChar == '\n') {
+            line++;
+            //consume newline after comment, if there is one
+            moveCurrentChar();
+        }
+    }
+
+
+    /// Move to the next character
+    private void moveCurrentChar() {
+        currentChar = readChar();
+    }
+
+    /// Get the next symbol from the input
     public Symbol getNextSymbol() throws Exception {
         skipWhitespaceAndComments();
 
@@ -45,121 +92,26 @@ public class Lexer {
             return new Symbol(TokenTypes.EOF, "EOF", line);
         }
 
-        int currentLine = line;
-
-        // if c is a letter, read until not letter then check if keyword or identifier
+        // if c is a letter, read until it's not letter then check if it's keyword or identifier
         if (Character.isLetter(currentChar)) {
             return buildIdentifierOrSymbol();
-        } else if (Character.isDigit(currentChar)) { // if c is a digit, read until not digit
+        } else if (Character.isDigit(currentChar)) { // if c is a digit, read until it's not digit
             return buildNumber();
         } else if (currentChar =='"') { // if c is a quote, then we have a string next so read until next quote
             return buildString();
         } else {
-            switch (currentChar) {
-                case '+':
-                    moveCurrentChar();
-                    return new Symbol(TokenTypes.PLUS, "+", currentLine);
-                case '-':
-                    moveCurrentChar();
-                    return new Symbol(TokenTypes.MINUS, "-", currentLine);
-                case '*':
-                    moveCurrentChar();
-                    return new Symbol(TokenTypes.MULTIPLY, "*", currentLine);
-                case '/':
-                    moveCurrentChar();
-                    return new Symbol(TokenTypes.DIVIDE, "/", currentLine);
-                case '%':
-                    moveCurrentChar();
-                    return new Symbol(TokenTypes.MODULO, "%", currentLine);
-                case '(':
-                    moveCurrentChar();
-                    return new Symbol(TokenTypes.LEFT_PAR, "(", currentLine);
-                case ')':
-                    moveCurrentChar();
-                    return new Symbol(TokenTypes.RIGHT_PAR, ")", currentLine);
-                case '{':
-                    moveCurrentChar();
-                    return new Symbol(TokenTypes.LEFT_BRACKET, "{", currentLine);
-                case '}':
-                    moveCurrentChar();
-                    return new Symbol(TokenTypes.RIGHT_BRACKET, "}", currentLine);
-                case ';':
-                    moveCurrentChar();
-                    return new Symbol(TokenTypes.SEMICOLON, ";", currentLine);
-                case ',':
-                    moveCurrentChar();
-                    return new Symbol(TokenTypes.COMMA, ",", currentLine);
-                case '[':
-                    moveCurrentChar();
-                    return new Symbol(TokenTypes.LEFT_SQUARE_BRACKET, "[", currentLine);
-                case ']':
-                    moveCurrentChar();
-                    return new Symbol(TokenTypes.RIGHT_SQUARE_BRACKET, "]", currentLine);
-                case '.':
-                    moveCurrentChar();
-                    return new Symbol(TokenTypes.DOT, ".", currentLine);
-                case '=':
-                    moveCurrentChar();
-                    if (currentChar == '=') {
-                        moveCurrentChar();
-                        return new Symbol(TokenTypes.EQUAL_EQUAL, "==", currentLine - 1);
-                    } else {
-                        return new Symbol(TokenTypes.ASSIGN, "=", currentLine);
-                    }
-                case '!':
-                    moveCurrentChar();
-                    if (currentChar == '=') {
-                        moveCurrentChar();
-                        return new Symbol(TokenTypes.NOT_EQUAL, "!=", currentLine - 1);
-                    } else {
-                        return new Symbol(TokenTypes.NOT, "!", currentLine);
-                    }
-                case '<':
-                    moveCurrentChar();
-                    if (currentChar == '=') {
-                        moveCurrentChar();
-                        return new Symbol(TokenTypes.LESS_THAN_EQUAL, "<=", currentLine - 1);
-                    } else {
-                        return new Symbol(TokenTypes.LESS_THAN, "<", currentLine);
-                    }
-                case '>':
-                    moveCurrentChar();
-                    if (currentChar == '=') {
-                        moveCurrentChar();
-                        return new Symbol(TokenTypes.GREATER_THAN_EQUAL, ">=", currentLine - 1);
-                    } else {
-                        return new Symbol(TokenTypes.GREATER_THAN, ">", currentLine);
-                    }
-                case '&':
-                    moveCurrentChar();
-                    if (currentChar == '&') {
-                        moveCurrentChar();
-                        return new Symbol(TokenTypes.AND, "&&", currentLine - 1);
-                    } else {
-                        throw new Exception("Illegal '&' at line " + currentLine);
-                    }
-                case '|':
-                    moveCurrentChar();
-                    if (currentChar == '|') {
-                        moveCurrentChar();
-                        return new Symbol(TokenTypes.OR, "||", currentLine - 1);
-                    } else {
-                        throw new Exception("Illegal '|' at line " + currentLine);
-                    }
-
-                default:
-                    moveCurrentChar();
-                    throw new Exception("Unknown character at line " + currentLine);
-            }
+            // Else, we have a symbol
+            return buildSymbol(line);
         }
     }
 
-
+    /// Build an identifier or a keyword
     private Symbol buildIdentifierOrSymbol() {
         StringBuilder str = new StringBuilder();
         int startLine = line;
 
-        while (Character.isLetterOrDigit(currentChar) || currentChar == '_') { // identifiers can start with _
+        // identifiers can start with a letter, a digit, or an underscore
+        while (Character.isLetterOrDigit(currentChar) || currentChar == '_') {
             str.append((char) currentChar);
             moveCurrentChar();
         }
@@ -200,6 +152,7 @@ public class Lexer {
         }
     }
 
+    /// Build a number literal
     private Symbol buildNumber() throws Exception {
         StringBuilder lexeme = new StringBuilder();
         int startLine = line;
@@ -236,57 +189,125 @@ public class Lexer {
         }
 	}
 
+
+    private Symbol buildSymbol(int currentLine) throws Exception {
+        switch (currentChar) {
+            case '+':
+                moveCurrentChar();
+                return new Symbol(TokenTypes.PLUS, "+", currentLine);
+            case '-':
+                moveCurrentChar();
+                return new Symbol(TokenTypes.MINUS, "-", currentLine);
+            case '*':
+                moveCurrentChar();
+                return new Symbol(TokenTypes.MULTIPLY, "*", currentLine);
+            case '/':
+                moveCurrentChar();
+                return new Symbol(TokenTypes.DIVIDE, "/", currentLine);
+            case '%':
+                moveCurrentChar();
+                return new Symbol(TokenTypes.MODULO, "%", currentLine);
+            case '(':
+                moveCurrentChar();
+                return new Symbol(TokenTypes.LEFT_PAR, "(", currentLine);
+            case ')':
+                moveCurrentChar();
+                return new Symbol(TokenTypes.RIGHT_PAR, ")", currentLine);
+            case '{':
+                moveCurrentChar();
+                return new Symbol(TokenTypes.LEFT_BRACKET, "{", currentLine);
+            case '}':
+                moveCurrentChar();
+                return new Symbol(TokenTypes.RIGHT_BRACKET, "}", currentLine);
+            case ';':
+                moveCurrentChar();
+                return new Symbol(TokenTypes.SEMICOLON, ";", currentLine);
+            case ',':
+                moveCurrentChar();
+                return new Symbol(TokenTypes.COMMA, ",", currentLine);
+            case '[':
+                moveCurrentChar();
+                return new Symbol(TokenTypes.LEFT_SQUARE_BRACKET, "[", currentLine);
+            case ']':
+                moveCurrentChar();
+                return new Symbol(TokenTypes.RIGHT_SQUARE_BRACKET, "]", currentLine);
+            case '.':
+                moveCurrentChar();
+                return new Symbol(TokenTypes.DOT, ".", currentLine);
+            case '=':
+                moveCurrentChar();
+                if (currentChar == '=') {
+                    moveCurrentChar();
+                    return new Symbol(TokenTypes.EQUAL_EQUAL, "==", currentLine - 1);
+                } else {
+                    return new Symbol(TokenTypes.ASSIGN, "=", currentLine);
+                }
+            case '!':
+                moveCurrentChar();
+                if (currentChar == '=') {
+                    moveCurrentChar();
+                    return new Symbol(TokenTypes.NOT_EQUAL, "!=", currentLine - 1);
+                } else {
+                    return new Symbol(TokenTypes.NOT, "!", currentLine);
+                }
+            case '<':
+                moveCurrentChar();
+                if (currentChar == '=') {
+                    moveCurrentChar();
+                    return new Symbol(TokenTypes.LESS_THAN_EQUAL, "<=", currentLine - 1);
+                } else {
+                    return new Symbol(TokenTypes.LESS_THAN, "<", currentLine);
+                }
+            case '>':
+                moveCurrentChar();
+                if (currentChar == '=') {
+                    moveCurrentChar();
+                    return new Symbol(TokenTypes.GREATER_THAN_EQUAL, ">=", currentLine - 1);
+                } else {
+                    return new Symbol(TokenTypes.GREATER_THAN, ">", currentLine);
+                }
+            case '&':
+                moveCurrentChar();
+                if (currentChar == '&') {
+                    moveCurrentChar();
+                    return new Symbol(TokenTypes.AND, "&&", currentLine - 1);
+                } else {
+                    throw new Exception("Unexpected '&' at line " + currentLine);
+                }
+            case '|':
+                moveCurrentChar();
+                if (currentChar == '|') {
+                    moveCurrentChar();
+                    return new Symbol(TokenTypes.OR, "||", currentLine - 1);
+                } else {
+                    throw new Exception("Unexpected '|' at line " + currentLine);
+                }
+
+            default:
+                moveCurrentChar();
+                throw new Exception("Unknown character at line " + currentLine);
+        }
+    }
+
+    /// Build a string literal
     private Symbol buildString() {
         StringBuilder lexeme = new StringBuilder();
         int startLine = line;
-        moveCurrentChar(); // Consume the opening quote "
 
-        while (currentChar != '"') {
+        // consume the opening quote "
+        moveCurrentChar();
+
+        do {
             if (currentChar == -1 || currentChar == '\n') {
                 throw new RuntimeException("Unterminated string at line " + startLine);
             }
             lexeme.append((char) currentChar);
             moveCurrentChar();
-        }
-        moveCurrentChar(); // closing quote "
+        } while (currentChar != '"');
+
+        // consume closing quote "
+        moveCurrentChar();
 
         return new Symbol(TokenTypes.STRING, lexeme.toString(), startLine, lexeme.toString());
-    }
-
-    private void skipWhitespaceAndComments() {
-        while (true) {
-            if (Character.isWhitespace(currentChar)) {
-                skipWhitespace();
-            } else if (currentChar == '$') {
-                skipComment();
-            } else {
-                break;
-            }
-        }
-    }
-
-
-    private void skipWhitespace() {
-        while (Character.isWhitespace(currentChar)) {
-            if (currentChar == '\n') {
-                line++;
-            }
-            moveCurrentChar();
-        }
-    }
-
-    private void skipComment() {
-        while (currentChar != '\n' && currentChar != -1) {
-            moveCurrentChar();
-        }
-        if (currentChar == '\n') {
-            line++;
-            moveCurrentChar(); //consume newline after comment, if there is one.
-        }
-    }
-
-
-    private void moveCurrentChar() {
-        currentChar = readChar();
     }
 }

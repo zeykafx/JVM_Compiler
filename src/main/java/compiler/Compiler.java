@@ -10,7 +10,7 @@ import java.io.StringReader;
 public class Compiler {
     public static void main(String[] args) throws Exception {
         System.out.println("Hello from the compiler !");
-        String input = "var x int = 2;\nvar y float = 3.14;";
+        String input = "var x int = 2;\nvar y float = 3.14;\n var x int=12;\n var x  int =       12;";
         StringReader reader = new StringReader(input);
         Lexer lexer = new Lexer(reader);
         while (true) {

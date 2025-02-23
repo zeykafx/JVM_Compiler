@@ -38,6 +38,38 @@ public class TestLexer {
     }
 
     @Test
+    public void testMultilineVariableDecl() throws Exception {
+        String input = "var x\n int = 2;";
+        StringReader reader = new StringReader(input);
+        Lexer lexer = new Lexer(reader);
+
+        Symbol symbol = lexer.getNextSymbol();
+        assertEquals(TokenTypes.VAR, symbol.type);
+        assertEquals("var", symbol.lexeme);
+
+        symbol = lexer.getNextSymbol();
+        assertEquals(TokenTypes.IDENTIFIER, symbol.type);
+        assertEquals("x", symbol.lexeme);
+
+        symbol = lexer.getNextSymbol();
+        assertEquals(TokenTypes.INT, symbol.type);
+        assertEquals("int", symbol.lexeme);
+
+        symbol = lexer.getNextSymbol();
+        assertEquals(TokenTypes.ASSIGN, symbol.type);
+        assertEquals("=", symbol.lexeme);
+
+        symbol = lexer.getNextSymbol();
+        assertEquals(TokenTypes.INT_LITERAL, symbol.type);
+        assertEquals("2", symbol.lexeme);
+        assertEquals(2, symbol.value);
+
+        symbol = lexer.getNextSymbol();
+        assertEquals(TokenTypes.SEMICOLON, symbol.type);
+        assertEquals(";", symbol.lexeme);
+    }
+
+    @Test
     public void testConstants() throws Exception {
         String input = "final i int = 3;";
         StringReader reader = new StringReader(input);

@@ -41,7 +41,7 @@ public class Lexer {
     }
 
 
-    /// Skip whitespaces and comments until we find something else
+    /// Skip whitespaces, comments, and newlines until we find something else
     private void skipWhitespaceAndComments() {
         while (true) {
             if (Character.isWhitespace(currentChar)) {
@@ -86,6 +86,7 @@ public class Lexer {
 
     /// Get the next symbol from the input
     public Symbol getNextSymbol() throws Exception {
+        // We always skip the newlines and comments
         skipWhitespaceAndComments();
 
         if (currentChar == -1) {

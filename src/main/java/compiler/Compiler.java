@@ -4,22 +4,38 @@
 package compiler;
 
 import compiler.Lexer.Lexer;
+import compiler.Lexer.Symbol;
 
+import java.io.FileNotFoundException;
+import java.io.FileReader;
 import java.io.StringReader;
 
 public class Compiler {
-    public static void main(String[] args) throws Exception {
-        System.out.println("Hello from the compiler !");
-        String input = "var x int = 2;\nvar y float = 3.14;\n var x int=12;\n var x  int =       12;\n var int \n x = 12;";
-        StringReader reader = new StringReader(input);
-        Lexer lexer = new Lexer(reader);
-        while (true) {
-            var symbol = lexer.getNextSymbol();
-            System.out.println(symbol);
-            if (symbol.type == compiler.Lexer.TokenTypes.EOF) {
-                break;
-            }
-        }
+	public static void main(String[] args) throws Exception {
+		// parse the command line arguments
+		if (args.length != 2) {
+			System.err.println("Usage: java Compiler -<module> <filepath>");
+			System.exit(1);
+		}
 
-    }
+		// run the lexer if the first argument is "-lexer"
+		if (args[0].equals("-lexer")) {
+			try {
+				String filepath = args[1];
+				FileReader reader = new FileReader(filepath);
+
+				Lexer lexer = new Lexer(reader);
+
+				Symbol symbol;
+				do {
+					symbol = lexer.getNextSymbol();
+					System.out.println(symbol);
+				} while (symbol.type != compiler.Lexer.TokenTypes.EOF);
+
+			} catch (FileNotFoundException e) {
+				System.err.println("File not found: " + args[1]);
+				System.exit(1);
+			}
+		}
+	}
 }

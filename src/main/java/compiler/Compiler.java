@@ -11,31 +11,70 @@ import java.io.FileReader;
 import java.io.StringReader;
 
 public class Compiler {
-	public static void main(String[] args) throws Exception {
-		// parse the command line arguments
-		if (args.length != 2) {
-			System.err.println("Usage: java Compiler -<module> <filepath>");
+	public static void main(String[] args) {
+		try {
+			validateArgs(args);
+			Module module = Module.fromFlag(args[0]);
+			String filepath = args[1];
+
+			processModule(module, filepath);
+		} catch (Exception e) {
+			System.err.println(e.getMessage());
 			System.exit(1);
 		}
+	}
 
-		// run the lexer if the first argument is "-lexer"
-		if (args[0].equals("-lexer")) {
-			try {
-				String filepath = args[1];
-				FileReader reader = new FileReader(filepath);
+	private static void validateArgs(String[] args) {
+		if (args.length != 2) {
+			throw new IllegalArgumentException("Usage: compiler <module> <filepath>");
+		}
+	}
 
-				Lexer lexer = new Lexer(reader);
+	private static void processModule(Module module, String filepath) throws Exception {
+		switch (module) {
+			case LEXER:
+				runLexer(filepath);
+				break;
+			// OTHER MODULES HERE -----
+			default:
+				throw new IllegalArgumentException("Unknown module: " + module);
+		}
+	}
 
-				Symbol symbol;
-				do {
-					symbol = lexer.getNextSymbol();
-					System.out.println(symbol);
-				} while (symbol.type != compiler.Lexer.TokenTypes.EOF);
+	private static void runLexer(String filepath) throws Exception {
+		FileReader reader = new FileReader(filepath);
+		Lexer lexer = new Lexer(reader);
 
-			} catch (FileNotFoundException e) {
-				System.err.println("File not found: " + args[1]);
-				System.exit(1);
+		Symbol symbol;
+		do {
+			symbol = lexer.getNextSymbol();
+			System.out.println(symbol);
+		} while (symbol.type != compiler.Lexer.TokenTypes.EOF);
+	}
+}
+
+
+enum Module {
+	LEXER("-lexer");
+
+	private final String flag;
+
+	Module(String flag) {
+		this.flag = flag;
+	}
+
+	public String getFlag() {
+		return flag;
+	}
+
+	public static Module fromFlag(String flag) {
+		for (Module module : Module.values()) {
+			if (module.getFlag().equals(flag)) {
+				return module;
 			}
 		}
+
+//		return null;
+		throw new IllegalArgumentException("Unknown flag: " + flag);
 	}
 }

@@ -210,4 +210,51 @@ public class TestLexer {
         symbol = lexer.getNextSymbol();
         assertEquals(TokenTypes.RIGHT_BRACKET, symbol.type);
     }
+
+
+    @Test
+    public void testArrayCreation() throws Exception {
+        String input = "c int[] = array [5] of int;";
+        StringReader reader = new StringReader(input);
+        Lexer lexer = new Lexer(reader);
+
+        Symbol symbol = lexer.getNextSymbol();
+        assertEquals(TokenTypes.IDENTIFIER, symbol.type);
+        assertEquals("c", symbol.lexeme);
+
+        symbol = lexer.getNextSymbol();
+        assertEquals(TokenTypes.INT, symbol.type);
+
+        symbol = lexer.getNextSymbol();
+        assertEquals(TokenTypes.LEFT_SQUARE_BRACKET, symbol.type);
+
+        symbol = lexer.getNextSymbol();
+        assertEquals(TokenTypes.RIGHT_SQUARE_BRACKET, symbol.type);
+
+        symbol = lexer.getNextSymbol();
+        assertEquals(TokenTypes.ASSIGN, symbol.type);
+
+        symbol = lexer.getNextSymbol();
+        assertEquals(TokenTypes.ARRAY, symbol.type);
+
+        symbol = lexer.getNextSymbol();
+        assertEquals(TokenTypes.LEFT_SQUARE_BRACKET, symbol.type);
+
+        symbol = lexer.getNextSymbol();
+        assertEquals(TokenTypes.INT_LITERAL, symbol.type);
+        assertEquals(5, symbol.value);
+
+        symbol = lexer.getNextSymbol();
+        assertEquals(TokenTypes.RIGHT_SQUARE_BRACKET, symbol.type);
+
+        symbol = lexer.getNextSymbol();
+        assertEquals(TokenTypes.OF, symbol.type);
+
+        symbol = lexer.getNextSymbol();
+        assertEquals(TokenTypes.INT, symbol.type);
+        assertEquals("int", symbol.lexeme);
+
+        symbol = lexer.getNextSymbol();
+        assertEquals(TokenTypes.SEMICOLON, symbol.type);
+    }
 }

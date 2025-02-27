@@ -70,6 +70,31 @@ public class TestLexer {
     }
 
     @Test
+    public void testFloatWithLeadingDot() throws Exception {
+        String input = "final i float = .123;";
+        StringReader reader = new StringReader(input);
+        Lexer lexer = new Lexer(reader);
+
+        Symbol symbol = lexer.getNextSymbol();
+        assertEquals(TokenTypes.FINAL, symbol.type);
+
+        symbol = lexer.getNextSymbol();
+        assertEquals(TokenTypes.IDENTIFIER, symbol.type);
+        assertEquals("i", symbol.lexeme);
+
+        symbol = lexer.getNextSymbol();
+        assertEquals(TokenTypes.FLOAT, symbol.type);
+
+        symbol = lexer.getNextSymbol();
+        assertEquals(TokenTypes.ASSIGN, symbol.type);
+
+        symbol = lexer.getNextSymbol();
+        assertEquals(TokenTypes.FLOAT_LITERAL, symbol.type);
+        assertEquals(0.123f, symbol.value);
+    }
+
+
+    @Test
     public void testConstants() throws Exception {
         String input = "final i int = 3;";
         StringReader reader = new StringReader(input);

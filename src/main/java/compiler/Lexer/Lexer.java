@@ -96,7 +96,7 @@ public class Lexer {
         // if c is a letter, read until it's not letter then check if it's keyword or identifier
         if (Character.isLetter(currentChar)) {
             return buildIdentifierOrSymbol();
-        } else if (Character.isDigit(currentChar)) { // if c is a digit, read until it's not digit
+        } else if (Character.isDigit(currentChar) || currentChar == '.') { // if c is a digit or a float without a leading 0, read until it's not digit
             return buildNumber();
         } else if (currentChar =='"') { // if c is a quote, then we have a string next so read until next quote
             return buildString();

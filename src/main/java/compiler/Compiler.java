@@ -26,7 +26,7 @@ public class Compiler {
 
 	private static void validateArgs(String[] args) {
 		if (args.length != 2) {
-			throw new IllegalArgumentException("Usage: compiler <module> <filepath>");
+			throw new IllegalArgumentException("Usage: compiler -<module> <filepath>");
 		}
 	}
 

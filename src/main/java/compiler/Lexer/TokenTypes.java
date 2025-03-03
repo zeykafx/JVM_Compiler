@@ -13,6 +13,7 @@ public enum TokenTypes {
     COMMENT_SYMBOL,
     WHITESPACE,
     EOF,
+    RECORD,
 
     // Base types
     INT,

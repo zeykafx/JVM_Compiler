@@ -93,6 +93,30 @@ public class TestLexer {
         assertEquals(0.123f, symbol.value);
     }
 
+    @Test
+    public void testIntWithTrailingDot() throws Exception {
+        String input = "final i int = 1.;"; // Per the assistant's teams message, "1." should be an integer
+        StringReader reader = new StringReader(input);
+        Lexer lexer = new Lexer(reader);
+
+        Symbol symbol = lexer.getNextSymbol();
+        assertEquals(TokenTypes.FINAL, symbol.type);
+
+        symbol = lexer.getNextSymbol();
+        assertEquals(TokenTypes.IDENTIFIER, symbol.type);
+        assertEquals("i", symbol.lexeme);
+
+        symbol = lexer.getNextSymbol();
+        assertEquals(TokenTypes.INT, symbol.type);
+
+        symbol = lexer.getNextSymbol();
+        assertEquals(TokenTypes.ASSIGN, symbol.type);
+
+        symbol = lexer.getNextSymbol();
+        assertEquals(TokenTypes.INT_LITERAL, symbol.type);
+        assertEquals(1, symbol.value);
+    }
+
 
     @Test
     public void testConstants() throws Exception {
@@ -125,7 +149,7 @@ public class TestLexer {
         Lexer lexer = new Lexer(reader);
 
         Symbol symbol = lexer.getNextSymbol();
-        assertEquals(TokenTypes.IDENTIFIER, symbol.type);
+        assertEquals(TokenTypes.RECORD, symbol.type);
         assertEquals("Point", symbol.lexeme);
 
         symbol = lexer.getNextSymbol();
@@ -256,5 +280,158 @@ public class TestLexer {
 
         symbol = lexer.getNextSymbol();
         assertEquals(TokenTypes.SEMICOLON, symbol.type);
+    }
+
+    @Test
+    public void methodWithRecAccess() throws Exception {
+        String input = "fun copyPoints(Point[] p) Point { return Point(p[0].x+p[1].x, p[0].y+p[1].y); }";
+        StringReader reader = new StringReader(input);
+        Lexer lexer = new Lexer(reader);
+
+        Symbol symbol = lexer.getNextSymbol();
+        assertEquals(TokenTypes.FUN, symbol.type);
+
+        symbol = lexer.getNextSymbol();
+        assertEquals(TokenTypes.IDENTIFIER, symbol.type);
+        assertEquals("copyPoints", symbol.lexeme);
+
+        symbol = lexer.getNextSymbol();
+        assertEquals(TokenTypes.LEFT_PAR, symbol.type);
+
+        symbol = lexer.getNextSymbol();
+        assertEquals(TokenTypes.RECORD, symbol.type);
+        assertEquals("Point", symbol.lexeme);
+
+        symbol = lexer.getNextSymbol();
+        assertEquals(TokenTypes.LEFT_SQUARE_BRACKET, symbol.type);
+
+        symbol = lexer.getNextSymbol();
+        assertEquals(TokenTypes.RIGHT_SQUARE_BRACKET, symbol.type);
+
+        symbol = lexer.getNextSymbol();
+        assertEquals(TokenTypes.IDENTIFIER, symbol.type);
+        assertEquals("p", symbol.lexeme);
+
+        symbol = lexer.getNextSymbol();
+        assertEquals(TokenTypes.RIGHT_PAR, symbol.type);
+
+        symbol = lexer.getNextSymbol();
+        assertEquals(TokenTypes.RECORD, symbol.type);
+        assertEquals("Point", symbol.lexeme);
+
+        symbol = lexer.getNextSymbol();
+        assertEquals(TokenTypes.LEFT_BRACKET, symbol.type);
+
+        symbol = lexer.getNextSymbol();
+        assertEquals(TokenTypes.RETURN, symbol.type);
+
+        symbol = lexer.getNextSymbol();
+        assertEquals(TokenTypes.RECORD, symbol.type);
+        assertEquals("Point", symbol.lexeme);
+
+        symbol = lexer.getNextSymbol();
+        assertEquals(TokenTypes.LEFT_PAR, symbol.type);
+
+        symbol = lexer.getNextSymbol();
+        assertEquals(TokenTypes.IDENTIFIER, symbol.type);
+        assertEquals("p", symbol.lexeme);
+
+        symbol = lexer.getNextSymbol();
+        assertEquals(TokenTypes.LEFT_SQUARE_BRACKET, symbol.type);
+
+        symbol = lexer.getNextSymbol();
+        assertEquals(TokenTypes.INT_LITERAL, symbol.type);
+        assertEquals(0, symbol.value);
+
+        symbol = lexer.getNextSymbol();
+        assertEquals(TokenTypes.RIGHT_SQUARE_BRACKET, symbol.type);
+
+        symbol = lexer.getNextSymbol();
+        assertEquals(TokenTypes.DOT, symbol.type);
+
+        symbol = lexer.getNextSymbol();
+        assertEquals(TokenTypes.IDENTIFIER, symbol.type);
+        assertEquals("x", symbol.lexeme);
+
+        symbol = lexer.getNextSymbol();
+        assertEquals(TokenTypes.PLUS, symbol.type);
+
+        symbol = lexer.getNextSymbol();
+        assertEquals(TokenTypes.IDENTIFIER, symbol.type);
+        assertEquals("p", symbol.lexeme);
+
+        symbol = lexer.getNextSymbol();
+        assertEquals(TokenTypes.LEFT_SQUARE_BRACKET, symbol.type);
+
+        symbol = lexer.getNextSymbol();
+        assertEquals(TokenTypes.INT_LITERAL, symbol.type);
+        assertEquals(1, symbol.value);
+
+        symbol = lexer.getNextSymbol();
+        assertEquals(TokenTypes.RIGHT_SQUARE_BRACKET, symbol.type);
+
+        symbol = lexer.getNextSymbol();
+        assertEquals(TokenTypes.DOT, symbol.type);
+
+        symbol = lexer.getNextSymbol();
+        assertEquals(TokenTypes.IDENTIFIER, symbol.type);
+        assertEquals("x", symbol.lexeme);
+
+        symbol = lexer.getNextSymbol();
+        assertEquals(TokenTypes.COMMA, symbol.type);
+
+        symbol = lexer.getNextSymbol();
+        assertEquals(TokenTypes.IDENTIFIER, symbol.type);
+        assertEquals("p", symbol.lexeme);
+
+        symbol = lexer.getNextSymbol();
+        assertEquals(TokenTypes.LEFT_SQUARE_BRACKET, symbol.type);
+
+        symbol = lexer.getNextSymbol();
+        assertEquals(TokenTypes.INT_LITERAL, symbol.type);
+        assertEquals(0, symbol.value);
+
+        symbol = lexer.getNextSymbol();
+        assertEquals(TokenTypes.RIGHT_SQUARE_BRACKET, symbol.type);
+
+        symbol = lexer.getNextSymbol();
+        assertEquals(TokenTypes.DOT, symbol.type);
+
+        symbol = lexer.getNextSymbol();
+        assertEquals(TokenTypes.IDENTIFIER, symbol.type);
+        assertEquals("y", symbol.lexeme);
+
+        symbol = lexer.getNextSymbol();
+        assertEquals(TokenTypes.PLUS, symbol.type);
+
+        symbol = lexer.getNextSymbol();
+        assertEquals(TokenTypes.IDENTIFIER, symbol.type);
+        assertEquals("p", symbol.lexeme);
+
+        symbol = lexer.getNextSymbol();
+        assertEquals(TokenTypes.LEFT_SQUARE_BRACKET, symbol.type);
+
+        symbol = lexer.getNextSymbol();
+        assertEquals(TokenTypes.INT_LITERAL, symbol.type);
+        assertEquals(1, symbol.value);
+
+        symbol = lexer.getNextSymbol();
+        assertEquals(TokenTypes.RIGHT_SQUARE_BRACKET, symbol.type);
+
+        symbol = lexer.getNextSymbol();
+        assertEquals(TokenTypes.DOT, symbol.type);
+
+        symbol = lexer.getNextSymbol();
+        assertEquals(TokenTypes.IDENTIFIER, symbol.type);
+        assertEquals("y", symbol.lexeme);
+
+        symbol = lexer.getNextSymbol();
+        assertEquals(TokenTypes.RIGHT_PAR, symbol.type);
+
+        symbol = lexer.getNextSymbol();
+        assertEquals(TokenTypes.SEMICOLON, symbol.type);
+
+        symbol = lexer.getNextSymbol();
+        assertEquals(TokenTypes.RIGHT_BRACKET, symbol.type);
     }
 }

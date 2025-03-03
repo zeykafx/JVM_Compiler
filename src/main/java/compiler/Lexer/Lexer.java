@@ -33,7 +33,7 @@ public class Lexer {
     private int peekChar() {
         try {
             int c = input.read();
-            input.unread(1);
+            input.unread(c);
             return c;
         } catch (IOException e) {
             return -1;
@@ -96,7 +96,7 @@ public class Lexer {
         // if c is a letter, read until it's not letter then check if it's keyword or identifier
         if (Character.isLetter(currentChar)) {
             return buildIdentifierOrSymbol();
-        } else if (Character.isDigit(currentChar) || currentChar == '.') { // if c is a digit or a float without a leading 0, read until it's not digit
+        } else if (Character.isDigit(currentChar) || (currentChar == '.' && (peekChar() != -1 && Character.isDigit(peekChar())))) { // if c is a digit or a float without a leading 0, read until it's not digit
             return buildNumber();
         } else if (currentChar =='"') { // if c is a quote, then we have a string next so read until next quote
             return buildString();
@@ -115,6 +115,11 @@ public class Lexer {
         while (Character.isLetterOrDigit(currentChar) || currentChar == '_') {
             str.append((char) currentChar);
             moveCurrentChar();
+        }
+
+        // If the first char is an uppercase letter, it's a record type
+        if (Character.isUpperCase(str.charAt(0))) {
+            return new Symbol(TokenTypes.RECORD, str.toString(), startLine);
         }
 
         String identifier = str.toString();
@@ -164,7 +169,8 @@ public class Lexer {
             moveCurrentChar();
         }
 
-        if (currentChar == '.') {
+        // If we have a dot, we have a float, but not if the dot is the last character
+        if (currentChar == '.' && peekChar() != -1 && Character.isDigit(peekChar())) {
             isFloat = true;
 			do {
 				lexeme.append((char) currentChar);
@@ -185,7 +191,7 @@ public class Lexer {
                 int value = Integer.parseInt(numberStr);
                 return new Symbol(TokenTypes.INT_LITERAL, numberStr, startLine, value);
             } catch (NumberFormatException e) {
-                throw new Exception("Invalid integer at line " + startLine);
+                throw new Exception("Invalid integer at line " + startLine + ": " + numberStr);
             }
         }
 	}

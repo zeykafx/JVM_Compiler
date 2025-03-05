@@ -1,0 +1,92 @@
+// Real grammar
+
+Type → BaseType | BaseType []
+BaseType → record | NumType | bool | string // TODO: verify this (if boolean terminal or not ?)
+NumType → int | float
+
+Block → { Stmts }
+Stmts → ε | Stmt Stmts
+Stmt → return BaseStatement; | BaseStatement; TODO
+
+BaseStatement -> identifier | VariableCreation | VariableAssignment | RecordDefinition | FunctionDefinition | FunctionCall | IfStmt | ForLoop | WhileLoop
+
+// operators, function calls, declarations,
+VariableCreation → Final identifier Type Assignment
+Assignment → ε | = Expression
+Final → ε | final
+
+VariableAssignment -> IdentifierAccess = Expression | IdentifierAccess = IdentifierAccess
+
+RecordDefinition -> recordNameIdentifier rec { RecordFields }
+RecordFields -> RecordField; MoreRecordFields  // TODO: can it be empty?
+MoreRecordFields → ε | RecordField MoreRecordFields
+RecordField -> identifier Type;
+
+FunctionDefinition → fun identifier (Params) Type
+
+Params → ε | Param MoreParams
+MoreParams → ε |, Param MoreParams
+Param → Type identifier
+
+FunctionCall -> identifier( ParamsCall )
+ParamsCall -> ε | FunctionCall MoreParamsCall | Expression MoreParamsCall
+MoreParamsCall -> ε | , ParamsCall
+
+IfStmt → if ( Expression ) Block ElseStmt
+ElseStmt → ε | else Block
+
+WhileLoop → while ( Expression ) Block
+ForLoop → for ( ForCondition ) Block
+ForCondition → identifier, NumType, NumType, NumType
+
+ArrayAccess -> identifier [ Expression ] | RecordAccess [ Expression ]
+RecordAccess -> recordIdentifier . Expression | ArrayAccess . Expression
+IdentifierAccess → identifier | ArrayAccess | RecordAccess
+
+//old : Expression → TypeValue | identifier | ArrayAccess | RecordAccess
+Expression → TypeValue | IdentifierAccess
+
+Arithmetic // TODO
+
+
+// Tests
+if (i > 10){
+    $ ....
+} else {
+    $ ....
+}
+
+fun copyPoints(Point[] p) Point {
+    return Point(p[0].x+p[1].x, p[0].y+p[1].y);
+}
+c int[] = array [5] of int;  $ new array of length 5
+x Point = Point(3,5);
+
+a int = 3;
+final i int = 9;
+p[0] = p[9]
+i = 0;
+a[3] = 1234;
+a.x = 123;
+a[3].x = 12;
+
+
+Point rec {
+    x int;
+    y int;
+}
+
+Person rec{
+    name string;
+    location Point;
+    locationHistory Point[];
+}
+
+people Person[] = array [5] of Person;
+
+p Person = people[0];
+p.locationHistory[5].y
+
+i int = people[0].locationHistory[3].y;
+
+writeln(square(value), p[1]);

@@ -29,19 +29,17 @@ public enum TokenTypes {
     // Operations
     PLUS,
     MINUS,
-    MULTIPLY,
-    DIVIDE,
-    ASSIGN,
+
+    // boolean operators
+    OR,
+    AND,
+    NOT,
     EQUAL_EQUAL,
     NOT_EQUAL,
     LESS_THAN,
     GREATER_THAN,
     LESS_THAN_EQUAL,
     GREATER_THAN_EQUAL,
-    MODULO,
-    AND,
-    OR,
-    NOT,
 
     // Special Keywords
     REC,

@@ -187,6 +187,8 @@ public class Lexer {
                 throw new Exception("Invalid float at line " + startLine);
             }
         } else {
+            // remove leading zeros
+            numberStr = numberStr.replaceFirst("^0+(?!$)", "");
             try {
                 int value = Integer.parseInt(numberStr);
                 return new Symbol(TokenTypes.INT_LITERAL, numberStr, startLine, value);

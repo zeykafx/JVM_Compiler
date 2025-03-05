@@ -117,6 +117,29 @@ public class TestLexer {
         assertEquals(1, symbol.value);
     }
 
+    @Test
+    public void testIntWithLeadingZeros() throws Exception {
+        String input = "final i int = 001;";
+        StringReader reader = new StringReader(input);
+        Lexer lexer = new Lexer(reader);
+
+        Symbol symbol = lexer.getNextSymbol();
+        assertEquals(TokenTypes.FINAL, symbol.type);
+
+        symbol = lexer.getNextSymbol();
+        assertEquals(TokenTypes.IDENTIFIER, symbol.type);
+        assertEquals("i", symbol.lexeme);
+
+        symbol = lexer.getNextSymbol();
+        assertEquals(TokenTypes.INT, symbol.type);
+
+        symbol = lexer.getNextSymbol();
+        assertEquals(TokenTypes.ASSIGN, symbol.type);
+
+        symbol = lexer.getNextSymbol();
+        assertEquals(TokenTypes.INT_LITERAL, symbol.type);
+        assertEquals(1, symbol.value);
+    }
 
     @Test
     public void testConstants() throws Exception {

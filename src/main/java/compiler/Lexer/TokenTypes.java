@@ -26,7 +26,14 @@ public enum TokenTypes {
     STRING,
     STRING_LITERAL,
 
+    // other
+    ASSIGN,
+
     // Operations
+    MULTIPLY,
+    DIVIDE,
+    MODULO,
+
     PLUS,
     MINUS,
 

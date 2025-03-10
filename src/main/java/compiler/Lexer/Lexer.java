@@ -187,7 +187,9 @@ public class Lexer {
                 throw new Exception("Invalid float at line " + startLine);
             }
         } else {
-            // remove leading zeros
+            // remove leading zeros:
+            // ^ = start of string, 0+ = one or more 0s, () = no?!$t at the end of the string
+            // so it shouldn't remove a single 0
             numberStr = numberStr.replaceFirst("^0+(?!$)", "");
             try {
                 int value = Integer.parseInt(numberStr);

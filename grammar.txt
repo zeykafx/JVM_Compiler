@@ -1,55 +1,55 @@
 // Real grammar
 
-Type → BaseType | BaseType []
-BaseType → record | NumType | bool | string // TODO: verify this (if boolean terminal or not ?)
-NumType → int | float
+Type -> BaseType | BaseType []
+BaseType -> record | NumType | bool | string  // TODO: verify this (if boolean terminal or not ?)
+NumType -> int | float
 
-Block → { Stmts }
-Stmts → ε | Stmt Stmts
-Stmt → return BaseStatement; | BaseStatement; TODO
+Block -> { Stmts }
+Stmts -> ε | Stmt Stmts
+Stmt -> return BaseStatement; | BaseStatement; TODO
 
 BaseStatement -> identifier | VariableCreation | VariableAssignment | RecordDefinition | FunctionDefinition | FunctionCall | IfStmt | ForLoop | WhileLoop
 
 // operators, function calls, declarations,
-VariableCreation → Final identifier Type Assignment
-Assignment → ε | = Expression
-Final → ε | final
+VariableCreation -> Final identifier Type Assignment
+Assignment -> ε | = Expression
+Final -> ε | final
 
 VariableAssignment -> IdentifierAccess = Expression | IdentifierAccess = IdentifierAccess
 
 RecordDefinition -> recordNameIdentifier rec { RecordFields }
 RecordFields -> RecordField; MoreRecordFields  // TODO: can it be empty?
-MoreRecordFields → ε | RecordField MoreRecordFields
+MoreRecordFields ->ε | RecordField MoreRecordFields
 RecordField -> identifier Type;
 
-FunctionDefinition → fun identifier (Params) Type
+FunctionDefinition ->fun identifier (Params) Type
 
-Params → ε | Param MoreParams
-MoreParams → ε |, Param MoreParams
-Param → Type identifier
+Params -> ε | Param MoreParams
+MoreParams -> ε |, Param MoreParams
+Param -> Type identifier
 
 FunctionCall -> identifier( ParamsCall )
 ParamsCall -> ε | FunctionCall MoreParamsCall | Expression MoreParamsCall
 MoreParamsCall -> ε | , ParamsCall
 
-IfStmt → if ( Expression ) Block ElseStmt
-ElseStmt → ε | else Block
+IfStmt -> if ( Expression ) Block ElseStmt
+ElseStmt -> ε | else Block
 
-WhileLoop → while ( Expression ) Block
-ForLoop → for ( ForCondition ) Block
-ForCondition → identifier, NumType, NumType, NumType
+WhileLoop -> while ( Expression ) Block
+ForLoop -> for ( ForCondition ) Block
+ForCondition -> identifier, NumType, NumType, NumType
 
 ArrayAccess -> identifier [ Expression ] | RecordAccess [ Expression ]
 RecordAccess -> recordIdentifier . Expression | ArrayAccess . Expression
-IdentifierAccess → identifier | ArrayAccess | RecordAccess
+IdentifierAccess -> identifier | ArrayAccess | RecordAccess
 
-//old : Expression → TypeValue | identifier | ArrayAccess | RecordAccess
-Expression → TypeValue | IdentifierAccess
+//old : Expression -> TypeValue | identifier | ArrayAccess | RecordAccess
+Expression -> TypeValue | IdentifierAccess
 
 Arithmetic // TODO
 
 
-// Tests
+// Brouillons / tests
 if (i > 10){
     $ ....
 } else {

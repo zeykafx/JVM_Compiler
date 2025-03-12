@@ -105,169 +105,60 @@ Expression -> TypeValue | IdentifierAccess .
 
 
 ----- Claude
-Program -> Constants Stmts .
+Program -> Stmts .
 
 Type -> BaseType IsList .
 BaseType -> "record" | NumType | "bool" | "string" .
 NumType -> "int" | "float" .
-IsList -> "[]" |  .
+IsList -> "[]" | .
 
 Block -> "{" Stmts ReturnStmt "}" .
-Stmts -> Stmt Stmts |  .
-Stmt ->  IfStmt | ForLoop | WhileLoop | FunctionDefinition ";" | BaseStatement ";" .
-ReturnStmt -> "return" Expression ";" |  .
+Stmts -> Stmt Stmts | .
+Stmt -> IfStmt | ForLoop | WhileLoop | FunctionDefinition ";" | BaseStatement ";" .
+ReturnStmt -> "return" Expression ";" | .
 
 BaseStatement -> Declaration | VariableAssignment | RecordDefinition .
 
 Declaration -> Final "identifier" Type Assignment .
-Assignment -> "=" Expression |  .
-Final -> "final" |  .
+Assignment -> "=" Expression | .
+Final -> "final" | .
 
 VariableAssignment -> IdentifierAccess "=" Expression .
 
+
 RecordDefinition -> "recordNameIdentifier" "rec" "{" RecordFields "}" .
-RecordFields -> RecordField ";" MoreRecordFields |  .
-MoreRecordFields -> RecordField ";" MoreRecordFields |  .
+RecordFields -> RecordField RecordFieldsTail | .
+RecordFieldsTail -> ";" RecordField RecordFieldsTail | .
 RecordField -> "identifier" Type .
 
 FunctionDefinition -> "fun" "identifier" "(" Params ")" Type Block .
 
-Params -> Param MoreParams |  .
-MoreParams -> "," Param MoreParams |  .
+Params -> Param ParamsTail | .
+ParamsTail -> "," Param ParamsTail | .
 Param -> Type "identifier" .
 
 IfStmt -> "if" "(" Expression ")" Block ElseStmt .
-ElseStmt -> "else" Block |  .
+ElseStmt -> "else" Block | .
 
 WhileLoop -> "while" "(" Expression ")" Block .
 ForLoop -> "for" "(" ForCondition ")" Block .
 ForCondition -> "identifier" "," NumType "," NumType "," NumType .
 
-IdentifierAccess -> "identifier" IdentifierAccessTail .
-IdentifierAccessTail -> "[" Expression "]" IdentifierAccessTail
-                      | "." Expression IdentifierAccessTail
-                      | "(" ParamsCall ")" IdentifierAccessTail
-                      |  .
+#IdentifierAccess -> "identifier" IdentifierAccessTail .
+#IdentifierAccessTail -> "[" Expression "]" IdentifierAccessTail
+#                      | "." IdentifierAccess IdentifierAccessTail
+#                      | .
 
-ParamsCall -> Expression MoreParamsCall |  .
-MoreParamsCall -> "," Expression MoreParamsCall |  .
+IdentifierAccess -> "identifier" AccessChain .
+AccessChain -> Access AccessChain | .
+Access -> "[" Expression "]" | "." Identifier .
 
-Expression -> TypeValue | IdentifierAccess .
+Expression -> Term Tail | ArrayExpression .
+Tail -> Operator Term | .
 
-"""
-a;
-
-"""
+ArrayExpression -> "array" "[" "intval" "]" "of" "Type" ";" .
 
 
------------- other grammar
-
-Program → Constants RecordDefs GlobalVars Functions
-
-Constants → ConstantDecl Constants | ε
-ConstantDecl → "final" Identifier Type "=" Expression ";"
-
-RecordDefs → RecordDef RecordDefs | ε
-RecordDef → Identifier "rec" "{" FieldDecls "}"
-
-FieldDecls → FieldDecl FieldDecls | ε
-FieldDecl → Identifier Type ";"
-
-GlobalVars → VarDecl GlobalVars | ε
-VarDecl → Identifier Type "=" Expression ";"
-
-Functions → FunctionDecl Functions | ε
-FunctionDecl → "fun" Identifier "(" Parameters ")" ReturnType "{" Body "}"
-
-Parameters → ParamList | ε
-ParamList → Param RestParams
-RestParams → "," Param RestParams | ε
-Param → Type Identifier
-
-ReturnType → Type | "void"
-
-Body → Statements
-Statements → Statement Statements | ε
-
-Statement → VarDecl
-          | IfStatement
-          | WhileStatement
-          | ForStatement
-          | AssignStatement
-          | ReturnStatement
-          | FunctionCall ";"
-          | FreeStatement
-
-IfStatement → "if" "(" Expression ")" "{" Statements "}" ElseClause
-ElseClause → "else" "{" Statements "}" | ε
-
-WhileStatement → "while" "(" Expression ")" "{" Statements "}"
-
-ForStatement → "for" "(" Identifier "," Expression "," Expression "," Expression ")" "{" Statements "}"
-
-AssignStatement → LValue "=" Expression ";"
-LValue → Identifier Index | Identifier FieldAccess
-
-ReturnStatement → "return" Expression ";" | "return" ";"
-
-FreeStatement → "free" Identifier ";"
-
-Index → "[" Expression "]" | ε
-
-FieldAccess → "." Identifier FieldAccess | ε
-
-Type → "int" ArrayPart
-     | "float" ArrayPart
-     | "bool" ArrayPart
-     | "string" ArrayPart
-     | Identifier ArrayPart
-
-ArrayPart → "[]" | ε
-
-Expression → AndExpr OrTail
-OrTail → "||" AndExpr OrTail | ε
-
-AndExpr → CompExpr AndTail
-AndTail → "&&" CompExpr AndTail | ε
-
-CompExpr → AddExpr CompTail
-CompTail → CompOp AddExpr | ε
-CompOp → "==" | "!=" | "<" | ">" | "<=" | ">="
-
-AddExpr → MulExpr AddTail
-AddTail → AddOp MulExpr AddTail | ε
-AddOp → "+" | "-"
-
-MulExpr → UnaryExpr MulTail
-MulTail → MulOp UnaryExpr MulTail | ε
-MulOp → "*" | "/" | "%"
-
-UnaryExpr → "-" UnaryExpr | "!" UnaryExpr | Primary
-
-Primary → Identifier AccessTail
-        | IntLiteral
-        | FloatLiteral
-        | StringLiteral
-        | BoolLiteral
-        | "(" Expression ")"
-        | FunctionCall
-        | ArrayCreation
-        | RecordCreation
-
-AccessTail → Index FieldAccess | FieldAccess | "(" Arguments ")" | ε
-
-FunctionCall → Identifier "(" Arguments ")"
-
-Arguments → ArgList | ε
-ArgList → Expression RestArgs
-RestArgs → "," Expression RestArgs | ε
-
-ArrayCreation → "array" "[" Expression "]" "of" Type
-
-RecordCreation → Identifier "(" Arguments ")"
-
-BoolLiteral → "true" | "false"
-IntLiteral → [0-9]+
-FloatLiteral → [0-9]+ "." [0-9]+
-StringLiteral → """ [^"]* """
-Identifier → [a-zA-Z][a-zA-Z0-9_]*
+Term -> "(" Expression ")" | IdentifierAccess | FunctionCall | "!" Term | ConstVal .
+Operator -> "||" | "&&" | "==" | "!=" | "<" | ">" | "<=" | ">=" | "+" | "-" | "*" | "/" | "%" .
+ConstVal -> "intval" | "floatval" | "boolval" | "stringval" | "true" | "false" .

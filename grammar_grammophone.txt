@@ -151,7 +151,7 @@ ForCondition -> "identifier" "," NumType "," NumType "," NumType .
 
 IdentifierAccess -> "identifier" AccessChain .
 AccessChain -> Access AccessChain | .
-Access -> "[" Expression "]" | "." Identifier .
+Access -> "[" Expression "]" | "." "identifier" .
 
 Expression -> Term Tail | ArrayExpression .
 Tail -> Operator Term | .

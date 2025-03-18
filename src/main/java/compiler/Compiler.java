@@ -5,10 +5,9 @@ package compiler;
 
 import compiler.Lexer.Lexer;
 import compiler.Lexer.Symbol;
+import compiler.Parser.Parser;
 
-import java.io.FileNotFoundException;
 import java.io.FileReader;
-import java.io.StringReader;
 
 public class Compiler {
 	public static void main(String[] args) {
@@ -35,6 +34,10 @@ public class Compiler {
 			case LEXER:
 				runLexer(filepath);
 				break;
+			case PARSER:
+			    
+                break;
+			
 			// OTHER MODULES HERE -----
 			default:
 				throw new IllegalArgumentException("Unknown module: " + module);
@@ -51,11 +54,19 @@ public class Compiler {
 			System.out.println(symbol);
 		} while (symbol.type != compiler.Lexer.TokenTypes.EOF);
 	}
+	
+	private static void runParser(String filepath) throws Exception {
+        FileReader reader = new FileReader(filepath);
+  		Lexer lexer = new Lexer(reader);	
+        Parser parser = new Parser(lexer);
+        // TODO: do something with the parser
+    }
 }
 
 
 enum Module {
-	LEXER("-lexer");
+	LEXER("-lexer"),
+	PARSER("-parser");
 
 	private final String flag;
 

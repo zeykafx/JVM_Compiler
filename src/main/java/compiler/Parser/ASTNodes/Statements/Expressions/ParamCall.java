@@ -1,0 +1,16 @@
+package compiler.Parser.ASTNodes.Statements.Expressions;
+
+public class ParamCall extends Term {
+	private final Expression paramExpression;
+
+	public ParamCall(Expression paramExpression) {
+		this.paramExpression = paramExpression;
+	}
+
+	@Override
+	public String toString() {
+		return "ParamCall [paramExpression=" + paramExpression + "]";
+	}
+}
+
+// !myfunc()

@@ -1,3 +1,4 @@
+
 Type -> BaseType IsList .
 BaseType -> record | NumType | bool | string .
 NumType -> int | float .
@@ -114,17 +115,16 @@ IsList -> "[]" | .
 
 Block -> "{" Stmts ReturnStmt "}" .
 Stmts -> Stmt Stmts | .
-Stmt -> IfStmt | ForLoop | WhileLoop | FunctionDefinition ";" | BaseStatement ";" .
+Stmt -> IfStmt | ForLoop | WhileLoop | FunctionDefinition | BaseStatement ";" .
 ReturnStmt -> "return" Expression ";" | .
 
 BaseStatement -> Declaration | VariableAssignment | RecordDefinition .
 
-Declaration -> Final "identifier" Type Assignment .
+Declaration -> Final "identifier" Type Assignment .  (need to add "var" to be LL(1))
 Assignment -> "=" Expression | .
 Final -> "final" | .
 
 VariableAssignment -> IdentifierAccess "=" Expression .
-
 
 RecordDefinition -> "recordNameIdentifier" "rec" "{" RecordFields "}" .
 RecordFields -> RecordField RecordFieldsTail | .
@@ -135,7 +135,8 @@ FunctionDefinition -> "fun" "identifier" "(" Params ")" Type Block .
 
 Params -> Param ParamsTail | .
 ParamsTail -> "," Param ParamsTail | .
-Param -> Type "identifier" .
+Param -> "identifier" Type .
+
 
 IfStmt -> "if" "(" Expression ")" Block ElseStmt .
 ElseStmt -> "else" Block | .
@@ -144,19 +145,18 @@ WhileLoop -> "while" "(" Expression ")" Block .
 ForLoop -> "for" "(" ForCondition ")" Block .
 ForCondition -> "identifier" "," NumType "," NumType "," NumType .
 
-#IdentifierAccess -> "identifier" IdentifierAccessTail .
-#IdentifierAccessTail -> "[" Expression "]" IdentifierAccessTail
-#                      | "." IdentifierAccess IdentifierAccessTail
-#                      | .
 
 IdentifierAccess -> "identifier" AccessChain .
 AccessChain -> Access AccessChain | .
 Access -> "[" Expression "]" | "." "identifier" .
 
-Expression -> Term Tail | ArrayExpression .
-Tail -> Operator Term | .
+FunctionCall -> "identifier" "(" ParamsCall ")" . # NOT LL(1)
+ParamsCall -> Expression MoreParamsCall .
+MoreParamsCall ->  | "," ParamsCall .
 
-ArrayExpression -> "array" "[" "intval" "]" "of" "Type" ";" .
+Expression -> Term Operator Term | ArrayExpression .
+
+ArrayExpression -> "array" "[" "intval" "]" "of" Type ";" .
 
 
 Term -> "(" Expression ")" | IdentifierAccess | FunctionCall | "!" Term | ConstVal .

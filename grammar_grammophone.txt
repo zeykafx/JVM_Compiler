@@ -105,8 +105,8 @@ IdentifierAccess -> identifier | ArrayAccess | RecordAccess .
 Expression -> TypeValue | IdentifierAccess .
 
 
------ Claude
-Program -> Stmts .
+----- Better grammar:
+Program -> Declarations RecordDefinitions FunctionDefinitions .
 
 Type -> BaseType IsList .
 BaseType -> "record" | NumType | "bool" | "string" .
@@ -120,17 +120,22 @@ ReturnStmt -> "return" Expression ";" | .
 
 BaseStatement -> Declaration | VariableAssignment | RecordDefinition .
 
-Declaration -> Final "identifier" Type Assignment .  (need to add "var" to be LL(1))
+Declarations -> Declaration Declarations | .
+
+Declaration -> Final "identifier" Type Assignment . # (need to add "var" to be LL(1))
 Assignment -> "=" Expression | .
 Final -> "final" | .
 
 VariableAssignment -> IdentifierAccess "=" Expression .
+
+RecordDefinitions -> RecordDefinition RecordDefinitions | .
 
 RecordDefinition -> "recordNameIdentifier" "rec" "{" RecordFields "}" .
 RecordFields -> RecordField RecordFieldsTail | .
 RecordFieldsTail -> ";" RecordField RecordFieldsTail | .
 RecordField -> "identifier" Type .
 
+FunctionDefinitions -> FunctionDefinition FunctionDefinitions | .
 FunctionDefinition -> "fun" "identifier" "(" Params ")" Type Block .
 
 Params -> Param ParamsTail | .
@@ -154,10 +159,16 @@ FunctionCall -> "identifier" "(" ParamsCall ")" . # NOT LL(1)
 ParamsCall -> Expression MoreParamsCall .
 MoreParamsCall ->  | "," ParamsCall .
 
-Expression -> Term Operator Term | ArrayExpression .
+Expression -> Term IsBinaryExpr | ArrayExpression | UnaryOperator Term .
+IsBinaryExpr -> BinaryOperator Term | .
 
 ArrayExpression -> "array" "[" "intval" "]" "of" Type ";" .
 
+NewRecord -> "recordNameIdentifier" "(" ParamsCall ")" . # Note: record identifiers start with a capital letter
+
+Term -> "(" Expression ")" | IdentifierOrFunctionCall | NewRecord | ConstVal .
+IdentifierOrFunctionCall -> "identifier" IdentifierOrFunctionCallTail .
+IdentifierOrFunctionCallTail -> | "(" ParamsCall ")" .
 
 Term -> "(" Expression ")" | IdentifierAccess | FunctionCall | "!" Term | ConstVal .
 Operator -> "||" | "&&" | "==" | "!=" | "<" | ">" | "<=" | ">=" | "+" | "-" | "*" | "/" | "%" .

@@ -1,7 +1,7 @@
 package compiler.Parser.ASTNodes.Statements.Expressions.Access;
 
-import compiler.Parser.ASTNodes.Statements.Expressions.Expression;
-import compiler.Parser.ASTNodes.Statements.Expressions.Term;
+import compiler.Parser.ASTNodes.Statements.Expressions.Expressions.Expression;
+import compiler.Parser.ASTNodes.Statements.Expressions.Terms.Term;
 
 public class ArrayAccess extends Term {
 

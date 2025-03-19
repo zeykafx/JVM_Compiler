@@ -1,4 +1,4 @@
-package compiler.Parser.ASTNodes.Statements.Expressions;
+package compiler.Parser.ASTNodes.Statements.Expressions.Terms;
 
 import compiler.Lexer.Symbol;
 

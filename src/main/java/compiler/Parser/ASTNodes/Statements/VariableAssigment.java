@@ -1,7 +1,7 @@
 package compiler.Parser.ASTNodes.Statements;
 
 import compiler.Parser.ASTNodes.Statements.Expressions.Access.ArrayAccess;
-import compiler.Parser.ASTNodes.Statements.Expressions.Expression;
+import compiler.Parser.ASTNodes.Statements.Expressions.Expressions.Expression;
 
 public class VariableAssigment extends Statement {
 	private final ArrayAccess identifier;

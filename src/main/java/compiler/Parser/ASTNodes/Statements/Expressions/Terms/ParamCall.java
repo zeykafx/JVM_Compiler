@@ -1,4 +1,6 @@
-package compiler.Parser.ASTNodes.Statements.Expressions;
+package compiler.Parser.ASTNodes.Statements.Expressions.Terms;
+
+import compiler.Parser.ASTNodes.Statements.Expressions.Expressions.Expression;
 
 public class ParamCall extends Term {
 	private final Expression paramExpression;

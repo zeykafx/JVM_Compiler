@@ -1,7 +1,7 @@
 package compiler.Parser.ASTNodes.Statements;
 
 import compiler.Parser.ASTNodes.Block;
-import compiler.Parser.ASTNodes.Statements.Expressions.Expression;
+import compiler.Parser.ASTNodes.Statements.Expressions.Expressions.Expression;
 
 public class WhileLoop extends Statement {
 	private final Expression condition;

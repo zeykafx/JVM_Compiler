@@ -3,7 +3,7 @@ package compiler.Parser.ASTNodes.Statements;
 
 import compiler.Lexer.Symbol;
 import compiler.Parser.ASTNodes.ASTNode;
-import compiler.Parser.ASTNodes.Statements.Expressions.Expression;
+import compiler.Parser.ASTNodes.Statements.Expressions.Expressions.Expression;
 import compiler.Parser.ASTNodes.Types.Type;
 
 public class VariableDeclaration extends ASTNode {

@@ -8,10 +8,12 @@ public class Lexer {
     private final PushbackReader input;
     private int currentChar;
     private int line;
+    private int column;
 
     public Lexer(Reader input) {
         this.input = new PushbackReader(input);
         this.line = 1;
+        this.column = 0;
         this.currentChar = readChar();
     }
 
@@ -20,6 +22,7 @@ public class Lexer {
         try {
             int c = input.read();
             if (c != -1) {
+                column++;
                 return c;
             } else {
                 return -1; // EOF
@@ -61,6 +64,7 @@ public class Lexer {
         while (Character.isWhitespace(currentChar)) {
             if (currentChar == '\n') {
                 line++;
+                column = 0;
             }
             moveCurrentChar();
         }
@@ -73,6 +77,7 @@ public class Lexer {
         }
         if (currentChar == '\n') {
             line++;
+            column = 0;
             //consume newline after comment, if there is one
             moveCurrentChar();
         }
@@ -90,7 +95,7 @@ public class Lexer {
         skipWhitespaceAndComments();
 
         if (currentChar == -1) {
-            return new Symbol(TokenTypes.EOF, "EOF", line);
+            return new Symbol(TokenTypes.EOF, "EOF", line, column);
         }
 
         // if c is a letter, read until it's not letter then check if it's keyword or identifier
@@ -102,7 +107,7 @@ public class Lexer {
             return buildString();
         } else {
             // Else, we have a symbol
-            return buildSymbol(line);
+            return buildSymbol();
         }
     }
 
@@ -110,6 +115,7 @@ public class Lexer {
     private Symbol buildIdentifierOrSymbol() {
         StringBuilder str = new StringBuilder();
         int startLine = line;
+        int startColumn = column;
 
         // identifiers can start with a letter, a digit, or an underscore
         while (Character.isLetterOrDigit(currentChar) || currentChar == '_') {
@@ -119,43 +125,42 @@ public class Lexer {
 
         // If the first char is an uppercase letter, it's a record type
         if (Character.isUpperCase(str.charAt(0))) {
-            return new Symbol(TokenTypes.RECORD, str.toString(), startLine);
+            return new Symbol(TokenTypes.RECORD, str.toString(), startLine, startColumn);
         }
 
         String identifier = str.toString();
-        switch (identifier) {
-            case "final": return new Symbol(TokenTypes.FINAL, identifier, startLine);
-            case "var": return new Symbol(TokenTypes.VAR, identifier, startLine);
-            case "rec": return new Symbol(TokenTypes.REC, identifier, startLine);
-            case "int": return new Symbol(TokenTypes.INT, identifier, startLine);
-            case "float": return new Symbol(TokenTypes.FLOAT, identifier, startLine);
-            case "bool": return new Symbol(TokenTypes.BOOL, identifier, startLine);
-            case "string": return new Symbol(TokenTypes.STRING, identifier, startLine);
-            case "fun": return new Symbol(TokenTypes.FUN, identifier, startLine);
-            case "return": return new Symbol(TokenTypes.RETURN, identifier, startLine);
-            case "void": return new Symbol(TokenTypes.VOID, identifier, startLine);
-            case "if": return new Symbol(TokenTypes.IF, identifier, startLine);
-            case "else": return new Symbol(TokenTypes.ELSE, identifier, startLine);
-            case "for": return new Symbol(TokenTypes.FOR, identifier, startLine);
-            case "while": return new Symbol(TokenTypes.WHILE, identifier, startLine);
-            case "array": return new Symbol(TokenTypes.ARRAY, identifier, startLine);
-            case "of": return new Symbol(TokenTypes.OF, identifier, startLine);
-            case "free": return new Symbol(TokenTypes.FREE, identifier, startLine);
-            case "true": return new Symbol(TokenTypes.BOOL_TRUE, identifier, startLine, true);
-            case "false": return new Symbol(TokenTypes.BOOL_FALSE, identifier, startLine, false);
-            case "chr": return new Symbol(TokenTypes.CHR, identifier, startLine);
-            case "len": return new Symbol(TokenTypes.LEN, identifier, startLine);
-            case "floor": return new Symbol(TokenTypes.FLOOR, identifier, startLine);
-            case "readInt": return new Symbol(TokenTypes.READ_INT, identifier, startLine);
-            case "readFloat": return new Symbol(TokenTypes.READ_FLOAT, identifier, startLine);
-            case "readString": return new Symbol(TokenTypes.READ_STRING, identifier, startLine);
-            case "writeInt": return new Symbol(TokenTypes.WRITE_INT, identifier, startLine);
-            case "writeFloat": return new Symbol(TokenTypes.WRITE_FLOAT, identifier, startLine);
-            case "write": return new Symbol(TokenTypes.WRITE, identifier, startLine);
-            case "writeln": return new Symbol(TokenTypes.WRITELN, identifier, startLine);
-
-            default: return new Symbol(TokenTypes.IDENTIFIER, identifier, startLine);
-        }
+		return switch (identifier) {
+			case "final" -> new Symbol(TokenTypes.FINAL, identifier, startLine, startColumn);
+			case "var" -> new Symbol(TokenTypes.VAR, identifier, startLine, startColumn);
+			case "rec" -> new Symbol(TokenTypes.REC, identifier, startLine, startColumn);
+			case "int" -> new Symbol(TokenTypes.INT, identifier, startLine, startColumn);
+			case "float" -> new Symbol(TokenTypes.FLOAT, identifier, startLine, startColumn);
+			case "bool" -> new Symbol(TokenTypes.BOOL, identifier, startLine, startColumn);
+			case "string" -> new Symbol(TokenTypes.STRING, identifier, startLine, startColumn);
+			case "fun" -> new Symbol(TokenTypes.FUN, identifier, startLine, startColumn);
+			case "return" -> new Symbol(TokenTypes.RETURN, identifier, startLine, startColumn);
+			case "void" -> new Symbol(TokenTypes.VOID, identifier, startLine, startColumn);
+			case "if" -> new Symbol(TokenTypes.IF, identifier, startLine, startColumn);
+			case "else" -> new Symbol(TokenTypes.ELSE, identifier, startLine, startColumn);
+			case "for" -> new Symbol(TokenTypes.FOR, identifier, startLine, startColumn);
+			case "while" -> new Symbol(TokenTypes.WHILE, identifier, startLine, startColumn);
+			case "array" -> new Symbol(TokenTypes.ARRAY, identifier, startLine, startColumn);
+			case "of" -> new Symbol(TokenTypes.OF, identifier, startLine, startColumn);
+			case "free" -> new Symbol(TokenTypes.FREE, identifier, startLine, startColumn);
+			case "true" -> new Symbol(TokenTypes.BOOL_TRUE, identifier, startLine, startColumn, true);
+			case "false" -> new Symbol(TokenTypes.BOOL_FALSE, identifier, startLine, startColumn, false);
+			case "chr" -> new Symbol(TokenTypes.CHR, identifier, startLine, startColumn);
+			case "len" -> new Symbol(TokenTypes.LEN, identifier, startLine, startColumn);
+			case "floor" -> new Symbol(TokenTypes.FLOOR, identifier, startLine, startColumn);
+			case "readInt" -> new Symbol(TokenTypes.READ_INT, identifier, startLine, startColumn);
+			case "readFloat" -> new Symbol(TokenTypes.READ_FLOAT, identifier, startLine, startColumn);
+			case "readString" -> new Symbol(TokenTypes.READ_STRING, identifier, startLine, startColumn);
+			case "writeInt" -> new Symbol(TokenTypes.WRITE_INT, identifier, startLine, startColumn);
+			case "writeFloat" -> new Symbol(TokenTypes.WRITE_FLOAT, identifier, startLine, startColumn);
+			case "write" -> new Symbol(TokenTypes.WRITE, identifier, startLine, startColumn);
+			case "writeln" -> new Symbol(TokenTypes.WRITELN, identifier, startLine, startColumn);
+			default -> new Symbol(TokenTypes.IDENTIFIER, identifier, startLine, startColumn);
+		};
     }
 
     /// Build a number literal
@@ -182,7 +187,7 @@ public class Lexer {
         if (isFloat) {
             try {
                 float value = Float.parseFloat(numberStr);
-                return new Symbol(TokenTypes.FLOAT_LITERAL, numberStr, startLine, value);
+                return new Symbol(TokenTypes.FLOAT_LITERAL, numberStr, startLine, column, value);
             } catch (NumberFormatException e) {
                 throw new Exception("Invalid float at line " + startLine);
             }
@@ -201,102 +206,102 @@ public class Lexer {
 	}
 
 
-    private Symbol buildSymbol(int currentLine) throws Exception {
+    private Symbol buildSymbol() throws Exception {
         switch (currentChar) {
             case '+':
                 moveCurrentChar();
-                return new Symbol(TokenTypes.PLUS, "+", currentLine);
+                return new Symbol(TokenTypes.PLUS, "+", line, column);
             case '-':
                 moveCurrentChar();
-                return new Symbol(TokenTypes.MINUS, "-", currentLine);
+                return new Symbol(TokenTypes.MINUS, "-", line, column);
             case '*':
                 moveCurrentChar();
-                return new Symbol(TokenTypes.MULTIPLY, "*", currentLine);
+                return new Symbol(TokenTypes.MULTIPLY, "*", line, column);
             case '/':
                 moveCurrentChar();
-                return new Symbol(TokenTypes.DIVIDE, "/", currentLine);
+                return new Symbol(TokenTypes.DIVIDE, "/", line, column);
             case '%':
                 moveCurrentChar();
-                return new Symbol(TokenTypes.MODULO, "%", currentLine);
+                return new Symbol(TokenTypes.MODULO, "%", line, column);
             case '(':
                 moveCurrentChar();
-                return new Symbol(TokenTypes.LEFT_PAR, "(", currentLine);
+                return new Symbol(TokenTypes.LEFT_PAR, "(", line, column);
             case ')':
                 moveCurrentChar();
-                return new Symbol(TokenTypes.RIGHT_PAR, ")", currentLine);
+                return new Symbol(TokenTypes.RIGHT_PAR, ")", line, column);
             case '{':
                 moveCurrentChar();
-                return new Symbol(TokenTypes.LEFT_BRACKET, "{", currentLine);
+                return new Symbol(TokenTypes.LEFT_BRACKET, "{", line, column);
             case '}':
                 moveCurrentChar();
-                return new Symbol(TokenTypes.RIGHT_BRACKET, "}", currentLine);
+                return new Symbol(TokenTypes.RIGHT_BRACKET, "}", line, column);
             case ';':
                 moveCurrentChar();
-                return new Symbol(TokenTypes.SEMICOLON, ";", currentLine);
+                return new Symbol(TokenTypes.SEMICOLON, ";", line, column);
             case ',':
                 moveCurrentChar();
-                return new Symbol(TokenTypes.COMMA, ",", currentLine);
+                return new Symbol(TokenTypes.COMMA, ",", line, column);
             case '[':
                 moveCurrentChar();
-                return new Symbol(TokenTypes.LEFT_SQUARE_BRACKET, "[", currentLine);
+                return new Symbol(TokenTypes.LEFT_SQUARE_BRACKET, "[", line, column);
             case ']':
                 moveCurrentChar();
-                return new Symbol(TokenTypes.RIGHT_SQUARE_BRACKET, "]", currentLine);
+                return new Symbol(TokenTypes.RIGHT_SQUARE_BRACKET, "]", line, column);
             case '.':
                 moveCurrentChar();
-                return new Symbol(TokenTypes.DOT, ".", currentLine);
+                return new Symbol(TokenTypes.DOT, ".", line, column);
             case '=':
                 moveCurrentChar();
                 if (currentChar == '=') {
                     moveCurrentChar();
-                    return new Symbol(TokenTypes.EQUAL_EQUAL, "==", currentLine - 1);
+                    return new Symbol(TokenTypes.EQUAL_EQUAL, "==", line -1, column);
                 } else {
-                    return new Symbol(TokenTypes.ASSIGN, "=", currentLine);
+                    return new Symbol(TokenTypes.ASSIGN, "=", line, column);
                 }
             case '!':
                 moveCurrentChar();
                 if (currentChar == '=') {
                     moveCurrentChar();
-                    return new Symbol(TokenTypes.NOT_EQUAL, "!=", currentLine - 1);
+                    return new Symbol(TokenTypes.NOT_EQUAL, "!=", line -1, column);
                 } else {
-                    return new Symbol(TokenTypes.NOT, "!", currentLine);
+                    return new Symbol(TokenTypes.NOT, "!", line, column);
                 }
             case '<':
                 moveCurrentChar();
                 if (currentChar == '=') {
                     moveCurrentChar();
-                    return new Symbol(TokenTypes.LESS_THAN_EQUAL, "<=", currentLine - 1);
+                    return new Symbol(TokenTypes.LESS_THAN_EQUAL, "<=", line-1, column);
                 } else {
-                    return new Symbol(TokenTypes.LESS_THAN, "<", currentLine);
+                    return new Symbol(TokenTypes.LESS_THAN, "<", line, column);
                 }
             case '>':
                 moveCurrentChar();
                 if (currentChar == '=') {
                     moveCurrentChar();
-                    return new Symbol(TokenTypes.GREATER_THAN_EQUAL, ">=", currentLine - 1);
+                    return new Symbol(TokenTypes.GREATER_THAN_EQUAL, ">=", line - 1, column);
                 } else {
-                    return new Symbol(TokenTypes.GREATER_THAN, ">", currentLine);
+                    return new Symbol(TokenTypes.GREATER_THAN, ">", line, column);
                 }
             case '&':
                 moveCurrentChar();
                 if (currentChar == '&') {
                     moveCurrentChar();
-                    return new Symbol(TokenTypes.AND, "&&", currentLine - 1);
+                    return new Symbol(TokenTypes.AND, "&&", line-1, column);
                 } else {
-                    throw new Exception("Unexpected '&' at line " + currentLine);
+                    throw new Exception("Unexpected '&' at line " + line +", column " + column);
                 }
             case '|':
                 moveCurrentChar();
                 if (currentChar == '|') {
                     moveCurrentChar();
-                    return new Symbol(TokenTypes.OR, "||", currentLine - 1);
+                    return new Symbol(TokenTypes.OR, "||", line-1, column);
                 } else {
-                    throw new Exception("Unexpected '|' at line " + currentLine);
+                    throw new Exception("Unexpected '|' at line " + line + ", column " + column);
                 }
 
             default:
                 moveCurrentChar();
-                throw new Exception("Unknown character at line " + currentLine);
+                throw new Exception("Unknown character at line " + line +", column "+ column);
         }
     }
 
@@ -304,6 +309,7 @@ public class Lexer {
     private Symbol buildString() {
         StringBuilder lexeme = new StringBuilder();
         int startLine = line;
+        int startColumn = column;
 
         // consume the opening quote "
         moveCurrentChar();
@@ -319,6 +325,6 @@ public class Lexer {
         // consume closing quote "
         moveCurrentChar();
 
-        return new Symbol(TokenTypes.STRING_LITERAL, lexeme.toString(), startLine, lexeme.toString());
+        return new Symbol(TokenTypes.STRING_LITERAL, lexeme.toString(), startLine, startColumn, lexeme.toString());
     }
 }

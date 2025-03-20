@@ -46,7 +46,7 @@ public class Parser {
 			lookAheadSymbol = lexer.getNextSymbol();
 			return matchedSymbol;
 		} else {
-			throw new RuntimeException("Syntax Error: Expected " + token + " but found " + lookAheadSymbol.lexeme + " of type " + lookAheadSymbol.type + " at line " + lookAheadSymbol.line);
+			throw new RuntimeException("Syntax Error: Expected " + token + " but found " + lookAheadSymbol.lexeme + " of type " + lookAheadSymbol.type + " at line " + lookAheadSymbol.line + ", column " + lookAheadSymbol.column);
 		}
 	}
 
@@ -232,7 +232,7 @@ public class Parser {
 		}
 
 		// If none of the above, throw an error
-		throw new Exception("Syntax Error: Expected Term but found " + lookAheadSymbol.lexeme + " of type " + lookAheadSymbol.type + " at line " + lookAheadSymbol.line);
+		throw new Exception("Syntax Error: Expected Term but found " + lookAheadSymbol.lexeme + " of type " + lookAheadSymbol.type + " at line " + lookAheadSymbol.line + ", column " + lookAheadSymbol.column);
 	}
 
 

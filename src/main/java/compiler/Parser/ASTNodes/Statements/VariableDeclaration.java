@@ -11,12 +11,14 @@ public class VariableDeclaration extends Statement {
 	Symbol name;
 	Expression value;
 	boolean isConstant;
+	boolean hasValue;
 
 	public VariableDeclaration(Symbol name, Type type, Expression value, boolean isConstant) {
 		this.name = name;
 		this.type = type;
 		this.value = value;
 		this.isConstant = isConstant;
+		this.hasValue = true;
 	}
 
 	public VariableDeclaration(Symbol name, Type type, Expression value) {
@@ -24,6 +26,15 @@ public class VariableDeclaration extends Statement {
 		this.type = type;
 		this.value = value;
 		this.isConstant = false;
+		this.hasValue = true;
+	}
+
+	public VariableDeclaration(Symbol name, Type type) {
+		this.name = name;
+		this.type = type;
+		this.value = null;
+		this.isConstant = false;
+		this.hasValue = false;
 	}
 
 	public Type getType() {
@@ -45,6 +56,9 @@ public class VariableDeclaration extends Statement {
 	@Override
 	public String toString() {
 		String constant = isConstant ? "Constant, " : "Variable, ";
+		if (value == null) {
+			return constant + name.lexeme + ", " + type.symbol + ", null";
+		}
 		return "Variable, " + name.lexeme + ", " + constant + type.symbol + ", " + value.toString();
 	}
 }

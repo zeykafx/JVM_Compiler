@@ -93,10 +93,20 @@ public class Parser {
 		}
 
 		Type type = parseType();
-		match(TokenTypes.ASSIGN);
-		Expression expression = parseExpression();
-		match(TokenTypes.SEMICOLON);
-		return new VariableDeclaration(identifier, type, expression, isConstant);
+		// there might not be an assignment
+
+		if (lookAheadSymbol.type == TokenTypes.ASSIGN) {
+			match(TokenTypes.ASSIGN);
+
+			Expression expression = parseExpression();
+			match(TokenTypes.SEMICOLON);
+			return new VariableDeclaration(identifier, type, expression, isConstant);
+		} else if (lookAheadSymbol.type == TokenTypes.SEMICOLON) {
+			match(TokenTypes.SEMICOLON);
+			return new VariableDeclaration(identifier, type);
+		} else {
+			throw new Exception("Syntax Error: Expected '=' or ';' after variable declaration but found " + lookAheadSymbol.lexeme + " of type " + lookAheadSymbol.type + " at line " + lookAheadSymbol.line + ", column " + lookAheadSymbol.column);
+		}
 	}
 
 	public Type parseType() throws Exception {
@@ -109,6 +119,12 @@ public class Parser {
 			case RECORD -> match(TokenTypes.RECORD);
 			default -> null;
 		};
+
+		System.out.println("Type: " + type);
+		if (type == null) {
+			System.out.println("NULL TYPE: " + lookAheadSymbol.lexeme);
+		}
+
 
 		// Check if the type is an array
 		if (lookAheadSymbol.type == TokenTypes.LEFT_SQUARE_BRACKET) {
@@ -167,11 +183,11 @@ public class Parser {
 
 		// Check for binary operators
 		if (lookAheadSymbol.type == TokenTypes.PLUS || lookAheadSymbol.type == TokenTypes.MINUS ||
-				lookAheadSymbol.type == TokenTypes.MULTIPLY || lookAheadSymbol.type == TokenTypes.DIVIDE ||
-				lookAheadSymbol.type == TokenTypes.MODULO || lookAheadSymbol.type == TokenTypes.EQUAL_EQUAL ||
-				lookAheadSymbol.type == TokenTypes.NOT_EQUAL || lookAheadSymbol.type == TokenTypes.LESS_THAN ||
-				lookAheadSymbol.type == TokenTypes.GREATER_THAN || lookAheadSymbol.type == TokenTypes.LESS_THAN_EQUAL ||
-				lookAheadSymbol.type == TokenTypes.GREATER_THAN_EQUAL) {
+			lookAheadSymbol.type == TokenTypes.MULTIPLY || lookAheadSymbol.type == TokenTypes.DIVIDE ||
+			lookAheadSymbol.type == TokenTypes.MODULO || lookAheadSymbol.type == TokenTypes.EQUAL_EQUAL ||
+			lookAheadSymbol.type == TokenTypes.NOT_EQUAL || lookAheadSymbol.type == TokenTypes.LESS_THAN ||
+			lookAheadSymbol.type == TokenTypes.GREATER_THAN || lookAheadSymbol.type == TokenTypes.LESS_THAN_EQUAL ||
+			lookAheadSymbol.type == TokenTypes.GREATER_THAN_EQUAL) {
 			// BinaryOperator -> "+" | "-" | "*" | "/" | "%" | "&&" | "||" | "==" | "!=" | "<" | ">" | "<=" | ">="
 			Symbol binaryOperator = match(lookAheadSymbol.type);
 			Operator binaryOp = new BinaryOperator(binaryOperator);
@@ -191,19 +207,36 @@ public class Parser {
 			Expression expression = parseExpression();
 			match(TokenTypes.RIGHT_PAR);
 			return new ParenthesesTerm(expression);
+
 		} else if (lookAheadSymbol.type == TokenTypes.IDENTIFIER) {
+
 			// IdentifierOrFunctionCall -> "identifier" IdentifierOrFunctionCallTail
-			Symbol identifier = match(TokenTypes.IDENTIFIER);
+//			Symbol identifier = match(TokenTypes.IDENTIFIER);
+			Symbol identifier = match(lookAheadSymbol.type);
+
+			System.out.println("Identifier: " + identifier.lexeme);
+			System.out.println("lookAheadSymbol = " + lookAheadSymbol);
+
+			// this can be a function call, or an access (identifier, record, array)
 			if (lookAheadSymbol.type == TokenTypes.LEFT_PAR) {
 				// IdentifierOrFunctionCallTail -> "(" ParamsCall ")"
 				match(TokenTypes.LEFT_PAR);
+				if (lookAheadSymbol.type == TokenTypes.RIGHT_PAR) {
+					// empty params
+					match(TokenTypes.RIGHT_PAR);
+					return new FunctionCall(identifier, new ArrayList<>());
+				}
 				ArrayList<ParamCall> params = parseParamsCall();
 				match(TokenTypes.RIGHT_PAR);
 				return new FunctionCall(identifier, params);
 			} else {
 				// IdentifierOrFunctionCallTail -> ε
-				return new Identifier(identifier);
+				// return new Identifier(identifier);
+
+				return parseAccess(true, identifier);
 			}
+
+
 		} else if (lookAheadSymbol.type == TokenTypes.RECORD) {
 			// Term -> NewRecord
 			// RECORD is recordIdentifier in the grammar
@@ -309,7 +342,7 @@ public class Parser {
 		//ParamsTail -> "," Param ParamsTail | .
 		//Param -> "identifier" Type .
 		ArrayList<FunctionDefinition> functions = new ArrayList<>();
-		System.out.println(lookAheadSymbol);
+
 		while (lookAheadSymbol.type == TokenTypes.FUN) {
 			functions.add(parseFunction());
 		}
@@ -323,7 +356,11 @@ public class Parser {
 		match(TokenTypes.LEFT_PAR);
 		ArrayList<ParamDefinition> params = parseParamDefinitions();
 		match(TokenTypes.RIGHT_PAR);
-		Type returnType = parseType();
+
+		Type returnType = null;
+		if (lookAheadSymbol.type != TokenTypes.LEFT_BRACKET) {
+			returnType = parseType();
+		}
 		Block block = parseBlock();
 		return new FunctionDefinition(identifier, returnType, params, block);
 	}
@@ -368,8 +405,7 @@ public class Parser {
 				match(TokenTypes.SEMICOLON);
 				returnStatement = new ReturnStatement(returnExpression);
 			} else {
-				Statement statement = parseStatement();
-				statements.add(statement);
+				statements.add(parseStatement());
 			}
 		}
 		match(TokenTypes.RIGHT_BRACKET);
@@ -456,7 +492,7 @@ public class Parser {
 	}
 
 	public Statement parseBaseStatement() throws Exception {
-		// BaseStatement -> Declaration | VariableAssignment | RecordDefinition .
+		// BaseStatement -> Declaration | VariableAssignment | RecordDefinition | Expression .
 
 		// Declarations -> Declaration Declarations | .
 
@@ -477,19 +513,38 @@ public class Parser {
 		if (lookAheadSymbol.type == TokenTypes.FINAL) {
 			// Declaration (final or not)
 			return parseVariableDeclaration(true, false, null);
+
 		} else if (lookAheadSymbol.type == TokenTypes.IDENTIFIER) {
 			// VariableAssignment (using an Access) or non-constant declaration
 			Symbol identifier = match(TokenTypes.IDENTIFIER);
 
-			// If the lookahead is not an equal sign, then we have a non-constant declaration
+
+			// If the lookahead is not an equal sign, then we have a non-constant declaration or a function call
 			if (lookAheadSymbol.type != TokenTypes.ASSIGN) {
+				if (lookAheadSymbol.type == TokenTypes.LEFT_PAR) {
+					// Function call
+					match(TokenTypes.LEFT_PAR);
+					if (lookAheadSymbol.type == TokenTypes.RIGHT_PAR) {
+						// empty params
+						match(TokenTypes.RIGHT_PAR);
+						return new FunctionCall(identifier, new ArrayList<>());
+					}
+					ArrayList<ParamCall> params = parseParamsCall();
+					match(TokenTypes.RIGHT_PAR);
+					return new FunctionCall(identifier, params);
+				}
+
+				// or it could be something like "i int"
+
 				return parseVariableDeclaration(false, true, identifier);
 			}
 
 			// otherwise we have a variable assignment
+			Access access = parseAccess(true, identifier);
 			match(TokenTypes.ASSIGN);
+
 			Expression expression = parseExpression();
-			return new VariableAssigment(identifier, expression);
+			return new VariableAssigment(access, expression);
 		} else if (lookAheadSymbol.type == TokenTypes.RECORD) {
 			return parseRecord();
 		}
@@ -498,13 +553,18 @@ public class Parser {
 	}
 
 
-	public Access parseAccess() throws Exception {
+	public Access parseAccess(boolean skipIdent, Symbol identIfSkipped) throws Exception {
 		// IdentifierAccess -> "identifier" AccessChain .
 		// AccessChain -> Access AccessChain | .
 		// Access -> "[" Expression "]" | "." "identifier" .
 		// e.g.:  "people[0].locationHistory[3].y;"
 
-		Symbol identifier = match(TokenTypes.IDENTIFIER);
+		Symbol identifier;
+		if (skipIdent) {
+			identifier = identIfSkipped;
+		} else {
+			identifier = match(TokenTypes.IDENTIFIER);
+		}
 		Access access = new IdentifierAccess(identifier);
 
 		// Parse the access chain (array indices and field accesses)

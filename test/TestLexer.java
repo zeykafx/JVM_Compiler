@@ -481,4 +481,34 @@ public class TestLexer {
         symbol = lexer.getNextSymbol();
         assertEquals(TokenTypes.RIGHT_BRACKET, symbol.type);
     }
+
+    @Test
+    public void testBuiltInFunction() throws Exception {
+        String input = "value int = readInt();";
+        StringReader reader = new StringReader(input);
+        Lexer lexer = new Lexer(reader);
+
+        Symbol symbol = lexer.getNextSymbol();
+        assertEquals(TokenTypes.IDENTIFIER, symbol.type);
+        assertEquals("value", symbol.lexeme);
+
+        symbol = lexer.getNextSymbol();
+        assertEquals(TokenTypes.INT, symbol.type);
+
+        symbol = lexer.getNextSymbol();
+        assertEquals(TokenTypes.ASSIGN, symbol.type);
+
+        symbol = lexer.getNextSymbol();
+        assertEquals(TokenTypes.IDENTIFIER, symbol.type);
+        assertEquals("readInt", symbol.lexeme);
+
+        symbol = lexer.getNextSymbol();
+        assertEquals(TokenTypes.LEFT_PAR, symbol.type);
+
+        symbol = lexer.getNextSymbol();
+        assertEquals(TokenTypes.RIGHT_PAR, symbol.type);
+
+        symbol = lexer.getNextSymbol();
+        assertEquals(TokenTypes.SEMICOLON, symbol.type);
+    }
 }

@@ -47,6 +47,7 @@ IdentifierAccess -> "identifier" AccessChain .
 AccessChain -> Access AccessChain | .
 Access -> "[" Expression "]" | "." "identifier" .
 
+
 FunctionCall -> "identifier" "(" ParamsCall ")" . # NOT LL(1)
 ParamsCall -> Expression MoreParamsCall .
 MoreParamsCall ->  | "," ParamsCall .

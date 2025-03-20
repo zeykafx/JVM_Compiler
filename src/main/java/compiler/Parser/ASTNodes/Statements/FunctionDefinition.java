@@ -12,12 +12,14 @@ public class FunctionDefinition extends Statement {
 	private final Type returnType;
 	private final ArrayList<ParamDefinition> paramDefinitions;
 	private final Block block;
+	private final boolean voidReturnType;
 
 	public FunctionDefinition(Symbol name, Type returnType, ArrayList<ParamDefinition> paramDefinitions, Block block) {
 		this.name = name;
 		this.returnType = returnType;
 		this.paramDefinitions = paramDefinitions;
 		this.block = block;
+		this.voidReturnType = returnType == null;
 	}
 
 	public Symbol getName() {
@@ -38,6 +40,15 @@ public class FunctionDefinition extends Statement {
 
 	@Override
 	public String toString() {
-		return "Function, " + name.type + ", " + returnType.toString() + ", " +paramDefinitions+ ", " + block.toString();
+//		return "Function, " + name.type + ", " + returnType.toString() + ", " +paramDefinitions+ ", " + block.toString();
+		StringBuilder paramStr = new StringBuilder();
+		for (ParamDefinition param : paramDefinitions) {
+			paramStr.append(param.toString()).append(", ");
+		}
+		if (!paramStr.isEmpty()) {
+			paramStr.setLength(paramStr.length() - 2); // Remove the last comma and space
+		}
+		String returnTypeStr = voidReturnType ? "void" : returnType.toString();
+		return "Function, " + name.type + ", " + returnTypeStr + ", [" + paramStr + "], " + block.toString();
 	}
 }

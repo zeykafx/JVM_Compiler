@@ -6,7 +6,6 @@ public class Statement extends ASTNode {
 
 	@Override
 	public String toString() {
-		return "";
-
+		return "Statement []";
 	}
 }

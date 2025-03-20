@@ -3,7 +3,7 @@ package compiler.Parser.ASTNodes.Types;
 import compiler.Lexer.Symbol;
 
 public class NumType extends Type {
-	boolean isFloat;
+	private final boolean isFloat;
 
 	public NumType(Symbol type, boolean isFloat) {
 		super(type, false);
@@ -13,6 +13,14 @@ public class NumType extends Type {
 	public NumType(Symbol type) {
 		super(type, false);
 		this.isFloat = false;
+	}
+
+	public boolean isFloat() {
+		return isFloat;
+	}
+
+	public boolean isInt() {
+		return !isFloat;
 	}
 
 	@Override

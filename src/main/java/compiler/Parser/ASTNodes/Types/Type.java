@@ -15,6 +15,14 @@ public class Type extends ASTNode {
 		this.isList = isList;
 	}
 
+	public Symbol getSymbol() {
+		return symbol;
+	}
+
+	public boolean isList() {
+		return isList;
+	}
+
 	@Override
 	public String toString() {
 		return "Type, " + symbol.type + ", " + (isList ? "array" : "");

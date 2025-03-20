@@ -10,6 +10,10 @@ public class IdentifierAccess extends Term {
 		this.identifier = identifier;
 	}
 
+	public Symbol getIdentifier() {
+		return identifier;
+	}
+
 	@Override
 	public String toString() {
 		return "IdentifierAccess [identifier=" + identifier + "]";

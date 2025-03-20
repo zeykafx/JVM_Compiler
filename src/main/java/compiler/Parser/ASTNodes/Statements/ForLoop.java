@@ -19,6 +19,26 @@ public class ForLoop extends Statement {
 		this.block = block;
 	}
 
+	public VariableDeclaration getVariable() {
+		return variable;
+	}
+
+	public NumType getStart() {
+		return start;
+	}
+
+	public NumType getEnd() {
+		return end;
+	}
+
+	public NumType getStep() {
+		return step;
+	}
+
+	public Block getBlock() {
+		return block;
+	}
+
 	@Override
 	public String toString() {
 		return "ForLoop [variable=" + variable + ", start=" + start + ", end=" + end + ", step=" + step + ", block="

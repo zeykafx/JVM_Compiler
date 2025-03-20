@@ -13,6 +13,14 @@ public class FunctionCall extends Term {
 		this.parameters = parameters;
 	}
 
+	public Symbol getIdentifier() {
+		return identifier;
+	}
+
+	public ArrayList<ParamCall> getParameters() {
+		return parameters;
+	}
+
 	@Override
 	public String toString() {
 		return "FunctionCall [identifier=" + identifier + ", parameters=" + parameters + "]";

@@ -12,6 +12,14 @@ public class WhileLoop extends Statement {
 		this.block = block;
 	}
 
+	public Expression getCondition() {
+		return condition;
+	}
+
+	public Block getBlock() {
+		return block;
+	}
+
 	@Override
 	public String toString() {
 		return "WhileLoop [condition=" + condition + ", block=" + block + "]";

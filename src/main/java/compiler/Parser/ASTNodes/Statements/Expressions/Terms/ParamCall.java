@@ -9,6 +9,10 @@ public class ParamCall extends Term {
 		this.paramExpression = paramExpression;
 	}
 
+	public Expression getParamExpression() {
+		return paramExpression;
+	}
+
 	@Override
 	public String toString() {
 		return "ParamCall [paramExpression=" + paramExpression + "]";

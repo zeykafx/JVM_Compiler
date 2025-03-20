@@ -14,6 +14,14 @@ public class RecordAccess extends Term {
 		this.identifier = identifier;
 	}
 
+	public Symbol getIdentifier() {
+		return identifier;
+	}
+
+	public Expression getHeadExpression() {
+		return headExpression;
+	}
+
 	@Override
 	public String toString() {
 		return "RecordAccess [headExpression=" + headExpression + ", identifier=" + identifier + "]";

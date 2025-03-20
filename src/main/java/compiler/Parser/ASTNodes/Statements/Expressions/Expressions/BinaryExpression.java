@@ -15,6 +15,18 @@ public class BinaryExpression extends Expression {
         this.rightTerm = rightTerm;
     }
 
+    public Term getLeftTerm() {
+        return leftTerm;
+    }
+
+    public Operator getOperator() {
+        return operator;
+    }
+
+    public Term getRightTerm() {
+        return rightTerm;
+    }
+
     @Override
     public String toString() {
         return "BinaryExpression [leftTerm=" + leftTerm + ", operator=" + operator + ", rightTerm=" + rightTerm + "]";

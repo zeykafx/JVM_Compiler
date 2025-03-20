@@ -14,6 +14,10 @@ public class BinaryOperator extends Operator {
         this.operator = operator;
     }
 
+    public Symbol getOperator() {
+        return operator;
+    }
+
     @Override
     public String toString() {
         return "BinaryOperator [operator=" + operator.lexeme + "]";

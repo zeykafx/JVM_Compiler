@@ -11,6 +11,14 @@ public class ConstVal extends Term {
         this.symbol = symbol;
     }
 
+    public Object getValue() {
+        return value;
+    }
+
+    public Symbol getSymbol() {
+        return symbol;
+    }
+
     @Override
     public String toString() {
         return "ConstVal [value=" + value + ", symbol=" + symbol + "]";

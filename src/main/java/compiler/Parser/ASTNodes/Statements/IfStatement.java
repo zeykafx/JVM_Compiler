@@ -23,6 +23,22 @@ public class IfStatement extends Statement {
 		this.isElse = true;
 	}
 
+	public Expression getCondition() {
+		return condition;
+	}
+
+	public Block getThenBlock() {
+		return thenSBlock;
+	}
+
+	public Block getElseBlock() {
+		return elseBlock;
+	}
+
+	public boolean isElse() {
+		return isElse;
+	}
+
 	@Override
 	public String toString() {
 		return "IfStatement, " + condition.toString() + ", " + thenSBlock.toString() + ", " + (isElse ? "else" : "") + ", " + (elseBlock != null ? elseBlock.toString() : "");

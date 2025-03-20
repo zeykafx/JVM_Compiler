@@ -7,8 +7,21 @@ public class RecordFieldDefinition extends Statement {
 	Symbol identifier;
 	Type type;
 
+	public RecordFieldDefinition(Symbol identifier, Type type) {
+		this.identifier = identifier;
+		this.type = type;
+	}
+
+	public Symbol getIdentifier() {
+		return identifier;
+	}
+
+	public Type getType() {
+		return type;
+	}
+
 	@Override
 	public String toString() {
-		return "RecordField, " + identifier.type + ", " + type.toString();
+		return "RecordField: " + identifier.type + ", " + type.toString();
 	}
 }

@@ -12,7 +12,11 @@ public class UnaryOperator extends Operator {
         this.operator = operator;
     }
 
-   @Override
+    public Symbol getOperator() {
+        return operator;
+    }
+
+    @Override
     public String toString() {
         return "UnaryOperator [operator=" + operator.lexeme + "]";
     }

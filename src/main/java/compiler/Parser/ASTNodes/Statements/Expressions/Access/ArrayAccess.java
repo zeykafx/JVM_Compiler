@@ -13,6 +13,14 @@ public class ArrayAccess extends Term {
 		this.indexExpression = index;
 	}
 
+	public Expression getHeadExpression() {
+		return headExpression;
+	}
+
+	public Expression getIndexExpression() {
+		return indexExpression;
+	}
+
 	@Override
 	public String toString() {
 		return "ArrayAccess [headExpression=" + headExpression + ", indexExpression=" + indexExpression + "]";

@@ -15,6 +15,14 @@ public class NewRecord extends Term {
         this.terms = terms;
     }
 
+    public Symbol getIdentifier() {
+        return identifier;
+    }
+
+    public ArrayList<ParamCall> getTerms() {
+        return terms;
+    }
+
     @Override
     public String toString() {
         return "NewRecord [identifier=" + identifier + ", terms=" + terms + "]";

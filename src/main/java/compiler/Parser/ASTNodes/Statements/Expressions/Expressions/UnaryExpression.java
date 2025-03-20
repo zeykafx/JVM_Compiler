@@ -13,6 +13,14 @@ public class UnaryExpression extends Expression {
         this.term = term;
     }
 
+    public Operator getOperator() {
+        return operator;
+    }
+
+    public Term getTerm() {
+        return term;
+    }
+
     @Override
     public String toString() {
         return "UnaryExpression [operator=" + operator + ", term=" + term + "]";

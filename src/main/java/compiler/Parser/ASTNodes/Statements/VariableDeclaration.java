@@ -6,7 +6,7 @@ import compiler.Parser.ASTNodes.ASTNode;
 import compiler.Parser.ASTNodes.Statements.Expressions.Expressions.Expression;
 import compiler.Parser.ASTNodes.Types.Type;
 
-public class VariableDeclaration extends ASTNode {
+public class VariableDeclaration extends Statement {
 	Type type;
 	Symbol name;
 	Expression value;
@@ -17,6 +17,29 @@ public class VariableDeclaration extends ASTNode {
 		this.type = type;
 		this.value = value;
 		this.isConstant = isConstant;
+	}
+
+	public VariableDeclaration(Symbol name, Type type, Expression value) {
+		this.name = name;
+		this.type = type;
+		this.value = value;
+		this.isConstant = false;
+	}
+
+	public Type getType() {
+		return type;
+	}
+
+	public Symbol getName() {
+		return name;
+	}
+
+	public Expression getValue() {
+		return value;
+	}
+
+	public boolean isConstant() {
+		return isConstant;
 	}
 
 	@Override

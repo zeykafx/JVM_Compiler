@@ -17,9 +17,20 @@ public class Program extends ASTNode {
         this.constants = constants;
         this.records = records;
         this.functions = functions;
-
     }
-    
+
+    public ArrayList<VariableDeclaration> getConstants() {
+        return constants;
+    }
+
+    public ArrayList<RecordDefinition> getRecords() {
+        return records;
+    }
+
+    public ArrayList<FunctionDefinition> getFunctions() {
+        return functions;
+    }
+
     public String toString() {
         return "Program";
     }

@@ -13,6 +13,14 @@ public class VariableAssigment extends Statement {
 		this.expression = expression;
 	}
 
+	public ArrayAccess getIdentifier() {
+		return identifier;
+	}
+
+	public Expression getExpression() {
+		return expression;
+	}
+
 	@Override
 	public String toString() {
 		return "VariableAssigment [identifier=" + identifier + ", expression=" + expression + "]";

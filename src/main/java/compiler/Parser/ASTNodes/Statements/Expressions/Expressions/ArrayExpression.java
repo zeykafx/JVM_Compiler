@@ -7,17 +7,17 @@ public class ArrayExpression extends Expression {
     // ArrayExpression -> "array" "[" "intval" "]" "of" Type ";" .
     private final Expression sizeExpression;
     private final Type type;
-    private final Symbol identifier;
+//    private final Symbol identifier;
 
 
-    public ArrayExpression(Expression sizeExpression, Type type, Symbol identifier) {
+    public ArrayExpression(Expression sizeExpression, Type type) {
         this.sizeExpression = sizeExpression;
         this.type = type;
-        this.identifier = identifier;
+//        this.identifier = identifier;
     }
 
     @Override
     public String toString() {
-        return "ArrayExpression [sizeExpression=" + sizeExpression + ", type=" + type + ", identifier=" + identifier + "]";
+        return "ArrayExpression [sizeExpression=" + sizeExpression + ", type=" + type + "]";
     }
 }

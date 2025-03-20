@@ -1,6 +1,5 @@
 package compiler.Parser.ASTNodes.Statements.Expressions.Expressions;
 
-import compiler.Lexer.Symbol;
 import compiler.Parser.ASTNodes.Types.Type;
 
 public class ArrayExpression extends Expression {

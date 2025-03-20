@@ -319,6 +319,6 @@ public class Lexer {
         // consume closing quote "
         moveCurrentChar();
 
-        return new Symbol(TokenTypes.STRING, lexeme.toString(), startLine, lexeme.toString());
+        return new Symbol(TokenTypes.STRING_LITERAL, lexeme.toString(), startLine, lexeme.toString());
     }
 }

@@ -118,6 +118,30 @@ public class TestLexer {
     }
 
     @Test
+    public void testStringLiteral() throws Exception {
+        String input = "final s string = \"Hello, World!\";";
+        StringReader reader = new StringReader(input);
+        Lexer lexer = new Lexer(reader);
+
+        Symbol symbol = lexer.getNextSymbol();
+        assertEquals(TokenTypes.FINAL, symbol.type);
+
+        symbol = lexer.getNextSymbol();
+        assertEquals(TokenTypes.IDENTIFIER, symbol.type);
+        assertEquals("s", symbol.lexeme);
+
+        symbol = lexer.getNextSymbol();
+        assertEquals(TokenTypes.STRING, symbol.type);
+
+        symbol = lexer.getNextSymbol();
+        assertEquals(TokenTypes.ASSIGN, symbol.type);
+
+        symbol = lexer.getNextSymbol();
+        assertEquals(TokenTypes.STRING_LITERAL, symbol.type);
+        assertEquals("Hello, World!", symbol.lexeme);
+    }
+
+    @Test
     public void testIntWithLeadingZeros() throws Exception {
         String input = "final i int = 001;";
         StringReader reader = new StringReader(input);

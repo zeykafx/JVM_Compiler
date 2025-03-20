@@ -1,8 +1,6 @@
 package compiler.Parser.ASTNodes.Statements.Expressions.Terms;
 
 import compiler.Lexer.Symbol;
-import compiler.Parser.ASTNodes.Statements.Expressions.Expressions.Expression;
-
 import java.util.ArrayList;
 
 public class NewRecord extends Term {

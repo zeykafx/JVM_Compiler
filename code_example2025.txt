@@ -150,7 +150,7 @@ $ To initialise array or record variables, they must be assigned to an existing 
 
 c int[] = array [5] of int;  $ new array of length 5 
 
-d Person= Person("me", Point(3,7), array [i*2] of int);  $ new record 
+d Person = Person("me", Point(3,7), array [i*2] of int);  $ new record
 
   
 

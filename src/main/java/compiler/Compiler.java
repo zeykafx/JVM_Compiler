@@ -5,6 +5,7 @@ package compiler;
 
 import compiler.Lexer.Lexer;
 import compiler.Lexer.Symbol;
+import compiler.Parser.ASTNodes.ASTNode;
 import compiler.Parser.Parser;
 
 import java.io.FileReader;
@@ -35,7 +36,7 @@ public class Compiler {
 				runLexer(filepath);
 				break;
 			case PARSER:
-			    
+			    runParser(filepath);
                 break;
 			
 			// OTHER MODULES HERE -----
@@ -59,7 +60,9 @@ public class Compiler {
         FileReader reader = new FileReader(filepath);
   		Lexer lexer = new Lexer(reader);	
         Parser parser = new Parser(lexer);
-        // TODO: do something with the parser
+		ASTNode root = parser.getAST();
+		System.out.println("Parsing completed successfully.");
+		System.out.println("AST: " + root.prettyPrint(0));
     }
 }
 

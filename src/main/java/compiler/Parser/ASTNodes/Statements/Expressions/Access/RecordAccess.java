@@ -2,15 +2,14 @@ package compiler.Parser.ASTNodes.Statements.Expressions.Access;
 
 import compiler.Lexer.Symbol;
 import compiler.Parser.ASTNodes.Statements.Expressions.Expressions.Expression;
-import compiler.Parser.ASTNodes.Statements.Expressions.Terms.Term;
 
-public class RecordAccess extends Term {
+public class RecordAccess extends Access {
 
-	private final Expression headExpression;
+	private final Access headAccess;
 	private final Symbol identifier;
 
-	public RecordAccess(Expression head, Symbol identifier) {
-		this.headExpression = head;
+	public RecordAccess(Access head, Symbol identifier) {
+		this.headAccess = head;
 		this.identifier = identifier;
 	}
 
@@ -18,12 +17,12 @@ public class RecordAccess extends Term {
 		return identifier;
 	}
 
-	public Expression getHeadExpression() {
-		return headExpression;
+	public Access getHeadAccess() {
+		return headAccess;
 	}
 
 	@Override
 	public String toString() {
-		return "RecordAccess [headExpression=" + headExpression + ", identifier=" + identifier + "]";
+		return "RecordAccess [headExpression=" + headAccess + ", identifier=" + identifier + "]";
 	}
 }

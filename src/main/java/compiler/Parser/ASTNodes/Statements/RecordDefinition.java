@@ -23,6 +23,6 @@ public class RecordDefinition extends Statement {
 
 	@Override
 	public String toString() {
-		return "Record, " + identifier.type + ", " + fields.toString();
+		return "Record: " + identifier.lexeme + ", " + fields.toString();
 	}
 }

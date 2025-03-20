@@ -3,18 +3,18 @@ package compiler.Parser.ASTNodes.Statements.Expressions.Access;
 import compiler.Parser.ASTNodes.Statements.Expressions.Expressions.Expression;
 import compiler.Parser.ASTNodes.Statements.Expressions.Terms.Term;
 
-public class ArrayAccess extends Term {
+public class ArrayAccess extends Access {
 
-	private final Expression headExpression;
+	private final Access headAccess;
 	private final Expression indexExpression;
 
-	public ArrayAccess(Expression head, Expression index) {
-		this.headExpression = head;
+	public ArrayAccess(Access head, Expression index) {
+		this.headAccess = head;
 		this.indexExpression = index;
 	}
 
-	public Expression getHeadExpression() {
-		return headExpression;
+	public Access getHeadAccess() {
+		return headAccess;
 	}
 
 	public Expression getIndexExpression() {
@@ -23,7 +23,7 @@ public class ArrayAccess extends Term {
 
 	@Override
 	public String toString() {
-		return "ArrayAccess [headExpression=" + headExpression + ", indexExpression=" + indexExpression + "]";
+		return "ArrayAccess [headExpression=" + headAccess + ", indexExpression=" + indexExpression + "]";
 	}
 }
 

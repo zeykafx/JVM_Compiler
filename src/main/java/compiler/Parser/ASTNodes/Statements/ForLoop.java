@@ -1,17 +1,18 @@
 package compiler.Parser.ASTNodes.Statements;
 
+import compiler.Lexer.Symbol;
 import compiler.Parser.ASTNodes.Block;
 import compiler.Parser.ASTNodes.Types.NumType;
 
 public class ForLoop extends Statement {
 
-	private final VariableDeclaration variable;
+	private final Symbol variable;
 	private final NumType start;
 	private final NumType end;
 	private final NumType step;
 	private final Block block;
 
-	public ForLoop(VariableDeclaration variable, NumType start, NumType end, NumType step, Block block) {
+	public ForLoop(Symbol variable, NumType start, NumType end, NumType step, Block block) {
 		this.variable = variable;
 		this.start = start;
 		this.end = end;
@@ -19,7 +20,7 @@ public class ForLoop extends Statement {
 		this.block = block;
 	}
 
-	public VariableDeclaration getVariable() {
+	public Symbol getVariable() {
 		return variable;
 	}
 

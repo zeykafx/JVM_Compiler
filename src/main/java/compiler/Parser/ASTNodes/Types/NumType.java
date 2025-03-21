@@ -30,6 +30,6 @@ public class NumType extends Type {
 	
 	@Override
 	public String prettyPrint(int indent) {
-        return "  ".repeat(indent) + "(NumType " + (isFloat ? "float" : "int") + ": " + symbol.lexeme +")";
+        return "  ".repeat(indent) + "NumType: " + (isFloat ? "float" : "int") + ": " + symbol.lexeme +"";
     }
 }

@@ -22,6 +22,6 @@ public class ArrayExpression extends Expression {
     
     @Override
     public String prettyPrint(int indent) {
-        return "  ".repeat(indent) + "ArrayExpression: array[" + sizeExpression.prettyPrint(0) + "] of " + type.prettyPrint(0);
+        return "  ".repeat(indent) + "ArrayExpression: \n" + sizeExpression.prettyPrint(indent+1) + "\n" + "  ".repeat(indent+1) + " of " + type.prettyPrint(0);
     }
 }

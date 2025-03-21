@@ -34,6 +34,9 @@ public class BinaryExpression extends Expression {
     
     @Override
     public String prettyPrint(int indent) {
-        return "  ".repeat(indent) + "BinaryExpression: " + leftTerm.prettyPrint(0) + " " + operator.prettyPrint(0)+ " " + rightTerm.prettyPrint(0);
+        return "  ".repeat(indent) + "BinaryExpression:\n" +
+                "  ".repeat(indent + 1) + "Left: \n" + leftTerm.prettyPrint(indent+2) + "\n" +
+                "  ".repeat(indent + 1) + "Operator: " + operator.prettyPrint(0) + "\n" +
+                "  ".repeat(indent + 1) + "Right: \n" + rightTerm.prettyPrint(indent+2);
     }
 }

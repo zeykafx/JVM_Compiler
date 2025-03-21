@@ -32,6 +32,6 @@ public class ParamDefinition extends Statement {
 	
 	@Override
 	public String prettyPrint(int indent) {
-        return "  ".repeat(indent) + "ParamDefinition: " + identifier.type + " " + type.prettyPrint(0);
+        return "  ".repeat(indent) + "ParamDefinition: " + identifier.lexeme + " " + type.prettyPrint(0);
     }
 }

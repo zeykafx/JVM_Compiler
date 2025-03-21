@@ -20,7 +20,7 @@ public class ParamCall extends Term {
 	
 	@Override
 	public String prettyPrint(int indent) {
-        return "  ".repeat(indent) + "ParamCall: " + paramExpression.prettyPrint(0);
+        return "  ".repeat(indent) + "ParamCall:\n" + paramExpression.prettyPrint(indent+1);
     }
 }
 

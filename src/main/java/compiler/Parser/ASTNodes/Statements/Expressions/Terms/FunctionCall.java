@@ -28,14 +28,14 @@ public class FunctionCall extends Term {
 	
 	@Override
 	public String prettyPrint(int indent) {
-        StringBuilder str = new StringBuilder("  ".repeat(indent) + "FunctionCall: " + identifier.lexeme + "(");
+        StringBuilder str = new StringBuilder("  ".repeat(indent) + "FunctionCall: " + identifier.lexeme + "\n");
         for (ParamCall param : parameters) {
-            str.append(param.prettyPrint(0)).append(", ");
+            str.append(param.prettyPrint(indent+1)).append("\n");
         }
         if (parameters.size() > 0) {
             str.delete(str.length() - 2, str.length());
         }
-        str.append(")");
+
         return str.toString();
     }
 }

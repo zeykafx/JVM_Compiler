@@ -20,6 +20,6 @@ public class ParenthesesTerm extends Term {
     
     @Override
     public String prettyPrint(int indent) {
-        return "  ".repeat(indent) + "(" + expression.prettyPrint(0) + ")";
+        return "  ".repeat(indent) + "ParenthesesTerm \n" + expression.prettyPrint(indent+1);
     }
 }

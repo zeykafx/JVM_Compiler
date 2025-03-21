@@ -27,7 +27,7 @@ public class VariableAssigment extends Statement {
 	
 	@Override
 	public String prettyPrint(int indent) {
-        return "  ".repeat(indent) + "VariableAssigment: " + identifier.prettyPrint(0) + " = " + expression.prettyPrint(0);
+        return "  ".repeat(indent) + "VariableAssigment: \n" + identifier.prettyPrint(indent) + " \n" + expression.prettyPrint(indent+1);
     }
 }
 

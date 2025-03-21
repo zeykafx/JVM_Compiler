@@ -28,14 +28,14 @@ public class NewRecord extends Term {
     
     @Override
     public String prettyPrint(int indent) {
-        StringBuilder str = new StringBuilder("  ".repeat(indent) + "NewRecord: " + identifier.lexeme + "(");
+        StringBuilder str = new StringBuilder("  ".repeat(indent) + "NewRecordInstance: \n");
         for (ParamCall term : terms) {
-            str.append(term.prettyPrint(0)).append(", ");
+            str.append(term.prettyPrint(indent+1)).append("\n");
         }
         if (terms.size() > 0) {
             str.delete(str.length() - 2, str.length());
         }
-        str.append(")");
+
         return str.toString();
     }
 }

@@ -26,6 +26,6 @@ public class Assignment extends Expression {
 	
 	@Override
 	public String prettyPrint(int indent) {
-        return "  ".repeat(indent) + "Assignment: " + symbol.lexeme + " = " + rightExpression.prettyPrint(0);
+        return "  ".repeat(indent) + "Assignment: \n" + symbol.lexeme + "\n" + rightExpression.prettyPrint(indent+1);
     }
 }

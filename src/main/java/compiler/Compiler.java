@@ -61,7 +61,6 @@ public class Compiler {
   		Lexer lexer = new Lexer(reader);	
         Parser parser = new Parser(lexer);
 		ASTNode root = parser.getAST();
-		System.out.println("Parsing completed successfully.");
 		System.out.println("AST: " + root.prettyPrint(0));
     }
 }

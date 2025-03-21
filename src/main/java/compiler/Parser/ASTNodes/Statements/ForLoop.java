@@ -48,6 +48,6 @@ public class ForLoop extends Statement {
 	
 	@Override
 	public String prettyPrint(int indent) {
-        return "  ".repeat(indent) + "ForLoop: " + variable.lexeme + " = " + start.prettyPrint(0) + " to " + end.prettyPrint(0) + " step " + step.prettyPrint(0) + "\n" + block.prettyPrint(indent + 1);
+        return "  ".repeat(indent) + "ForLoop:\n" +  "  ".repeat(indent+1) + "LoopVar: " + variable.lexeme + "\n" + "  ".repeat(indent+1) + "Start: " + start.prettyPrint(0) + "\n" + "  ".repeat(indent+1) + "End: " + end.prettyPrint(0) + "\n" + "  ".repeat(indent+1) +  "Step: " + step.prettyPrint(0) + "\n" + block.prettyPrint(indent + 1);
     }
 }

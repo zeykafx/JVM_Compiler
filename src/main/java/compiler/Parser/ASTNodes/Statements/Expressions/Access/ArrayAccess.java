@@ -35,11 +35,11 @@ public class ArrayAccess extends Access {
     public String prettyPrint(int indent) {
         return (
             "  ".repeat(indent) +
-            "ArrayAccess: " +
-            headAccess.prettyPrint(0) +
-            "[" +
-            indexExpression.prettyPrint(0) +
-            "]"
+            "ArrayAccess: \n" +
+            headAccess.prettyPrint(indent+1) + "\n"+
+            // "[\n" +
+            indexExpression.prettyPrint(indent+1) +"\n"
+            // "\n]"
         );
     }
 }

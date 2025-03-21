@@ -29,4 +29,9 @@ public class ParamDefinition extends Statement {
 	public String toString() {
 		return "ParamDefinition [identifier=" + identifier.type + ", type=" + type + "]";
 	}
+	
+	@Override
+	public String prettyPrint(int indent) {
+        return "  ".repeat(indent) + "ParamDefinition: " + identifier.type + " " + type.prettyPrint(0);
+    }
 }

@@ -17,6 +17,11 @@ public class ParamCall extends Term {
 	public String toString() {
 		return "ParamCall [paramExpression=" + paramExpression + "]";
 	}
+	
+	@Override
+	public String prettyPrint(int indent) {
+        return "  ".repeat(indent) + "ParamCall: " + paramExpression.prettyPrint(0);
+    }
 }
 
 // !myfunc()

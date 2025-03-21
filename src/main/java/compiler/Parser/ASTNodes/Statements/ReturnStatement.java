@@ -17,4 +17,9 @@ public class ReturnStatement extends Statement {
 	public String toString() {
 		return "ReturnStatement [expression=" + expression + "]";
 	}
+	
+	@Override
+	public String prettyPrint(int indent) {
+        return "  ".repeat(indent) + "Return: " + expression.prettyPrint(0);
+    }
 }

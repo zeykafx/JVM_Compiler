@@ -24,4 +24,11 @@ public class RecordFieldDefinition extends Statement {
 	public String toString() {
 		return "RecordField: " + identifier.type + ", " + type.toString();
 	}
+	
+	@Override
+    public String prettyPrint(int indent) {
+        StringBuilder sb = new StringBuilder();
+        sb.append("  ".repeat(indent)).append("RecordField: ").append(identifier.lexeme).append(", ").append(type.toString());
+        return sb.toString();
+    }
 }

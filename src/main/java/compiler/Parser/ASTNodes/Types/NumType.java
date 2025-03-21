@@ -27,4 +27,9 @@ public class NumType extends Type {
 	public String toString() {
 		return "NumType, " + (isFloat ? "float" : "int");
 	}
+	
+	@Override
+	public String prettyPrint(int indent) {
+        return "  ".repeat(indent) + "(NumType " + (isFloat ? "float" : "int") + ": " + symbol.lexeme +")";
+    }
 }

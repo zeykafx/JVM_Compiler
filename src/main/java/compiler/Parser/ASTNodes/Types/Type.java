@@ -27,4 +27,9 @@ public class Type extends ASTNode {
 	public String toString() {
 		return "Type, " + symbol.type + ", " + (isList ? "array" : "");
 	}
+	
+	@Override
+	public String prettyPrint(int indent) {
+        return "  ".repeat(indent) + "Type " + symbol.lexeme + (isList ? " array" : "");
+    }
 }

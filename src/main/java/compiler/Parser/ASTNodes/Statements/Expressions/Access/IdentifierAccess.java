@@ -1,8 +1,6 @@
 package compiler.Parser.ASTNodes.Statements.Expressions.Access;
 
 import compiler.Lexer.Symbol;
-import compiler.Parser.ASTNodes.Statements.Expressions.Expressions.Expression;
-import compiler.Parser.ASTNodes.Statements.Expressions.Terms.Term;
 
 public class IdentifierAccess extends Access {
 	private final Symbol identifier;
@@ -20,4 +18,8 @@ public class IdentifierAccess extends Access {
 		return "IdentifierAccess [identifier=" + identifier + "]";
 	}
 
+	@Override
+	public String prettyPrint(int indent) {
+        return "  ".repeat(indent) + "IdentifierAccess: " + identifier.lexeme;
+    }
 }

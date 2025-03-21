@@ -24,4 +24,9 @@ public class WhileLoop extends Statement {
 	public String toString() {
 		return "WhileLoop [condition=" + condition + ", block=" + block + "]";
 	}
+	
+	@Override
+	public String prettyPrint(int indent) {
+        return "  ".repeat(indent) + "While: " + condition.prettyPrint(0) + "\n" + block.prettyPrint(indent + 1);
+    }
 }

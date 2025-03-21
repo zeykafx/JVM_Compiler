@@ -25,4 +25,9 @@ public class UnaryExpression extends Expression {
     public String toString() {
         return "UnaryExpression [operator=" + operator + ", term=" + term + "]";
     }
+    
+    @Override
+    public String prettyPrint(int indent) {
+        return "  ".repeat(indent) + "UnaryExpression: " + operator + " " + term.prettyPrint(0);
+    }
 }

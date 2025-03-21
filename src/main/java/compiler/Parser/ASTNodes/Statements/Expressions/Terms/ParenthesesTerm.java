@@ -17,4 +17,9 @@ public class ParenthesesTerm extends Term {
     public String toString() {
         return "ParenthesesTerm [expression=" + expression + "]";
     }
+    
+    @Override
+    public String prettyPrint(int indent) {
+        return "  ".repeat(indent) + "(" + expression.prettyPrint(0) + ")";
+    }
 }

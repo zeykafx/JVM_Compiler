@@ -23,4 +23,9 @@ public class Assignment extends Expression {
 	public String toString() {
 		return "Assignment [symbol=" + symbol + ", rightExpression=" + rightExpression + "]";
 	}
+	
+	@Override
+	public String prettyPrint(int indent) {
+        return "  ".repeat(indent) + "Assignment: " + symbol.lexeme + " = " + rightExpression.prettyPrint(0);
+    }
 }

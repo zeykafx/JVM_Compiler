@@ -1,8 +1,5 @@
 package compiler.Parser.ASTNodes.Statements;
-
-import compiler.Lexer.Symbol;
 import compiler.Parser.ASTNodes.Statements.Expressions.Access.Access;
-import compiler.Parser.ASTNodes.Statements.Expressions.Access.ArrayAccess;
 import compiler.Parser.ASTNodes.Statements.Expressions.Expressions.Expression;
 
 public class VariableAssigment extends Statement {
@@ -27,6 +24,11 @@ public class VariableAssigment extends Statement {
 	public String toString() {
 		return "VariableAssigment [identifier=" + identifier + ", expression=" + expression + "]";
 	}
+	
+	@Override
+	public String prettyPrint(int indent) {
+        return "  ".repeat(indent) + "VariableAssigment: " + identifier.prettyPrint(0) + " = " + expression.prettyPrint(0);
+    }
 }
 
 

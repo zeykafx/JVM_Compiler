@@ -14,4 +14,9 @@ public class AloneExpression extends Expression {
     public String toString() {
         return "AloneExpression [term=" + term + "]";
     }
+    
+    @Override
+    public String prettyPrint(int indent) {
+        return term.prettyPrint(indent);
+    }
 }

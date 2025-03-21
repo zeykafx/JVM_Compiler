@@ -1,7 +1,7 @@
 package compiler.Parser.ASTNodes.Statements.Expressions.Access;
 
 import compiler.Lexer.Symbol;
-import compiler.Parser.ASTNodes.Statements.Expressions.Expressions.Expression;
+
 
 public class RecordAccess extends Access {
 
@@ -25,4 +25,9 @@ public class RecordAccess extends Access {
 	public String toString() {
 		return "RecordAccess [headExpression=" + headAccess + ", identifier=" + identifier + "]";
 	}
+	
+	@Override
+	public String prettyPrint(int indent) {
+        return "  ".repeat(indent) + "RecordAccess: " + headAccess.prettyPrint(0) + "." + identifier.lexeme;
+    }
 }

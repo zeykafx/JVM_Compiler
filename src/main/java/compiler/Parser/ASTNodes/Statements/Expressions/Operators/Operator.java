@@ -6,6 +6,6 @@ public abstract class Operator extends ASTNode {
 
     @Override
     public String toString() {
-        return "Operator";
+        return "Op";
     }
 }

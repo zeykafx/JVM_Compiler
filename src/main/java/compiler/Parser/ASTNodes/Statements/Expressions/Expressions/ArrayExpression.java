@@ -19,4 +19,9 @@ public class ArrayExpression extends Expression {
     public String toString() {
         return "ArrayExpression [sizeExpression=" + sizeExpression + ", type=" + type + "]";
     }
+    
+    @Override
+    public String prettyPrint(int indent) {
+        return "  ".repeat(indent) + "ArrayExpression: array[" + sizeExpression.prettyPrint(0) + "] of " + type.prettyPrint(0);
+    }
 }

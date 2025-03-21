@@ -45,4 +45,9 @@ public class ForLoop extends Statement {
 		return "ForLoop [variable=" + variable + ", start=" + start + ", end=" + end + ", step=" + step + ", block="
 				+ block + "]";
 	}
+	
+	@Override
+	public String prettyPrint(int indent) {
+        return "  ".repeat(indent) + "ForLoop: " + variable.lexeme + " = " + start.prettyPrint(0) + " to " + end.prettyPrint(0) + " step " + step.prettyPrint(0) + "\n" + block.prettyPrint(indent + 1);
+    }
 }

@@ -20,4 +20,9 @@ public class UnaryOperator extends Operator {
     public String toString() {
         return "UnaryOperator [operator=" + operator.lexeme + "]";
     }
+    
+    @Override
+    public String prettyPrint(int indent) {
+        return "  ".repeat(indent) + "UnaryOperator, " + operator.lexeme;
+    }
 }

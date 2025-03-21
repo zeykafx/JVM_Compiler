@@ -25,6 +25,6 @@ public class BinaryOperator extends Operator {
     
     @Override
     public String prettyPrint(int indent) {
-        return "  ".repeat(indent) + "Operator, " + operator.lexeme;
+        return "  ".repeat(indent) + operator.lexeme;
     }
 }

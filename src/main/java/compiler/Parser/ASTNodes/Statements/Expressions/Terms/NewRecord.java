@@ -32,9 +32,6 @@ public class NewRecord extends Term {
         for (ParamCall term : terms) {
             str.append(term.prettyPrint(indent+1)).append("\n");
         }
-        if (terms.size() > 0) {
-            str.delete(str.length() - 2, str.length());
-        }
 
         return str.toString();
     }

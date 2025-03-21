@@ -8,4 +8,9 @@ public class Statement extends ASTNode {
 	public String toString() {
 		return "Statement []";
 	}
+
+	@Override
+	public String prettyPrint(int indent) {
+		return "";
+	}
 }

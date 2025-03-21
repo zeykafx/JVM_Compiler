@@ -1,6 +1,7 @@
 import static org.junit.Assert.*;
 
 import compiler.Parser.ASTNodes.Statements.Statements.*;
+import compiler.Parser.ASTNodes.Types.NumType;
 import org.junit.Test;
 import java.io.StringReader;
 import java.util.ArrayList;
@@ -573,7 +574,7 @@ public class TestParser {
         
         assertTrue(varDecl.getValue() instanceof RecordAccess);
         RecordAccess access = (RecordAccess) varDecl.getValue();
-        
+
         assertTrue(access.getHeadAccess() instanceof ArrayAccess);
         ArrayAccess locHistArray = (ArrayAccess) access.getHeadAccess();
         
@@ -599,6 +600,191 @@ public class TestParser {
         assertEquals(TokenTypes.INT_LITERAL, locHistIndex.getSymbol().type);
 
         assertEquals("y", access.getIdentifier().lexeme);
+    }
 
+    @Test
+    public void testForLoop() throws Exception {
+        String input = """
+                fun main() {
+                    i int;
+                    for (i, 0, 10, 1) {
+                        writeln(i);
+                    }
+                }
+                """;
+
+        StringReader reader = new StringReader(input);
+        Lexer lexer = new Lexer(reader);
+        Parser parser = new Parser(lexer);
+
+        ASTNode node = parser.getAST();
+        assertNotNull(node);
+
+        assertTrue(node instanceof Program);
+        Program program = (Program) node;
+        assertEquals(1, program.getFunctions().size());
+
+        FunctionDefinition function = program.getFunctions().getFirst();
+        assertEquals("main", function.getName().lexeme);
+
+        assertNotNull(function.getBlock());
+        Block block = (Block) function.getBlock();
+        assertEquals(2, block.getStatements().size());
+
+        Statement statement = block.getStatements().getFirst();
+        assertTrue(statement instanceof VariableDeclaration);
+
+        VariableDeclaration decl = (VariableDeclaration) statement;
+        assertFalse(decl.isConstant());
+        assertEquals("i", decl.getName().lexeme);
+        assertEquals(TokenTypes.INT, decl.getType().symbol.type);
+
+        assertTrue(block.getStatements().get(1) instanceof ForLoop);
+        ForLoop forLoop = (ForLoop) block.getStatements().get(1);
+		assertNotNull(forLoop.getVariable());
+
+
+		assertNotNull(forLoop.getStart());
+        NumType start = (NumType) forLoop.getStart();
+        assertEquals(0, start.getSymbol().value);
+        assertEquals(TokenTypes.INT_LITERAL, start.getSymbol().type);
+
+        assertNotNull(forLoop.getEnd());
+        NumType end = (NumType) forLoop.getEnd();
+        assertEquals(10, end.getSymbol().value);
+        assertEquals(TokenTypes.INT_LITERAL, end.getSymbol().type);
+
+        assertNotNull(forLoop.getStep());
+        NumType step = (NumType) forLoop.getStep();
+        assertEquals(1, step.getSymbol().value);
+        assertEquals(TokenTypes.INT_LITERAL, step.getSymbol().type);
+
+        assertNotNull(forLoop.getBlock());
+        Block forBlock = (Block) forLoop.getBlock();
+        assertEquals(1, forBlock.getStatements().size());
+        Statement forStatement = forBlock.getStatements().getFirst();
+        assertTrue(forStatement instanceof FunctionCall);
+        FunctionCall functionCall = (FunctionCall) forStatement;
+        assertEquals("writeln", functionCall.getIdentifier().lexeme);
+        assertEquals(1, functionCall.getParameters().size());
+
+        assertTrue(functionCall.getParameters().getFirst().getParamExpression() instanceof IdentifierAccess);
+        IdentifierAccess paramAccess = (IdentifierAccess) functionCall.getParameters().getFirst().getParamExpression();
+        assertEquals("i", paramAccess.getIdentifier().lexeme);
+        assertEquals(TokenTypes.IDENTIFIER, paramAccess.getIdentifier().type);
+    }
+
+    @Test
+    public void testUnaryOperator() throws Exception {
+        String input = """
+                fun main() {
+                    $ comment (idk why)
+                    i int = 2132;
+                    writeln(-i);
+                }
+                """;
+
+        StringReader reader = new StringReader(input);
+        Lexer lexer = new Lexer(reader);
+        Parser parser = new Parser(lexer);
+
+        ASTNode node = parser.getAST();
+        assertNotNull(node);
+
+        assertTrue(node instanceof Program);
+        Program program = (Program) node;
+
+        assertEquals(1, program.getFunctions().size());
+
+        FunctionDefinition function = program.getFunctions().getFirst();
+        assertEquals("main", function.getName().lexeme);
+
+        assertNotNull(function.getBlock());
+        Block block = (Block) function.getBlock();
+        assertEquals(2, block.getStatements().size());
+        Statement statement = block.getStatements().getFirst();
+
+        assertTrue(statement instanceof VariableDeclaration);
+        VariableDeclaration decl = (VariableDeclaration) statement;
+        assertFalse(decl.isConstant());
+        assertEquals("i", decl.getName().lexeme);
+        assertEquals(TokenTypes.INT, decl.getType().symbol.type);
+        assertTrue(decl.getValue() instanceof ConstVal);
+        ConstVal constVal = (ConstVal) decl.getValue();
+        assertEquals(2132, constVal.getValue());
+        assertEquals(TokenTypes.INT_LITERAL, constVal.getSymbol().type);
+
+        Statement statement2 = block.getStatements().get(1);
+        assertTrue(statement2 instanceof FunctionCall);
+        FunctionCall functionCall = (FunctionCall) statement2;
+        assertEquals("writeln", functionCall.getIdentifier().lexeme);
+        assertEquals(1, functionCall.getParameters().size());
+
+        assertTrue(functionCall.getParameters().getFirst().getParamExpression() instanceof UnaryExpression);
+        UnaryExpression unaryExpr = (UnaryExpression) functionCall.getParameters().getFirst().getParamExpression();
+        assertTrue(unaryExpr.getTerm() instanceof IdentifierAccess);
+        IdentifierAccess idAccess = (IdentifierAccess) unaryExpr.getTerm();
+        assertEquals("i", idAccess.getIdentifier().lexeme);
+        assertTrue(unaryExpr.getOperator() instanceof UnaryOperator);
+        UnaryOperator unaryOp = (UnaryOperator) unaryExpr.getOperator();
+        assertEquals(TokenTypes.MINUS, unaryOp.getOperator().type);
+    }
+
+
+    @Test
+    public void testParenthesesTerm() throws Exception {
+        String input = """
+                fun main() {
+                    writeln((a + b) * c);
+                }
+                """;
+
+        StringReader reader = new StringReader(input);
+        Lexer lexer = new Lexer(reader);
+        Parser parser = new Parser(lexer);
+
+        ASTNode node = parser.getAST();
+        assertNotNull(node);
+
+        assertTrue(node instanceof Program);
+        Program program = (Program) node;
+
+        assertEquals(1, program.getFunctions().size());
+        FunctionDefinition function = program.getFunctions().getFirst();
+        assertEquals("main", function.getName().lexeme);
+
+        assertNotNull(function.getBlock());
+        Block block = (Block) function.getBlock();
+        assertEquals(1, block.getStatements().size());
+        Statement statement = block.getStatements().getFirst();
+
+        assertTrue(statement instanceof FunctionCall);
+        FunctionCall functionCall = (FunctionCall) statement;
+        assertEquals("writeln", functionCall.getIdentifier().lexeme);
+
+        assertEquals(1, functionCall.getParameters().size());
+        assertTrue(functionCall.getParameters().getFirst().getParamExpression() instanceof BinaryExpression);
+        BinaryExpression binaryExpr = (BinaryExpression) functionCall.getParameters().getFirst().getParamExpression();
+
+        assertTrue(binaryExpr.getLeftTerm() instanceof ParenthesesTerm);
+        ParenthesesTerm parenthesesTerm = (ParenthesesTerm) binaryExpr.getLeftTerm();
+        assertTrue(parenthesesTerm.getExpression() instanceof BinaryExpression);
+        BinaryExpression innerBinaryExpr = (BinaryExpression) parenthesesTerm.getExpression();
+        assertTrue(innerBinaryExpr.getLeftTerm() instanceof IdentifierAccess);
+        IdentifierAccess leftAccess = (IdentifierAccess) innerBinaryExpr.getLeftTerm();
+        assertEquals("a", leftAccess.getIdentifier().lexeme);
+        assertTrue(innerBinaryExpr.getRightTerm() instanceof IdentifierAccess);
+        IdentifierAccess rightAccess = (IdentifierAccess) innerBinaryExpr.getRightTerm();
+        assertEquals("b", rightAccess.getIdentifier().lexeme);
+        assertTrue(innerBinaryExpr.getOperator() instanceof BinaryOperator);
+        BinaryOperator plusOp = (BinaryOperator) innerBinaryExpr.getOperator();
+        assertEquals(TokenTypes.PLUS, plusOp.getOperator().type);
+
+        assertTrue(binaryExpr.getRightTerm() instanceof IdentifierAccess);
+        IdentifierAccess rightTermAccess = (IdentifierAccess) binaryExpr.getRightTerm();
+        assertEquals("c", rightTermAccess.getIdentifier().lexeme);
+        assertTrue(binaryExpr.getOperator() instanceof BinaryOperator);
+        BinaryOperator mulOp = (BinaryOperator) binaryExpr.getOperator();
+        assertEquals(TokenTypes.MULTIPLY, mulOp.getOperator().type);
     }
 }

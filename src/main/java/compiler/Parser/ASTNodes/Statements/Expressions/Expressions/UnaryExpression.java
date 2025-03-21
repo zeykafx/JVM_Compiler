@@ -28,6 +28,6 @@ public class UnaryExpression extends Expression {
     
     @Override
     public String prettyPrint(int indent) {
-        return "  ".repeat(indent) + "UnaryExpression: " + operator + " " + term.prettyPrint(0);
+        return "  ".repeat(indent) + "UnaryExpression: " + operator + "\n" + term.prettyPrint(indent+1);
     }
 }

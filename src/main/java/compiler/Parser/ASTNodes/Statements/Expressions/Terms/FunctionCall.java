@@ -32,9 +32,7 @@ public class FunctionCall extends Term {
         for (ParamCall param : parameters) {
             str.append(param.prettyPrint(indent+1)).append("\n");
         }
-        if (parameters.size() > 0) {
-            str.delete(str.length() - 2, str.length());
-        }
+
 
         return str.toString();
     }

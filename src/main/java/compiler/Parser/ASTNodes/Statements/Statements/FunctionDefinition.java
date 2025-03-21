@@ -1,6 +1,7 @@
-package compiler.Parser.ASTNodes.Statements;
+package compiler.Parser.ASTNodes.Statements.Statements;
 
 import compiler.Lexer.Symbol;
+import compiler.Lexer.TokenTypes;
 import compiler.Parser.ASTNodes.Block;
 import compiler.Parser.ASTNodes.Types.Type;
 
@@ -16,10 +17,16 @@ public class FunctionDefinition extends Statement {
 
 	public FunctionDefinition(Symbol name, Type returnType, ArrayList<ParamDefinition> paramDefinitions, Block block) {
 		this.name = name;
-		this.returnType = returnType;
 		this.paramDefinitions = paramDefinitions;
 		this.block = block;
-		this.voidReturnType = returnType == null;
+
+		if (returnType == null) {
+			this.returnType = new Type(new Symbol(TokenTypes.VOID, "void", 0, 0), false);
+			this.voidReturnType = true;
+		} else {
+			this.returnType = returnType;
+			this.voidReturnType = false;
+		}
 	}
 
 	public Symbol getName() {
@@ -28,6 +35,10 @@ public class FunctionDefinition extends Statement {
 
 	public Type getReturnType() {
 		return returnType;
+	}
+
+	public boolean isVoidReturnType() {
+		return voidReturnType;
 	}
 
 	public ArrayList<ParamDefinition> getParamDefinitions() {
@@ -51,25 +62,25 @@ public class FunctionDefinition extends Statement {
 		String returnTypeStr = voidReturnType ? "void" : returnType.toString();
 		return "Function, " + name.type + ", " + returnTypeStr + ", [" + paramStr + "], " + block.toString();
 	}
-	
+
 	@Override
-    public String prettyPrint(int indent) {
-        StringBuilder sb = new StringBuilder();
-        sb.append("  ".repeat(indent)).append("Function, ").append(name.lexeme).append("\n");
-        
-        sb.append("  ".repeat(indent + 1)).append("Return Type: ")
-        .append(voidReturnType ? "void" : returnType.prettyPrint(0)).append("\n");
-        
-        if (!paramDefinitions.isEmpty()) {
-            sb.append("  ".repeat(indent + 1)).append("Parameters:\n");
-            for (ParamDefinition param : paramDefinitions) {
-                sb.append(param.prettyPrint(indent + 2)).append("\n");
-            }
-        }
-        
-        sb.append("  ".repeat(indent + 1)).append("Body:\n");
-        sb.append(block.prettyPrint(indent + 2));
-        
-        return sb.toString();
-    }
+	public String prettyPrint(int indent) {
+		StringBuilder sb = new StringBuilder();
+		sb.append("  ".repeat(indent)).append("Function, ").append(name.lexeme).append("\n");
+
+		sb.append("  ".repeat(indent + 1)).append("Return Type: ")
+				.append(voidReturnType ? "void" : returnType.prettyPrint(0)).append("\n");
+
+		if (!paramDefinitions.isEmpty()) {
+			sb.append("  ".repeat(indent + 1)).append("Parameters:\n");
+			for (ParamDefinition param : paramDefinitions) {
+				sb.append(param.prettyPrint(indent + 2)).append("\n");
+			}
+		}
+
+		sb.append("  ".repeat(indent + 1)).append("Body:\n");
+		sb.append(block.prettyPrint(indent + 2));
+
+		return sb.toString();
+	}
 }

@@ -1,5 +1,6 @@
 import static org.junit.Assert.*;
 
+import compiler.Parser.ASTNodes.Statements.Statements.*;
 import org.junit.Test;
 import java.io.StringReader;
 import java.util.ArrayList;
@@ -7,8 +8,6 @@ import java.util.ArrayList;
 import compiler.Lexer.*;
 import compiler.Parser.*;
 import compiler.Parser.ASTNodes.*;
-import compiler.Parser.ASTNodes.Types.*;
-import compiler.Parser.ASTNodes.Statements.*;
 import compiler.Parser.ASTNodes.Statements.Expressions.Expressions.*;
 import compiler.Parser.ASTNodes.Statements.Expressions.Terms.*;
 import compiler.Parser.ASTNodes.Statements.Expressions.Access.*;
@@ -221,7 +220,7 @@ public class TestParser {
         assertEquals(0, program.getFunctions().size());
         assertEquals(3, program.getGlobals().size());
 
-        VariableDeclaration globalVar1 = program.getGlobals().get(0);
+        VariableDeclaration globalVar1 = program.getGlobals().getFirst();
         assertFalse(globalVar1.isConstant());
         assertEquals("i", globalVar1.getName().lexeme);
         assertEquals(TokenTypes.INT, globalVar1.getType().symbol.type);
@@ -235,5 +234,371 @@ public class TestParser {
         assertFalse(globalVar3.isConstant());
         assertEquals("k", globalVar3.getName().lexeme);
         assertEquals(TokenTypes.STRING, globalVar3.getType().symbol.type);
+    }
+
+    @Test
+    public void testRecordInstantiation() throws Exception {
+        String input = """
+                fun main() {
+                    p Product = Product(1, "Phone", 699);
+                    ph Phone = Phone("iPhone 47 Pro Max XL Slim");
+                }
+                """;
+
+        StringReader reader = new StringReader(input);
+        Lexer lexer = new Lexer(reader);
+        Parser parser = new Parser(lexer);
+
+        ASTNode node = parser.getAST();
+        assertNotNull(node);
+
+        assertTrue(node instanceof Program);
+        Program program = (Program) node;
+        assertEquals(0, program.getConstants().size());
+        assertEquals(0, program.getRecords().size());
+        assertEquals(0, program.getGlobals().size());
+        assertEquals(1, program.getFunctions().size());
+
+        FunctionDefinition function = program.getFunctions().getFirst();
+        assertEquals("main", function.getName().lexeme);
+        assertEquals(TokenTypes.VOID, function.getReturnType().symbol.type);
+        assertTrue(function.isVoidReturnType());
+        assertEquals(0, function.getParamDefinitions().size());
+
+        assertNotNull(function.getBlock());
+        Block block = (Block) function.getBlock();
+        assertEquals(2, block.getStatements().size());
+
+        Statement statement1 = block.getStatements().get(0);
+        assertTrue(statement1 instanceof VariableDeclaration);
+        VariableDeclaration varDecl1 = (VariableDeclaration) statement1;
+        assertFalse(varDecl1.isConstant());
+        assertEquals("p", varDecl1.getName().lexeme);
+        assertEquals(TokenTypes.RECORD, varDecl1.getType().symbol.type);
+
+        assertTrue(varDecl1.getValue() instanceof NewRecord);
+        NewRecord newRecord1 = (NewRecord) varDecl1.getValue();
+        assertEquals("Product", newRecord1.getIdentifier().lexeme);
+
+        ArrayList<ParamCall> args1 = newRecord1.getTerms();
+        assertEquals(3, args1.size());
+        assertTrue(args1.getFirst().getParamExpression() instanceof ConstVal);
+        ConstVal constVal1 = (ConstVal) args1.getFirst().getParamExpression();
+        assertEquals(1, constVal1.getValue());
+        assertEquals(TokenTypes.INT_LITERAL, constVal1.getSymbol().type);
+
+        assertTrue(args1.get(1).getParamExpression() instanceof ConstVal);
+        ConstVal constVal2 = (ConstVal) args1.get(1).getParamExpression();
+        assertEquals("Phone", constVal2.getValue());
+        assertEquals(TokenTypes.STRING_LITERAL, constVal2.getSymbol().type);
+
+        assertTrue(args1.get(2).getParamExpression() instanceof ConstVal);
+        ConstVal constVal3 = (ConstVal) args1.get(2).getParamExpression();
+        assertEquals(699, constVal3.getValue());
+        assertEquals(TokenTypes.INT_LITERAL, constVal3.getSymbol().type);
+
+        Statement statement2 = block.getStatements().get(1);
+        assertTrue(statement2 instanceof VariableDeclaration);
+        VariableDeclaration varDecl2 = (VariableDeclaration) statement2;
+        assertFalse(varDecl2.isConstant());
+
+        assertEquals("ph", varDecl2.getName().lexeme);
+        assertEquals(TokenTypes.RECORD, varDecl2.getType().symbol.type);
+        assertTrue(varDecl2.getValue() instanceof NewRecord);
+        NewRecord newRecord2 = (NewRecord) varDecl2.getValue();
+        assertEquals("Phone", newRecord2.getIdentifier().lexeme);
+        ArrayList<ParamCall> args2 = newRecord2.getTerms();
+        assertEquals(1, args2.size());
+        assertTrue(args2.getFirst().getParamExpression() instanceof ConstVal);
+        ConstVal constVal4 = (ConstVal) args2.getFirst().getParamExpression();
+        assertEquals("iPhone 47 Pro Max XL Slim", constVal4.getValue());
+        assertEquals(TokenTypes.STRING_LITERAL, constVal4.getSymbol().type);
+    }
+
+
+    @Test
+    public void testMultipleFunctions() throws Exception {
+        String input = """
+        fun add(a int, b int) int {
+            return a + b;
+        }
+        
+        fun subtract(a int, b int) int {
+            return a - b;
+        }
+        """;
+
+        StringReader reader = new StringReader(input);
+        Lexer lexer = new Lexer(reader);
+        Parser parser = new Parser(lexer);
+
+        ASTNode node = parser.getAST();
+        assertNotNull(node);
+
+        assertTrue(node instanceof Program);
+        Program program = (Program) node;
+        assertEquals(0, program.getConstants().size());
+        assertEquals(0, program.getRecords().size());
+        assertEquals(2, program.getFunctions().size());
+        assertEquals(0, program.getGlobals().size());
+
+        FunctionDefinition function1 = program.getFunctions().getFirst();
+        assertEquals("add", function1.getName().lexeme);
+        assertEquals(TokenTypes.INT, function1.getReturnType().symbol.type);
+
+
+        FunctionDefinition function2 = program.getFunctions().get(1);
+        assertEquals("subtract", function2.getName().lexeme);
+        assertEquals(TokenTypes.INT, function2.getReturnType().symbol.type);
+    }
+
+    @Test
+    public void testIfElseStatement() throws Exception {
+        String input = """
+                fun main() {
+                    if (a > b) {
+                        return a;
+                    } else {
+                        return b;
+                    }
+                }
+                """;
+
+        StringReader reader = new StringReader(input);
+        Lexer lexer = new Lexer(reader);
+        Parser parser = new Parser(lexer);
+
+        ASTNode node = parser.getAST();
+        assertNotNull(node);
+
+        assertTrue(node instanceof Program);
+        Program program = (Program) node;
+        assertEquals(0, program.getConstants().size());
+        assertEquals(0, program.getRecords().size());
+        assertEquals(1, program.getFunctions().size());
+        assertEquals(0, program.getGlobals().size());
+
+        FunctionDefinition function = program.getFunctions().getFirst();
+        assertEquals("main", function.getName().lexeme);
+        assertEquals(TokenTypes.VOID, function.getReturnType().symbol.type);
+
+        assertNotNull(function.getBlock());
+        Block block = (Block) function.getBlock();
+        assertEquals(1, block.getStatements().size());
+
+        Statement statement = block.getStatements().get(0);
+        assertTrue(statement instanceof IfStatement);
+        IfStatement ifStmt = (IfStatement) statement;
+        assertTrue(ifStmt.getCondition() instanceof BinaryExpression);
+        BinaryExpression condition = (BinaryExpression) ifStmt.getCondition();
+        assertTrue(condition.getLeftTerm() instanceof IdentifierAccess);
+        assertTrue(condition.getRightTerm() instanceof IdentifierAccess);
+        IdentifierAccess leftAccess = (IdentifierAccess) condition.getLeftTerm();
+        IdentifierAccess rightAccess = (IdentifierAccess) condition.getRightTerm();
+        assertEquals("a", leftAccess.getIdentifier().lexeme);
+        assertEquals("b", rightAccess.getIdentifier().lexeme);
+        assertTrue(condition.getOperator() instanceof BinaryOperator);
+        BinaryOperator greaterOp = (BinaryOperator) condition.getOperator();
+        assertEquals(TokenTypes.GREATER_THAN, greaterOp.getOperator().type);
+
+        assertNotNull(ifStmt.getThenBlock());
+        Block thenBlock = ifStmt.getThenBlock();
+        assertEquals(0, thenBlock.getStatements().size()); // no statements in then block because it's a return statement
+        // TODO: maybe change the way we handle return statements in the parser
+        Statement thenStatement = thenBlock.getReturnStatement();
+        assertTrue(thenStatement instanceof ReturnStatement);
+        ReturnStatement returnStmt = (ReturnStatement) thenStatement;
+        assertTrue(returnStmt.getExpression() instanceof IdentifierAccess);
+        IdentifierAccess returnAccess = (IdentifierAccess) returnStmt.getExpression();
+        assertEquals("a", returnAccess.getIdentifier().lexeme);
+
+        assertNotNull(ifStmt.getElseBlock());
+        Block elseBlock = ifStmt.getElseBlock();
+        assertEquals(0, elseBlock.getStatements().size());
+        Statement elseStatement = elseBlock.getReturnStatement();
+        assertTrue(elseStatement instanceof ReturnStatement);
+        ReturnStatement elseReturnStmt = (ReturnStatement) elseStatement;
+        assertTrue(elseReturnStmt.getExpression() instanceof IdentifierAccess);
+        IdentifierAccess elseReturnAccess = (IdentifierAccess) elseReturnStmt.getExpression();
+        assertEquals("b", elseReturnAccess.getIdentifier().lexeme);
+    }
+
+
+    // free x
+    @Test
+    public void testFreeingVariable() throws Exception {
+        String input = """
+                fun main() {
+                    free x;
+                }
+                """;
+        StringReader reader = new StringReader(input);
+        Lexer lexer = new Lexer(reader);
+        Parser parser = new Parser(lexer);
+        ASTNode node = parser.getAST();
+
+        assertNotNull(node);
+        assertTrue(node instanceof Program);
+        Program program = (Program) node;
+
+        assertEquals(1, program.getFunctions().size());
+
+        FunctionDefinition function = program.getFunctions().getFirst();
+        assertEquals("main", function.getName().lexeme);
+
+        assertNotNull(function.getBlock());
+        Block block = (Block) function.getBlock();
+        assertEquals(1, block.getStatements().size());
+        Statement statement = block.getStatements().getFirst();
+
+        assertTrue(statement instanceof FreeStatement);
+        FreeStatement freeStmt = (FreeStatement) statement;
+
+		assertNotNull(freeStmt.getIdentifierAccess());
+        IdentifierAccess identifierAccess = freeStmt.getIdentifierAccess();
+        assertEquals("x", identifierAccess.getIdentifier().lexeme);
+    }
+
+    @Test
+    public void testWhileLoop() throws Exception {
+        String input = """
+                fun main() {
+                    while (a < b) {
+                        a = a + 1;
+                    }
+                }
+                """;
+
+        StringReader reader = new StringReader(input);
+        Lexer lexer = new Lexer(reader);
+        Parser parser = new Parser(lexer);
+
+        ASTNode node = parser.getAST();
+        assertNotNull(node);
+
+        assertTrue(node instanceof Program);
+        Program program = (Program) node;
+
+        assertEquals(1, program.getFunctions().size());
+
+
+        FunctionDefinition function = program.getFunctions().getFirst();
+        assertEquals("main", function.getName().lexeme);
+        assertEquals(TokenTypes.VOID, function.getReturnType().symbol.type);
+
+        assertNotNull(function.getBlock());
+        Block block = (Block) function.getBlock();
+        assertEquals(1, block.getStatements().size());
+
+        Statement statement = block.getStatements().getFirst();
+        assertTrue(statement instanceof WhileLoop);
+        WhileLoop whileLoop = (WhileLoop) statement;
+        assertTrue(whileLoop.getCondition() instanceof BinaryExpression);
+        BinaryExpression condition = (BinaryExpression) whileLoop.getCondition();
+        assertTrue(condition.getLeftTerm() instanceof IdentifierAccess);
+        assertTrue(condition.getRightTerm() instanceof IdentifierAccess);
+        IdentifierAccess leftAccess = (IdentifierAccess) condition.getLeftTerm();
+        IdentifierAccess rightAccess = (IdentifierAccess) condition.getRightTerm();
+        assertEquals("a", leftAccess.getIdentifier().lexeme);
+        assertEquals("b", rightAccess.getIdentifier().lexeme);
+        assertTrue(condition.getOperator() instanceof BinaryOperator);
+        BinaryOperator lessOp = (BinaryOperator) condition.getOperator();
+        assertEquals(TokenTypes.LESS_THAN, lessOp.getOperator().type);
+
+        assertNotNull(whileLoop.getBlock());
+        Block whileBlock = whileLoop.getBlock();
+        assertEquals(1, whileBlock.getStatements().size());
+        Statement whileStatement = whileBlock.getStatements().getFirst();
+        assertTrue(whileStatement instanceof VariableAssigment);
+        VariableAssigment assignment = (VariableAssigment) whileStatement;
+        assertTrue(assignment.getAccess() instanceof IdentifierAccess);
+        IdentifierAccess access = (IdentifierAccess) assignment.getAccess();
+        assertEquals("a", access.getIdentifier().lexeme);
+        assertTrue(assignment.getExpression() instanceof BinaryExpression);
+
+        BinaryExpression binaryExpr = (BinaryExpression) assignment.getExpression();
+        assertTrue(binaryExpr.getLeftTerm() instanceof IdentifierAccess);
+        assertTrue(binaryExpr.getRightTerm() instanceof ConstVal);
+        IdentifierAccess leftAccess2 = (IdentifierAccess) binaryExpr.getLeftTerm();
+        assertEquals("a", leftAccess2.getIdentifier().lexeme);
+        ConstVal constVal = (ConstVal) binaryExpr.getRightTerm();
+        assertEquals(1, constVal.getValue());
+        assertEquals(TokenTypes.INT_LITERAL, constVal.getSymbol().type);
+        assertTrue(binaryExpr.getOperator() instanceof BinaryOperator);
+        BinaryOperator plusOp = (BinaryOperator) binaryExpr.getOperator();
+        assertEquals(TokenTypes.PLUS, plusOp.getOperator().type);
+    }
+
+
+    @Test
+    public void testChainedAccess() throws Exception {
+        // i int = people[0].locationHistory[3].y;
+        // RecordAccess:
+        //  ArrayAccess:
+        //    RecordAccess:
+        //      ArrayAccess:
+        //        IdentifierAccess: people
+        //        Integer, 0
+        //      Identifier: locationHistory
+        //    Integer, 3
+        //  Identifier: y
+        String input = """
+                fun main() {
+                    i int = people[0].locationHistory[3].y;
+                }
+                """;
+        StringReader reader = new StringReader(input);
+        Lexer lexer = new Lexer(reader);
+        Parser parser = new Parser(lexer);
+        ASTNode node = parser.getAST();
+        assertNotNull(node);
+
+        assertTrue(node instanceof Program);
+        Program program = (Program) node;
+        assertEquals(1, program.getFunctions().size());
+
+        FunctionDefinition function = program.getFunctions().getFirst();
+        assertEquals("main", function.getName().lexeme);
+
+        assertNotNull(function.getBlock());
+        Block block = (Block) function.getBlock();
+        assertEquals(1, block.getStatements().size());
+        Statement statement = block.getStatements().getFirst();
+        assertTrue(statement instanceof VariableDeclaration);
+        VariableDeclaration varDecl = (VariableDeclaration) statement;
+        assertFalse(varDecl.isConstant());
+        assertEquals("i", varDecl.getName().lexeme);
+        assertEquals(TokenTypes.INT, varDecl.getType().symbol.type);
+        
+        
+        assertTrue(varDecl.getValue() instanceof RecordAccess);
+        RecordAccess access = (RecordAccess) varDecl.getValue();
+        
+        assertTrue(access.getHeadAccess() instanceof ArrayAccess);
+        ArrayAccess locHistArray = (ArrayAccess) access.getHeadAccess();
+        
+        assertTrue(locHistArray.getHeadAccess() instanceof RecordAccess);
+        RecordAccess locHist = (RecordAccess) locHistArray.getHeadAccess();
+
+        assertTrue(locHist.getHeadAccess() instanceof ArrayAccess);
+        ArrayAccess peopleArray = (ArrayAccess) locHist.getHeadAccess();
+
+        assertTrue(peopleArray.getHeadAccess() instanceof IdentifierAccess);
+        IdentifierAccess peopleAccess = (IdentifierAccess) peopleArray.getHeadAccess();
+        assertEquals("people", peopleAccess.getIdentifier().lexeme);
+
+        assertTrue(peopleArray.getIndexExpression() instanceof ConstVal);
+        ConstVal peopleIndex = (ConstVal) peopleArray.getIndexExpression();
+        assertEquals(0, peopleIndex.getValue());
+        assertEquals(TokenTypes.INT_LITERAL, peopleIndex.getSymbol().type);
+
+        assertEquals("locationHistory", locHist.getIdentifier().lexeme);
+        assertTrue(locHistArray.getIndexExpression() instanceof ConstVal);
+        ConstVal locHistIndex = (ConstVal) locHistArray.getIndexExpression();
+        assertEquals(3, locHistIndex.getValue());
+        assertEquals(TokenTypes.INT_LITERAL, locHistIndex.getSymbol().type);
+
+        assertEquals("y", access.getIdentifier().lexeme);
+
     }
 }

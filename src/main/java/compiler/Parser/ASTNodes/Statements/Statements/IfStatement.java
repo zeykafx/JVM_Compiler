@@ -1,4 +1,4 @@
-package compiler.Parser.ASTNodes.Statements;
+package compiler.Parser.ASTNodes.Statements.Statements;
 
 import compiler.Parser.ASTNodes.Block;
 import compiler.Parser.ASTNodes.Statements.Expressions.Expressions.Expression;

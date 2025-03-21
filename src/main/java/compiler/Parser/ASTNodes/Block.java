@@ -1,6 +1,6 @@
 package compiler.Parser.ASTNodes;
 
-import compiler.Parser.ASTNodes.Statements.Statement;
+import compiler.Parser.ASTNodes.Statements.Statements.Statement;
 import java.util.ArrayList;
 
 public class Block extends ASTNode {

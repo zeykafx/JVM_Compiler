@@ -1,4 +1,4 @@
-package compiler.Parser.ASTNodes.Statements;
+package compiler.Parser.ASTNodes.Statements.Statements;
 
 
 //Params -> Param ParamsTail | .

@@ -1,19 +1,19 @@
-package compiler.Parser.ASTNodes.Statements;
+package compiler.Parser.ASTNodes.Statements.Statements;
 import compiler.Parser.ASTNodes.Statements.Expressions.Access.Access;
 import compiler.Parser.ASTNodes.Statements.Expressions.Expressions.Expression;
 
 public class VariableAssigment extends Statement {
-	private final Access identifier;
+	private final Access access;
 	private final Expression expression;
 
 
-	public VariableAssigment(Access identifier, Expression expression) {
-		this.identifier = identifier;
+	public VariableAssigment(Access access, Expression expression) {
+		this.access = access;
 		this.expression = expression;
 	}
 
-	public Access getIdentifier() {
-		return identifier;
+	public Access getAccess() {
+		return access;
 	}
 
 	public Expression getExpression() {
@@ -22,12 +22,12 @@ public class VariableAssigment extends Statement {
 
 	@Override
 	public String toString() {
-		return "VariableAssigment [identifier=" + identifier + ", expression=" + expression + "]";
+		return "VariableAssigment [access=" + access + ", expression=" + expression + "]";
 	}
 	
 	@Override
 	public String prettyPrint(int indent) {
-        return "  ".repeat(indent) + "VariableAssigment: \n" + identifier.prettyPrint(indent) + " \n" + expression.prettyPrint(indent+1);
+        return "  ".repeat(indent) + "VariableAssigment: \n" + access.prettyPrint(indent) + " \n" + expression.prettyPrint(indent+1);
     }
 }
 

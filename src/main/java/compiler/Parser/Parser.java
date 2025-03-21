@@ -6,7 +6,6 @@ import compiler.Lexer.TokenTypes;
 import compiler.Parser.ASTNodes.ASTNode;
 import compiler.Parser.ASTNodes.Block;
 import compiler.Parser.ASTNodes.Program;
-import compiler.Parser.ASTNodes.Statements.*;
 import compiler.Parser.ASTNodes.Statements.Expressions.Access.Access;
 import compiler.Parser.ASTNodes.Statements.Expressions.Access.ArrayAccess;
 import compiler.Parser.ASTNodes.Statements.Expressions.Access.IdentifierAccess;
@@ -16,6 +15,7 @@ import compiler.Parser.ASTNodes.Statements.Expressions.Operators.BinaryOperator;
 import compiler.Parser.ASTNodes.Statements.Expressions.Operators.Operator;
 import compiler.Parser.ASTNodes.Statements.Expressions.Operators.UnaryOperator;
 import compiler.Parser.ASTNodes.Statements.Expressions.Terms.*;
+import compiler.Parser.ASTNodes.Statements.Statements.*;
 import compiler.Parser.ASTNodes.Types.NumType;
 import compiler.Parser.ASTNodes.Types.Type;
 import java.util.ArrayList;
@@ -257,19 +257,9 @@ public class Parser {
             // this can be a function call, or an access (identifier, record, array)
             if (lookAheadSymbol.type == TokenTypes.LEFT_PAR) {
                 // IdentifierOrFunctionCallTail -> "(" ParamsCall ")"
-                match(TokenTypes.LEFT_PAR);
-                if (lookAheadSymbol.type == TokenTypes.RIGHT_PAR) {
-                    // empty params
-                    match(TokenTypes.RIGHT_PAR);
-                    return new FunctionCall(identifier, new ArrayList<>());
-                }
-                ArrayList<ParamCall> params = parseParamsCall();
-                match(TokenTypes.RIGHT_PAR);
-                return new FunctionCall(identifier, params);
+                return parseParamCall(identifier);
             } else {
                 // IdentifierOrFunctionCallTail -> ε
-                // return new Identifier(identifier);
-
                 return parseAccess(true, identifier);
             }
         } else if (lookAheadSymbol.type == TokenTypes.RECORD) {
@@ -468,7 +458,7 @@ public class Parser {
         } else if (lookAheadSymbol.type == TokenTypes.FUN) {
             return parseFunction();
         } else {
-            // BaseStatement -> VariableDeclaration | Assignment | Expression ";"
+            // BaseStatement -> VariableDeclaration | Assignment | RecordDefinition | free IdentifierAccess | Expression ";"
             Statement statement = parseBaseStatement();
             if (lookAheadSymbol.type == TokenTypes.SEMICOLON) {
                 match(TokenTypes.SEMICOLON);
@@ -537,7 +527,7 @@ public class Parser {
     }
 
     public Statement parseBaseStatement() throws Exception {
-        // BaseStatement -> Declaration | VariableAssignment | RecordDefinition | Expression .
+        // BaseStatement -> Declaration | VariableAssignment | RecordDefinition | "free" IdentifierAccess | Expression ";" .
 
         // Declarations -> Declaration Declarations | .
 
@@ -566,15 +556,7 @@ public class Parser {
             if (lookAheadSymbol.type != TokenTypes.ASSIGN) {
                 if (lookAheadSymbol.type == TokenTypes.LEFT_PAR) {
                     // Function call
-                    match(TokenTypes.LEFT_PAR);
-                    if (lookAheadSymbol.type == TokenTypes.RIGHT_PAR) {
-                        // empty params
-                        match(TokenTypes.RIGHT_PAR);
-                        return new FunctionCall(identifier, new ArrayList<>());
-                    }
-                    ArrayList<ParamCall> params = parseParamsCall();
-                    match(TokenTypes.RIGHT_PAR);
-                    return new FunctionCall(identifier, params);
+                    return parseParamCall(identifier);
                 }
 
                 // or it could be something like "i int"
@@ -590,9 +572,27 @@ public class Parser {
             return new VariableAssigment(access, expression);
         } else if (lookAheadSymbol.type == TokenTypes.RECORD) {
             return parseRecord();
+        } else if (lookAheadSymbol.type == TokenTypes.FREE) {
+            // free IdentifierAccess
+            match(TokenTypes.FREE);
+            Access access = parseAccess(false, null);
+
+            return new FreeStatement((IdentifierAccess) access);
         }
 
         return null;
+    }
+
+    public FunctionCall parseParamCall(Symbol identifier) throws Exception {
+        match(TokenTypes.LEFT_PAR);
+        if (lookAheadSymbol.type == TokenTypes.RIGHT_PAR) {
+            // empty params
+            match(TokenTypes.RIGHT_PAR);
+            return new FunctionCall(identifier, new ArrayList<>());
+        }
+        ArrayList<ParamCall> params = parseParamsCall();
+        match(TokenTypes.RIGHT_PAR);
+        return new FunctionCall(identifier, params);
     }
 
     public Access parseAccess(boolean skipIdent, Symbol identIfSkipped)

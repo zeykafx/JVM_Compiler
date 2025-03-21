@@ -51,4 +51,25 @@ public class FunctionDefinition extends Statement {
 		String returnTypeStr = voidReturnType ? "void" : returnType.toString();
 		return "Function, " + name.type + ", " + returnTypeStr + ", [" + paramStr + "], " + block.toString();
 	}
+	
+	@Override
+    public String prettyPrint(int indent) {
+        StringBuilder sb = new StringBuilder();
+        sb.append("  ".repeat(indent)).append("Function, ").append(name.lexeme).append("\n");
+        
+        sb.append("  ".repeat(indent + 1)).append("Return Type: ")
+        .append(voidReturnType ? "void" : returnType.prettyPrint(0)).append("\n");
+        
+        if (!paramDefinitions.isEmpty()) {
+            sb.append("  ".repeat(indent + 1)).append("Parameters:\n");
+            for (ParamDefinition param : paramDefinitions) {
+                sb.append(param.prettyPrint(indent + 2)).append("\n");
+            }
+        }
+        
+        sb.append("  ".repeat(indent + 1)).append("Body:\n");
+        sb.append(block.prettyPrint(indent + 2));
+        
+        return sb.toString();
+    }
 }

@@ -22,4 +22,9 @@ public class BinaryOperator extends Operator {
     public String toString() {
         return "BinaryOperator [operator=" + operator.lexeme + "]";
     }
+    
+    @Override
+    public String prettyPrint(int indent) {
+        return "  ".repeat(indent) + "Operator, " + operator.lexeme;
+    }
 }

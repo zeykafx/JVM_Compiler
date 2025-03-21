@@ -39,4 +39,40 @@ public class Program extends ASTNode {
 	public String toString() {
 		return "Program [constants=" + constants + ", records=" + records + ", globals: " + globals + ", functions=" + functions + "]";
 	}
+	
+	@Override
+    public String prettyPrint(int indent) {
+        StringBuilder sb = new StringBuilder();
+        sb.append("  ".repeat(indent)).append("Program\n");
+        
+        if (!constants.isEmpty()) {
+            sb.append("  ".repeat(indent + 1)).append("Constants:\n");
+            for (VariableDeclaration constant : constants) {
+                sb.append(constant.prettyPrint(indent + 2)).append("\n");
+            }
+        }
+        
+        if (!records.isEmpty()) {
+            sb.append("  ".repeat(indent + 1)).append("Records:\n");
+            for (RecordDefinition record : records) {
+                sb.append(record.prettyPrint(indent + 2)).append("\n");
+            }
+        }
+        
+        if (!globals.isEmpty()) {
+            sb.append("  ".repeat(indent + 1)).append("Globals:\n");
+            for (VariableDeclaration global : globals) {
+                sb.append(global.prettyPrint(indent + 2)).append("\n");
+            }
+        }
+        
+        if (!functions.isEmpty()) {
+            sb.append("  ".repeat(indent + 1)).append("Functions:\n");
+            for (FunctionDefinition function : functions) {
+                sb.append(function.prettyPrint(indent + 2)).append("\n");
+            }
+        }
+        
+        return sb.toString().trim();
+    }
 }

@@ -18,4 +18,9 @@ public class Identifier extends Term {
     public String getIdentifier() {
         return symbol.lexeme;
     }
+    
+    @Override
+    public String prettyPrint(int indent) {
+        return "  ".repeat(indent) + "Identifier, " + symbol.lexeme;
+    }
 }

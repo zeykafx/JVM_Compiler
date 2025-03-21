@@ -61,6 +61,22 @@ public class VariableDeclaration extends Statement {
 		}
 		return "Variable, " + name.lexeme + ", " + constant + type.symbol + ", " + value.toString();
 	}
+	
+	@Override
+    public String prettyPrint(int indent) {
+        StringBuilder sb = new StringBuilder();
+        String typeStr = isConstant ? "Constant" : "Variable";
+        sb.append("  ".repeat(indent)).append(typeStr).append(", ").append(name.lexeme).append("\n");
+        
+        sb.append("  ".repeat(indent + 1)).append("Type: ").append(type.prettyPrint(0)).append("\n");
+        
+        if (hasValue) {
+            sb.append("  ".repeat(indent + 1)).append("Value:\n");
+            sb.append(value.prettyPrint(indent + 2));
+        }
+        
+        return sb.toString();
+    }
 }
 
 // final i int = 3;

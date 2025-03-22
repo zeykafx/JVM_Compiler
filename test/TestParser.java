@@ -54,8 +54,14 @@ public class TestParser {
 
     @Test
     public void testFunctionDefinition() throws Exception {
+//        String input = """
+//        fun add(a int, b int) int {
+//            return a + b;
+//        }
+//        """;
+        // TODO: change back to post typing
         String input = """
-        fun add(a int, b int) int {
+        fun add(int a, int b) int {
             return a + b;
         }
         """;
@@ -319,15 +325,26 @@ public class TestParser {
 
     @Test
     public void testMultipleFunctions() throws Exception {
+//        String input = """
+//        fun add(a int, b int) int {
+//            return a + b;
+//        }
+//
+//        fun subtract(a int, b int) int {
+//            return a - b;
+//        }
+//        """;
+        // TODO: change back to post typing
         String input = """
-        fun add(a int, b int) int {
+        fun add(int a, int b) int {
             return a + b;
         }
         
-        fun subtract(a int, b int) int {
+        fun subtract(int a, int b) int {
             return a - b;
         }
         """;
+
 
         StringReader reader = new StringReader(input);
         Lexer lexer = new Lexer(reader);

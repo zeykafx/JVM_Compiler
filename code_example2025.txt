@@ -256,7 +256,7 @@ $ of the programmer to deallocate arrays or records referenced by that record.
 
                                           
 
-fun square(v int ) int {
+fun square(int v) int {
 
     return v*v; 
 
@@ -264,7 +264,7 @@ fun square(v int ) int {
 
   
 
-fun copyPoints(p Point[]) Point {
+fun copyPoints(Point[] p) Point {
 
     return Point(p[0].x+p[1].x, p[0].y+p[1].y); 
 
@@ -276,7 +276,7 @@ fun main() {
 
     value int = readInt();                              
 
-    writeln(square(value)); 
+    writeln(square(value));
 
     i int; 
 

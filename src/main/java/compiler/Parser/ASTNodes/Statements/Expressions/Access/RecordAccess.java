@@ -37,6 +37,7 @@ public class RecordAccess extends Access {
             "  ".repeat(indent) +
             "RecordAccess: \n" +
             headAccess.prettyPrint(indent + 1) +
+            "\n" +
             "  ".repeat(indent + 1) +
             "Identifier: " +
             identifier.lexeme

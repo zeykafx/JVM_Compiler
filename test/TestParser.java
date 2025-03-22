@@ -787,4 +787,120 @@ public class TestParser {
         BinaryOperator mulOp = (BinaryOperator) binaryExpr.getOperator();
         assertEquals(TokenTypes.MULTIPLY, mulOp.getOperator().type);
     }
+
+    @Test
+    public void testFunctionCallWithParams() throws Exception {
+        String input = """
+                fun main() {
+                    writeln(square(value), p[1]);
+                }
+                """;
+        StringReader reader = new StringReader(input);
+        Lexer lexer = new Lexer(reader);
+        Parser parser = new Parser(lexer);
+
+        ASTNode node = parser.getAST();
+        assertNotNull(node);
+
+        assertTrue(node instanceof Program);
+        Program program = (Program) node;
+
+        assertEquals(1, program.getFunctions().size());
+        FunctionDefinition function = program.getFunctions().getFirst();
+        assertEquals("main", function.getName().lexeme);
+
+        assertNotNull(function.getBlock());
+        Block block = (Block) function.getBlock();
+        assertEquals(1, block.getStatements().size());
+        Statement statement = block.getStatements().getFirst();
+
+        assertTrue(statement instanceof FunctionCall);
+        FunctionCall functionCall = (FunctionCall) statement;
+        assertEquals("writeln", functionCall.getIdentifier().lexeme);
+        assertEquals(2, functionCall.getParameters().size());
+        assertTrue(functionCall.getParameters().getFirst().getParamExpression() instanceof FunctionCall);
+        FunctionCall innerFunctionCall = (FunctionCall) functionCall.getParameters().getFirst().getParamExpression();
+        assertEquals("square", innerFunctionCall.getIdentifier().lexeme);
+        assertEquals(1, innerFunctionCall.getParameters().size());
+        assertTrue(innerFunctionCall.getParameters().getFirst().getParamExpression() instanceof IdentifierAccess);
+        IdentifierAccess idAccess = (IdentifierAccess) innerFunctionCall.getParameters().getFirst().getParamExpression();
+        assertEquals("value", idAccess.getIdentifier().lexeme);
+        assertTrue(functionCall.getParameters().get(1).getParamExpression() instanceof ArrayAccess);
+        ArrayAccess arrayAccess = (ArrayAccess) functionCall.getParameters().get(1).getParamExpression();
+        assertTrue(arrayAccess.getHeadAccess() instanceof IdentifierAccess);
+        IdentifierAccess arrayHeadAccess = (IdentifierAccess) arrayAccess.getHeadAccess();
+        assertEquals("p", arrayHeadAccess.getIdentifier().lexeme);
+        assertTrue(arrayAccess.getIndexExpression() instanceof ConstVal);
+
+        ConstVal constVal = (ConstVal) arrayAccess.getIndexExpression();
+        assertEquals(1, constVal.getValue());
+        assertEquals(TokenTypes.INT_LITERAL, constVal.getSymbol().type);
+    }
+
+    @Test
+    public void testArrayExpression() throws Exception {
+        String input = """
+                fun main() {
+                    c int[] = array [5] of int;
+                }
+                """;
+
+        StringReader reader = new StringReader(input);
+        Lexer lexer = new Lexer(reader);
+        Parser parser = new Parser(lexer);
+        ASTNode node = parser.getAST();
+        assertNotNull(node);
+
+        assertTrue(node instanceof Program);
+        Program program = (Program) node;
+
+        assertEquals(1, program.getFunctions().size());
+        FunctionDefinition function = program.getFunctions().getFirst();
+        assertEquals("main", function.getName().lexeme);
+        assertNotNull(function.getBlock());
+
+        Block block = (Block) function.getBlock();
+        assertEquals(1, block.getStatements().size());
+        Statement statement = block.getStatements().getFirst();
+        assertTrue(statement instanceof VariableDeclaration);
+        VariableDeclaration varDecl = (VariableDeclaration) statement;
+        assertFalse(varDecl.isConstant());
+        assertEquals("c", varDecl.getName().lexeme);
+        assertEquals(TokenTypes.INT, varDecl.getType().symbol.type);
+        assertTrue(varDecl.getType().isList);
+
+        assertTrue(varDecl.getValue() instanceof ArrayExpression);
+        ArrayExpression arrayExpr = (ArrayExpression) varDecl.getValue();
+        assertTrue(arrayExpr.getSizeExpression() instanceof ConstVal);
+
+        ConstVal sizeVal = (ConstVal) arrayExpr.getSizeExpression();
+        assertEquals(5, sizeVal.getValue());
+        assertEquals(TokenTypes.INT_LITERAL, sizeVal.getSymbol().type);
+
+        assertTrue(arrayExpr.getType() instanceof NumType);
+        NumType arrayType = (NumType) arrayExpr.getType();
+        assertEquals(TokenTypes.INT, arrayType.getSymbol().type);
+
+    }
+
+
+    @Test
+    public void testError() throws Exception {
+        try {
+            String input = """
+                fun main() {
+                    a = Point(;
+                }
+                """;
+
+            StringReader reader = new StringReader(input);
+            Lexer lexer = new Lexer(reader);
+            Parser parser = new Parser(lexer);
+
+            ASTNode node = parser.getAST();
+        } catch (SyntaxErrorException e) {
+            assertTrue(e.getMessage().contains("Error: Expected ')'"));
+        }
+
+    }
 }

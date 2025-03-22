@@ -15,6 +15,15 @@ public class ArrayExpression extends Expression {
 //        this.identifier = identifier;
     }
 
+
+    public Expression getSizeExpression() {
+        return sizeExpression;
+    }
+
+    public Type getType() {
+        return type;
+    }
+
     @Override
     public String toString() {
         return "ArrayExpression [sizeExpression=" + sizeExpression + ", type=" + type + "]";

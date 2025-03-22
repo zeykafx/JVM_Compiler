@@ -34,8 +34,12 @@ public class Parser {
     public ASTNode getAST() {
         try {
             return parseProgram();
-        } catch (Exception e) {
-            System.err.println("Error parsing the program: " + e.getMessage());
+        } catch (SyntaxErrorException e) {
+            System.err.println("Syntax Error: " + e.getMessage());
+            return null;
+        }
+        catch (Exception e) {
+            System.err.println("Unexpected error parsing the program: " + e.getMessage());
             return null;
         }
     }
@@ -46,7 +50,7 @@ public class Parser {
             lookAheadSymbol = lexer.getNextSymbol();
             return matchedSymbol;
         } else {
-            throw new RuntimeException(
+            throw new SyntaxErrorException(
                 "Syntax Error: Expected " +
                 token +
                 " but found " +
@@ -135,7 +139,7 @@ public class Parser {
             match(TokenTypes.SEMICOLON);
             return new VariableDeclaration(identifier, type);
         } else {
-            throw new Exception(
+            throw new SyntaxErrorException(
                 "Syntax Error: Expected '=' or ';' after variable declaration but found " +
                 lookAheadSymbol.lexeme +
                 " of type " +
@@ -149,7 +153,7 @@ public class Parser {
     }
 
     public Type parseType() throws Exception {
-        Symbol type =
+        Symbol symbol =
             switch (lookAheadSymbol.type) {
                 case INT -> match(TokenTypes.INT);
                 case FLOAT -> match(TokenTypes.FLOAT);
@@ -160,14 +164,21 @@ public class Parser {
                 default -> null;
             };
 
+        Type type = new Type(symbol, false);
+
+		assert symbol != null;
+		if (symbol.type == TokenTypes.INT || symbol.type == TokenTypes.FLOAT) {
+            type = new NumType(symbol);
+        }
+
         // Check if the type is an array
         if (lookAheadSymbol.type == TokenTypes.LEFT_SQUARE_BRACKET) {
             match(TokenTypes.LEFT_SQUARE_BRACKET);
             match(TokenTypes.RIGHT_SQUARE_BRACKET);
-            return new Type(type, true);
-        } else {
-            return new Type(type, false);
+            type.isList = true;
         }
+
+        return type;
     }
 
     public Expression parseExpression() throws Exception {
@@ -293,7 +304,7 @@ public class Parser {
         }
 
         // If none of the above, throw an error
-        throw new Exception(
+        throw new SyntaxErrorException(
             "Syntax Error: Expected Term but found " +
             lookAheadSymbol.lexeme +
             " of type " +
@@ -560,7 +571,6 @@ public class Parser {
                 }
 
                 // or it could be something like "i int"
-
                 return parseVariableDeclaration(false, true, identifier);
             }
 

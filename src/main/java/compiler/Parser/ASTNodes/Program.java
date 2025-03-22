@@ -5,6 +5,7 @@ import compiler.Parser.ASTNodes.Statements.Statements.RecordDefinition;
 import compiler.Parser.ASTNodes.Statements.Statements.VariableDeclaration;
 
 import java.util.ArrayList;
+import java.util.Objects;
 
 public class Program extends ASTNode {
 	ArrayList<VariableDeclaration> constants;

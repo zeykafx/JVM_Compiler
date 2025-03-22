@@ -47,11 +47,6 @@ IdentifierAccess -> "identifier" AccessChain .
 AccessChain -> Access AccessChain | .
 Access -> "[" Expression "]" | "." "identifier" .
 
-
-FunctionCall -> "identifier" "(" ParamsCall ")" . # NOT LL(1)
-ParamsCall -> Expression MoreParamsCall .
-MoreParamsCall ->  | "," ParamsCall .
-
 Expression -> Term IsBinaryExpr | ArrayExpression | UnaryOperator Term .
 IsBinaryExpr -> BinaryOperator Term | .
 
@@ -63,6 +58,9 @@ Term -> "(" Expression ")" | IdentifierOrFunctionCall | NewRecord | ConstVal .
 IdentifierOrFunctionCall -> "identifier" IdentifierOrFunctionCallTail .
 IdentifierOrFunctionCallTail -> | "(" ParamsCall ")" .
 
-Term -> "(" Expression ")" | IdentifierAccess | FunctionCall | "!" Term | ConstVal .
-Operator -> "||" | "&&" | "==" | "!=" | "<" | ">" | "<=" | ">=" | "+" | "-" | "*" | "/" | "%" .
+ParamsCall -> Expression MoreParamsCall .
+MoreParamsCall ->  | "," ParamsCall .
+
+UnaryOperator -> "!" | "-" .
+BinaryOperator -> "+" | "-" | "*" | "/" | "%" | "&&" | "||" | "==" | "!=" | "<" | ">" | "<=" | ">=" .
 ConstVal -> "intval" | "floatval" | "boolval" | "stringval" | "true" | "false" .

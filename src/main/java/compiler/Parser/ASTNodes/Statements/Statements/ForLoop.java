@@ -7,12 +7,12 @@ import compiler.Parser.ASTNodes.Types.NumType;
 public class ForLoop extends Statement {
 
 	private final Symbol variable;
-	private final NumType start;
-	private final NumType end;
-	private final NumType step;
+	private final Symbol start;
+	private final Symbol end;
+	private final Symbol step;
 	private final Block block;
 
-	public ForLoop(Symbol variable, NumType start, NumType end, NumType step, Block block) {
+	public ForLoop(Symbol variable, Symbol start, Symbol end, Symbol step, Block block) {
 		this.variable = variable;
 		this.start = start;
 		this.end = end;
@@ -24,15 +24,15 @@ public class ForLoop extends Statement {
 		return variable;
 	}
 
-	public NumType getStart() {
+	public Symbol getStart() {
 		return start;
 	}
 
-	public NumType getEnd() {
+	public Symbol getEnd() {
 		return end;
 	}
 
-	public NumType getStep() {
+	public Symbol getStep() {
 		return step;
 	}
 
@@ -48,6 +48,6 @@ public class ForLoop extends Statement {
 	
 	@Override
 	public String prettyPrint(int indent) {
-        return "  ".repeat(indent) + "ForLoop:\n" +  "  ".repeat(indent+1) + "LoopVar: " + variable.lexeme + "\n" + "  ".repeat(indent+1) + "Start: " + start.prettyPrint(0) + "\n" + "  ".repeat(indent+1) + "End: " + end.prettyPrint(0) + "\n" + "  ".repeat(indent+1) +  "Step: " + step.prettyPrint(0) + "\n" + block.prettyPrint(indent + 1);
+        return "  ".repeat(indent) + "ForLoop:\n" +  "  ".repeat(indent+1) + "LoopVar: " + variable.lexeme + "\n" + "  ".repeat(indent+1) + "Start: " + start.lexeme + "\n" + "  ".repeat(indent+1) + "End: " + end.lexeme + "\n" + "  ".repeat(indent+1) +  "Step: " + step.lexeme + "\n" + block.prettyPrint(indent + 1);
     }
 }

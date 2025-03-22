@@ -1,0 +1,33 @@
+$Good luck
+
+final message string = "Hello";
+final run bool = true;
+
+Point rec {
+    x int;
+    y int;
+}
+
+a int = 3;
+
+fun square(int v) int {
+    return v*v;
+}
+
+fun main() {
+    value int = readInt();
+    p Point = Point(a, a+value);
+    writeInt(square(value));
+    writeln();
+    i int;
+    for (i, 1, a, 1) {
+        while (value!=0) {
+            if (run){
+                value = value - 1;
+            } else {
+                write(message);
+            }
+        }
+    }
+    i = (i+2)*2;
+}

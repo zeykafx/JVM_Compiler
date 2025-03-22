@@ -662,19 +662,19 @@ public class TestParser {
 
 
 		assertNotNull(forLoop.getStart());
-        NumType start = (NumType) forLoop.getStart();
-        assertEquals(0, start.getSymbol().value);
-        assertEquals(TokenTypes.INT_LITERAL, start.getSymbol().type);
+        Symbol start = forLoop.getStart();
+        assertEquals(0, start.value);
+        assertEquals(TokenTypes.INT_LITERAL, start.type);
 
         assertNotNull(forLoop.getEnd());
-        NumType end = (NumType) forLoop.getEnd();
-        assertEquals(10, end.getSymbol().value);
-        assertEquals(TokenTypes.INT_LITERAL, end.getSymbol().type);
+        Symbol end = forLoop.getEnd();
+        assertEquals(10, end.value);
+        assertEquals(TokenTypes.INT_LITERAL, end.type);
 
         assertNotNull(forLoop.getStep());
-        NumType step = (NumType) forLoop.getStep();
-        assertEquals(1, step.getSymbol().value);
-        assertEquals(TokenTypes.INT_LITERAL, step.getSymbol().type);
+        Symbol step = forLoop.getStep();
+        assertEquals(1, step.value);
+        assertEquals(TokenTypes.INT_LITERAL, step.type);
 
         assertNotNull(forLoop.getBlock());
         Block forBlock = (Block) forLoop.getBlock();

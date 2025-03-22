@@ -506,25 +506,45 @@ public class Parser {
         match(TokenTypes.LEFT_PAR);
         Symbol identifier = match(TokenTypes.IDENTIFIER);
         match(TokenTypes.COMMA);
-        NumType startType = parseNumType();
+        // Parse the start, end, and step values, they could be int or float literals, or identifiers
+//        NumType startType = parseNumType();
+//        match(TokenTypes.COMMA);
+//        NumType endType = parseNumType();
+//        match(TokenTypes.COMMA);
+//        NumType stepType = parseNumType();
+        Symbol startType = parseNumLiteralOrIdent();
         match(TokenTypes.COMMA);
-        NumType endType = parseNumType();
+        Symbol endType = parseNumLiteralOrIdent();
         match(TokenTypes.COMMA);
-        NumType stepType = parseNumType();
+        Symbol stepType = parseNumLiteralOrIdent();
+        // Check if the types are valid
+        if (startType == null || endType == null || stepType == null) {
+            throw new SyntaxErrorException(
+                "Syntax Error: Expected int or float literal or identifier but found " +
+                lookAheadSymbol.lexeme +
+                " of type " +
+                lookAheadSymbol.type +
+                " at line " +
+                lookAheadSymbol.line +
+                ", column " +
+                lookAheadSymbol.column
+            );
+        }
+
+
         match(TokenTypes.RIGHT_PAR);
         Block block = parseBlock();
         return new ForLoop(identifier, startType, endType, stepType, block);
     }
 
-    public NumType parseNumType() throws Exception {
+    public Symbol parseNumLiteralOrIdent() throws Exception {
         // NumType -> "int" | "float"
-        Symbol type =
-            switch (lookAheadSymbol.type) {
-                case INT_LITERAL -> match(TokenTypes.INT_LITERAL);
-                case FLOAT_LITERAL -> match(TokenTypes.FLOAT_LITERAL);
-                default -> null;
-            };
-        return new NumType(type);
+		return switch (lookAheadSymbol.type) {
+			case INT_LITERAL -> match(TokenTypes.INT_LITERAL);
+			case FLOAT_LITERAL -> match(TokenTypes.FLOAT_LITERAL);
+			case IDENTIFIER -> match(TokenTypes.IDENTIFIER);
+			default -> null;
+		};
     }
 
     public WhileLoop parseWhileLoop() throws Exception {

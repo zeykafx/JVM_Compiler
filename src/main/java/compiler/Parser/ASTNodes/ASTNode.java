@@ -1,6 +1,10 @@
 package compiler.Parser.ASTNodes;
 
+import compiler.SemanticAnalysis.Visitor;
+
 public abstract class ASTNode {
+
+    public abstract void accept(Visitor v);
 
     public abstract String toString();
 

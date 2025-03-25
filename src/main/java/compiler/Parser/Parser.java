@@ -599,7 +599,7 @@ public class Parser {
             match(TokenTypes.ASSIGN);
 
             Expression expression = parseExpression();
-            return new VariableAssigment(access, expression);
+            return new VariableAssignment(access, expression);
         } else if (lookAheadSymbol.type == TokenTypes.RECORD) {
             return parseRecord();
         } else if (lookAheadSymbol.type == TokenTypes.FREE) {

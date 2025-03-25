@@ -4,6 +4,7 @@ package compiler.Parser.ASTNodes.Statements.Statements;
 import compiler.Lexer.Symbol;
 import compiler.Parser.ASTNodes.Statements.Expressions.Expressions.Expression;
 import compiler.Parser.ASTNodes.Types.Type;
+import compiler.SemanticAnalysis.Visitor;
 
 public class VariableDeclaration extends Statement {
 	Type type;
@@ -76,6 +77,11 @@ public class VariableDeclaration extends Statement {
         
         return sb.toString();
     }
+
+	@Override
+	public void accept(Visitor v) {
+		v.visitVariableDeclaration(this);
+	}
 }
 
 // final i int = 3;

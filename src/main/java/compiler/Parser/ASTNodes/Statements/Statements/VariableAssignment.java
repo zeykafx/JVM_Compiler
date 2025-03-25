@@ -1,13 +1,14 @@
 package compiler.Parser.ASTNodes.Statements.Statements;
 import compiler.Parser.ASTNodes.Statements.Expressions.Access.Access;
 import compiler.Parser.ASTNodes.Statements.Expressions.Expressions.Expression;
+import compiler.SemanticAnalysis.Visitor;
 
-public class VariableAssigment extends Statement {
+public class VariableAssignment extends Statement {
 	private final Access access;
 	private final Expression expression;
 
 
-	public VariableAssigment(Access access, Expression expression) {
+	public VariableAssignment(Access access, Expression expression) {
 		this.access = access;
 		this.expression = expression;
 	}
@@ -29,6 +30,11 @@ public class VariableAssigment extends Statement {
 	public String prettyPrint(int indent) {
         return "  ".repeat(indent) + "VariableAssigment: \n" + access.prettyPrint(indent) + " \n" + expression.prettyPrint(indent+1);
     }
+
+	@Override
+	public void accept(Visitor v) {
+		v.visitVariableAssignment(this);
+	}
 }
 
 

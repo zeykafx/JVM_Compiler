@@ -2,6 +2,7 @@ package compiler.Parser.ASTNodes.Statements.Statements;
 
 import compiler.Lexer.Symbol;
 import compiler.Parser.ASTNodes.Types.Type;
+import compiler.SemanticAnalysis.Visitor;
 
 public class RecordFieldDefinition extends Statement {
 	Symbol identifier;
@@ -31,4 +32,9 @@ public class RecordFieldDefinition extends Statement {
         sb.append("  ".repeat(indent)).append("RecordField: ").append(identifier.lexeme).append(", ").append(type.toString());
         return sb.toString();
     }
+
+	@Override
+	public void accept(Visitor v) {
+		v.visitRecordFieldDefinition(this);
+	}
 }

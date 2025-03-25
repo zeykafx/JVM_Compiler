@@ -7,6 +7,7 @@ package compiler.Parser.ASTNodes.Statements.Statements;
 
 import compiler.Lexer.Symbol;
 import compiler.Parser.ASTNodes.Types.Type;
+import compiler.SemanticAnalysis.Visitor;
 
 public class ParamDefinition extends Statement {
 	private final Symbol identifier;
@@ -34,4 +35,9 @@ public class ParamDefinition extends Statement {
 	public String prettyPrint(int indent) {
         return "  ".repeat(indent) + "ParamDefinition: " + identifier.lexeme + " " + type.prettyPrint(0);
     }
+
+	@Override
+	public void accept(Visitor v) {
+		v.visitParamDefinition(this);
+	}
 }

@@ -1,6 +1,7 @@
 package compiler.Parser.ASTNodes.Statements.Statements;
 
 import compiler.Parser.ASTNodes.Statements.Expressions.Expressions.Expression;
+import compiler.SemanticAnalysis.Visitor;
 
 public class ReturnStatement extends Statement {
 
@@ -26,5 +27,10 @@ public class ReturnStatement extends Statement {
             "Return: \n" +
             expression.prettyPrint(indent + 1)
         );
+    }
+
+    @Override
+    public void accept(Visitor v) {
+        v.visitReturnStatement(this);
     }
 }

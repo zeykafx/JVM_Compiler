@@ -1,6 +1,7 @@
 package compiler.Parser.ASTNodes.Types;
 
 import compiler.Lexer.Symbol;
+import compiler.SemanticAnalysis.Visitor;
 
 public class NumType extends Type {
 	private final boolean isFloat;
@@ -32,4 +33,9 @@ public class NumType extends Type {
 	public String prettyPrint(int indent) {
         return "  ".repeat(indent) + "NumType: " + (isFloat ? "float" : "int") + ": " + symbol.lexeme +"";
     }
+
+	@Override
+	public void accept(Visitor v) {
+		v.visitNumType(this);
+	}
 }

@@ -3,6 +3,7 @@ package compiler.Parser.ASTNodes;
 import compiler.Parser.ASTNodes.Statements.Statements.FunctionDefinition;
 import compiler.Parser.ASTNodes.Statements.Statements.RecordDefinition;
 import compiler.Parser.ASTNodes.Statements.Statements.VariableDeclaration;
+import compiler.SemanticAnalysis.Visitor;
 
 import java.util.ArrayList;
 import java.util.Objects;
@@ -37,7 +38,12 @@ public class Program extends ASTNode {
 		return globals;
 	}
 
-	public String toString() {
+    @Override
+    public void accept(Visitor v) {
+        v.visitProgram(this);
+    }
+
+    public String toString() {
 		return "Program [constants=" + constants + ", records=" + records + ", globals: " + globals + ", functions=" + functions + "]";
 	}
 	

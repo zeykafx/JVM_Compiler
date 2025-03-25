@@ -2,6 +2,7 @@ package compiler.Parser.ASTNodes.Types;
 
 import compiler.Lexer.Symbol;
 import compiler.Parser.ASTNodes.ASTNode;
+import compiler.SemanticAnalysis.Visitor;
 
 public class Type extends ASTNode {
 	public Symbol symbol;
@@ -21,6 +22,11 @@ public class Type extends ASTNode {
 
 	public boolean isList() {
 		return isList;
+	}
+
+	@Override
+	public void accept(Visitor v) {
+		v.visitType(this);
 	}
 
 	@Override

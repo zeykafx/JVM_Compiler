@@ -527,8 +527,8 @@ public class TestParser {
         Block whileBlock = whileLoop.getBlock();
         assertEquals(1, whileBlock.getStatements().size());
         Statement whileStatement = whileBlock.getStatements().getFirst();
-        assertTrue(whileStatement instanceof VariableAssigment);
-        VariableAssigment assignment = (VariableAssigment) whileStatement;
+        assertTrue(whileStatement instanceof VariableAssignment);
+        VariableAssignment assignment = (VariableAssignment) whileStatement;
         assertTrue(assignment.getAccess() instanceof IdentifierAccess);
         IdentifierAccess access = (IdentifierAccess) assignment.getAccess();
         assertEquals("a", access.getIdentifier().lexeme);

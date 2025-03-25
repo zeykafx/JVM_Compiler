@@ -2,6 +2,7 @@ package compiler.Parser.ASTNodes.Statements.Statements;
 
 import compiler.Parser.ASTNodes.Block;
 import compiler.Parser.ASTNodes.Statements.Expressions.Expressions.Expression;
+import compiler.SemanticAnalysis.Visitor;
 
 public class WhileLoop extends Statement {
 	private final Expression condition;
@@ -29,4 +30,9 @@ public class WhileLoop extends Statement {
 	public String prettyPrint(int indent) {
         return "  ".repeat(indent) + "While: \n" + condition.prettyPrint(indent+1) + "\n" + block.prettyPrint(indent + 1);
     }
+
+	@Override
+	public void accept(Visitor v) {
+		v.visitWhileLoop(this);
+	}
 }

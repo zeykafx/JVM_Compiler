@@ -1,6 +1,8 @@
 package compiler.Parser.ASTNodes.Statements.Statements;
 
 import compiler.Lexer.Symbol;
+import compiler.SemanticAnalysis.Visitor;
+
 import java.util.ArrayList;
 
 public class RecordDefinition extends Statement {
@@ -46,5 +48,10 @@ public class RecordDefinition extends Statement {
         }
 
         return sb.toString();
+    }
+
+    @Override
+    public void accept(Visitor v) {
+        v.visitRecordDefinition(this);
     }
 }

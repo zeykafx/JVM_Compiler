@@ -2,6 +2,7 @@ package compiler.Parser.ASTNodes.Statements.Expressions.Expressions;
 
 import compiler.Lexer.Symbol;
 import compiler.Parser.ASTNodes.Statements.Expressions.Terms.Term;
+import compiler.SemanticAnalysis.Visitor;
 
 public class Identifier extends Term {
     private final Symbol symbol;
@@ -22,5 +23,10 @@ public class Identifier extends Term {
     @Override
     public String prettyPrint(int indent) {
         return "  ".repeat(indent) + "Identifier, " + symbol.lexeme;
+    }
+
+    @Override
+    public void accept(Visitor v) {
+        v.visitIdentifier(this);
     }
 }

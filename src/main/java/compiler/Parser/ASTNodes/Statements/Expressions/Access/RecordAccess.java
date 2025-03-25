@@ -1,6 +1,7 @@
 package compiler.Parser.ASTNodes.Statements.Expressions.Access;
 
 import compiler.Lexer.Symbol;
+import compiler.SemanticAnalysis.Visitor;
 
 public class RecordAccess extends Access {
 
@@ -42,5 +43,10 @@ public class RecordAccess extends Access {
             "Identifier: " +
             identifier.lexeme
         );
+    }
+
+    @Override
+    public void accept(Visitor v) {
+        v.visitRecordAccess(this);
     }
 }

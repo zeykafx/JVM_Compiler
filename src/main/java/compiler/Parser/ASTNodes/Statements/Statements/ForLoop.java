@@ -3,6 +3,7 @@ package compiler.Parser.ASTNodes.Statements.Statements;
 import compiler.Lexer.Symbol;
 import compiler.Parser.ASTNodes.Block;
 import compiler.Parser.ASTNodes.Types.NumType;
+import compiler.SemanticAnalysis.Visitor;
 
 public class ForLoop extends Statement {
 
@@ -50,4 +51,9 @@ public class ForLoop extends Statement {
 	public String prettyPrint(int indent) {
         return "  ".repeat(indent) + "ForLoop:\n" +  "  ".repeat(indent+1) + "LoopVar: " + variable.lexeme + "\n" + "  ".repeat(indent+1) + "Start: " + start.lexeme + "\n" + "  ".repeat(indent+1) + "End: " + end.lexeme + "\n" + "  ".repeat(indent+1) +  "Step: " + step.lexeme + "\n" + block.prettyPrint(indent + 1);
     }
+
+	@Override
+	public void accept(Visitor v) {
+		v.visitForLoop(this);
+	}
 }

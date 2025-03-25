@@ -2,6 +2,7 @@ package compiler.Parser.ASTNodes.Statements.Expressions.Expressions;
 
 import compiler.Parser.ASTNodes.Statements.Expressions.Operators.Operator;
 import compiler.Parser.ASTNodes.Statements.Expressions.Terms.Term;
+import compiler.SemanticAnalysis.Visitor;
 
 
 public class BinaryExpression extends Expression {
@@ -38,5 +39,10 @@ public class BinaryExpression extends Expression {
                 "  ".repeat(indent + 1) + "Left: \n" + leftTerm.prettyPrint(indent+2) + "\n" +
                 "  ".repeat(indent + 1) + "Operator: " + operator.prettyPrint(0) + "\n" +
                 "  ".repeat(indent + 1) + "Right: \n" + rightTerm.prettyPrint(indent+2);
+    }
+
+    @Override
+    public void accept(Visitor v) {
+        v.visitBinaryExpression(this);
     }
 }

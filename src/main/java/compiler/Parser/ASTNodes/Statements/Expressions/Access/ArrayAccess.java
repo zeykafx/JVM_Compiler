@@ -1,6 +1,7 @@
 package compiler.Parser.ASTNodes.Statements.Expressions.Access;
 
 import compiler.Parser.ASTNodes.Statements.Expressions.Expressions.Expression;
+import compiler.SemanticAnalysis.Visitor;
 
 public class ArrayAccess extends Access {
 
@@ -41,6 +42,11 @@ public class ArrayAccess extends Access {
             indexExpression.prettyPrint(indent+1) +"\n"
             // "\n]"
         );
+    }
+
+    @Override
+    public void accept(Visitor v) {
+        v.visitArrayAccess(this);
     }
 }
 // a.x[myId]

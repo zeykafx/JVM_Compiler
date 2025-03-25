@@ -1,6 +1,7 @@
 package compiler.Parser.ASTNodes.Statements.Expressions.Expressions;
 
 import compiler.Parser.ASTNodes.Types.Type;
+import compiler.SemanticAnalysis.Visitor;
 
 public class ArrayExpression extends Expression {
     // ArrayExpression -> "array" "[" "intval" "]" "of" Type ";" .
@@ -32,5 +33,10 @@ public class ArrayExpression extends Expression {
     @Override
     public String prettyPrint(int indent) {
         return "  ".repeat(indent) + "ArrayExpression: \n" + sizeExpression.prettyPrint(indent+1) + "\n" + "  ".repeat(indent+1) + " of " + type.prettyPrint(0);
+    }
+
+    @Override
+    public void accept(Visitor v) {
+        v.visitArrayExpression(this);
     }
 }

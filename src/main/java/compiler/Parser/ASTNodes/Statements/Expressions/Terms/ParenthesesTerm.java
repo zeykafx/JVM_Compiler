@@ -1,6 +1,7 @@
 package compiler.Parser.ASTNodes.Statements.Expressions.Terms;
 
 import compiler.Parser.ASTNodes.Statements.Expressions.Expressions.Expression;
+import compiler.SemanticAnalysis.Visitor;
 
 public class ParenthesesTerm extends Term {
     private final Expression expression;
@@ -21,5 +22,10 @@ public class ParenthesesTerm extends Term {
     @Override
     public String prettyPrint(int indent) {
         return "  ".repeat(indent) + "ParenthesesTerm \n" + expression.prettyPrint(indent+1);
+    }
+
+    @Override
+    public void accept(Visitor v) {
+        v.visitParenthesesTerm(this);
     }
 }

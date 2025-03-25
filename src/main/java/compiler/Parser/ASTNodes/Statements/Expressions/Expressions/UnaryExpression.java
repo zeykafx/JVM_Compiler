@@ -2,6 +2,7 @@ package compiler.Parser.ASTNodes.Statements.Expressions.Expressions;
 
 import compiler.Parser.ASTNodes.Statements.Expressions.Operators.Operator;
 import compiler.Parser.ASTNodes.Statements.Expressions.Terms.Term;
+import compiler.SemanticAnalysis.Visitor;
 
 public class UnaryExpression extends Expression {
 
@@ -29,5 +30,10 @@ public class UnaryExpression extends Expression {
     @Override
     public String prettyPrint(int indent) {
         return "  ".repeat(indent) + "UnaryExpression: " + operator + "\n" + term.prettyPrint(indent+1);
+    }
+
+    @Override
+    public void accept(Visitor v) {
+        v.visitUnaryExpression(this);
     }
 }

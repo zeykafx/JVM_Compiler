@@ -1,6 +1,8 @@
 package compiler.Parser.ASTNodes.Statements.Expressions.Terms;
 
 import compiler.Lexer.Symbol;
+import compiler.SemanticAnalysis.Visitor;
+
 import java.util.ArrayList;
 
 public class NewRecord extends Term {
@@ -34,5 +36,10 @@ public class NewRecord extends Term {
         }
 
         return str.toString();
+    }
+
+    @Override
+    public void accept(Visitor v) {
+        v.visitNewRecord(this);
     }
 }

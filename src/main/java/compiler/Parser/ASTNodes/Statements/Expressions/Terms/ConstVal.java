@@ -1,6 +1,7 @@
 package compiler.Parser.ASTNodes.Statements.Expressions.Terms;
 
 import compiler.Lexer.Symbol;
+import compiler.SemanticAnalysis.Visitor;
 
 public class ConstVal extends Term {
 
@@ -47,5 +48,10 @@ public class ConstVal extends Term {
         }
 
         return "  ".repeat(indent) + typeStr + ", " + value;
+    }
+
+    @Override
+    public void accept(Visitor v) {
+        v.visitConstValue(this);
     }
 }

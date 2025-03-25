@@ -1,6 +1,7 @@
 package compiler.Parser.ASTNodes.Statements.Statements;
 
 import compiler.Parser.ASTNodes.Statements.Expressions.Access.IdentifierAccess;
+import compiler.SemanticAnalysis.Visitor;
 
 public class FreeStatement extends Statement {
 	private final IdentifierAccess identifierAccess;
@@ -21,5 +22,10 @@ public class FreeStatement extends Statement {
 	@Override
 	public String prettyPrint(int indent) {
 		return "  ".repeat(indent) + "Free: \n" + identifierAccess.prettyPrint(indent + 1);
+	}
+
+	@Override
+	public void accept(Visitor v) {
+		v.visitFreeStatement(this);
 	}
 }

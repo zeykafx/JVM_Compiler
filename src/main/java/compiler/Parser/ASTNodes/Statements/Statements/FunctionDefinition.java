@@ -4,6 +4,7 @@ import compiler.Lexer.Symbol;
 import compiler.Lexer.TokenTypes;
 import compiler.Parser.ASTNodes.Block;
 import compiler.Parser.ASTNodes.Types.Type;
+import compiler.SemanticAnalysis.Visitor;
 
 import java.util.ArrayList;
 
@@ -82,5 +83,10 @@ public class FunctionDefinition extends Statement {
 		sb.append(block.prettyPrint(indent + 2));
 
 		return sb.toString();
+	}
+
+	@Override
+	public void accept(Visitor v) {
+		v.visitFunctionDefinition(this);
 	}
 }

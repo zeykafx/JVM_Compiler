@@ -1,6 +1,7 @@
 package compiler.Parser.ASTNodes.Statements.Expressions.Operators;
 
 import compiler.Lexer.Symbol;
+import compiler.SemanticAnalysis.Visitor;
 
 /*
  * ! -
@@ -24,5 +25,10 @@ public class UnaryOperator extends Operator {
     @Override
     public String prettyPrint(int indent) {
         return "  ".repeat(indent) + "UnaryOperator, " + operator.lexeme;
+    }
+
+    @Override
+    public void accept(Visitor v) {
+        v.visitUnaryOperator(this);
     }
 }

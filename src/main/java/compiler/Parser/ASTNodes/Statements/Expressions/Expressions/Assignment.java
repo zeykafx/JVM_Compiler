@@ -1,6 +1,7 @@
 package compiler.Parser.ASTNodes.Statements.Expressions.Expressions;
 
 import compiler.Lexer.Symbol;
+import compiler.SemanticAnalysis.Visitor;
 
 public class Assignment extends Expression {
 	private final Symbol symbol;
@@ -28,4 +29,9 @@ public class Assignment extends Expression {
 	public String prettyPrint(int indent) {
         return "  ".repeat(indent) + "Assignment: \n" + symbol.lexeme + "\n" + rightExpression.prettyPrint(indent+1);
     }
+
+	@Override
+	public void accept(Visitor v) {
+		v.visitAssignment(this);
+	}
 }

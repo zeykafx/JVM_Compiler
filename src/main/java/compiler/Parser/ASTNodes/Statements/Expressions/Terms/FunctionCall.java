@@ -1,6 +1,7 @@
 package compiler.Parser.ASTNodes.Statements.Expressions.Terms;
 
 import compiler.Lexer.Symbol;
+import compiler.SemanticAnalysis.Visitor;
 
 import java.util.ArrayList;
 
@@ -36,4 +37,9 @@ public class FunctionCall extends Term {
 
         return str.toString();
     }
+
+	@Override
+	public void accept(Visitor v) {
+		v.visitFunctionCall(this);
+	}
 }

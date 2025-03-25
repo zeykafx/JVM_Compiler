@@ -2,6 +2,7 @@ package compiler.Parser.ASTNodes.Statements.Statements;
 
 import compiler.Parser.ASTNodes.Block;
 import compiler.Parser.ASTNodes.Statements.Expressions.Expressions.Expression;
+import compiler.SemanticAnalysis.Visitor;
 
 public class IfStatement extends Statement {
 
@@ -70,5 +71,10 @@ public class IfStatement extends Statement {
         }
 
         return sb.toString();
+    }
+
+    @Override
+    public void accept(Visitor v) {
+        v.visitIfStatement(this);
     }
 }

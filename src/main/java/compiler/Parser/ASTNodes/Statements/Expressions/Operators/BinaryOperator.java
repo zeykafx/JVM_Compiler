@@ -1,6 +1,7 @@
 package compiler.Parser.ASTNodes.Statements.Expressions.Operators;
 
 import compiler.Lexer.Symbol;
+import compiler.SemanticAnalysis.Visitor;
 
 
 /**
@@ -26,5 +27,10 @@ public class BinaryOperator extends Operator {
     @Override
     public String prettyPrint(int indent) {
         return "  ".repeat(indent) + operator.lexeme;
+    }
+
+    @Override
+    public void accept(Visitor v) {
+        v.visitBinaryOperator(this);
     }
 }

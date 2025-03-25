@@ -1,6 +1,8 @@
 package compiler.Parser.ASTNodes;
 
 import compiler.Parser.ASTNodes.Statements.Statements.Statement;
+import compiler.SemanticAnalysis.Visitor;
+
 import java.util.ArrayList;
 
 public class Block extends ASTNode {
@@ -30,6 +32,11 @@ public class Block extends ASTNode {
             returnStatement +
             "]"
         );
+    }
+
+    @Override
+    public void accept(Visitor v) {
+        v.visitBlock(this);
     }
 
     @Override

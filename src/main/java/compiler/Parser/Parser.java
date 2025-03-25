@@ -429,8 +429,8 @@ public class Parser {
 
     public ParamDefinition parseParamDefinition() throws Exception {
         // Param -> "identifier" Type
-        Type type = parseType(); // TODO: change back to post typing
         Symbol identifier = match(TokenTypes.IDENTIFIER);
+        Type type = parseType(); // Post typing
         return new ParamDefinition(identifier, type);
     }
 

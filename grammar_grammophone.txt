@@ -40,7 +40,7 @@ ElseStmt -> "else" Block | .
 
 WhileLoop -> "while" "(" Expression ")" Block .
 ForLoop -> "for" "(" ForCondition ")" Block .
-ForCondition -> "identifier" "," NumType "," NumType "," NumType .
+ForCondition -> "identifier" "," Term "," Term "," Term .
 
 
 IdentifierAccess -> "identifier" AccessChain .

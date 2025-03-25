@@ -10,7 +10,7 @@ Point rec {
 
 a int = 3;
 
-fun square(int v) int {
+fun square(v int) int {
     return v*v;
 }
 

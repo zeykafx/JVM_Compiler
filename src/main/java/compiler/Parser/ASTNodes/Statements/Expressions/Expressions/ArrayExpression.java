@@ -4,6 +4,10 @@ import compiler.Parser.ASTNodes.Types.Type;
 import compiler.SemanticAnalysis.Visitor;
 
 public class ArrayExpression extends Expression {
+    // a int[] = array[10] of int;
+
+    // a[11]
+
     // ArrayExpression -> "array" "[" "intval" "]" "of" Type ";" .
     private final Expression sizeExpression;
     private final Type type;

@@ -28,7 +28,7 @@ public class ParamDefinition extends Statement {
 
 	@Override
 	public String toString() {
-		return "ParamDefinition [identifier=" + identifier.type + ", type=" + type + "]";
+		return "ParamDefinition [identifier=" + identifier.lexeme + ", type=" + type + "]";
 	}
 	
 	@Override

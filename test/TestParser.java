@@ -54,14 +54,8 @@ public class TestParser {
 
     @Test
     public void testFunctionDefinition() throws Exception {
-//        String input = """
-//        fun add(a int, b int) int {
-//            return a + b;
-//        }
-//        """;
-        // TODO: change back to post typing
         String input = """
-        fun add(int a, int b) int {
+        fun add(a int, b int) int {
             return a + b;
         }
         """;
@@ -325,22 +319,12 @@ public class TestParser {
 
     @Test
     public void testMultipleFunctions() throws Exception {
-//        String input = """
-//        fun add(a int, b int) int {
-//            return a + b;
-//        }
-//
-//        fun subtract(a int, b int) int {
-//            return a - b;
-//        }
-//        """;
-        // TODO: change back to post typing
         String input = """
-        fun add(int a, int b) int {
+        fun add(a int, b int) int {
             return a + b;
         }
-        
-        fun subtract(int a, int b) int {
+
+        fun subtract(a int, b int) int {
             return a - b;
         }
         """;
@@ -358,6 +342,7 @@ public class TestParser {
         assertEquals(0, program.getConstants().size());
         assertEquals(0, program.getRecords().size());
         assertEquals(2, program.getFunctions().size());
+
         assertEquals(0, program.getGlobals().size());
 
         FunctionDefinition function1 = program.getFunctions().getFirst();

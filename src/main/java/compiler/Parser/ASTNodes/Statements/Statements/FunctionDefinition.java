@@ -61,7 +61,7 @@ public class FunctionDefinition extends Statement {
 			paramStr.setLength(paramStr.length() - 2); // Remove the last comma and space
 		}
 		String returnTypeStr = voidReturnType ? "void" : returnType.toString();
-		return "Function, " + name.type + ", " + returnTypeStr + ", [" + paramStr + "], " + block.toString();
+		return "Function, " + name.lexeme + ", " + name.type + ", " + returnTypeStr + ", [" + paramStr + "], " + block.toString();
 	}
 
 	@Override

@@ -2,7 +2,7 @@
 Program -> Declarations RecordDefinitions FunctionDefinitions .
 
 Type -> BaseType IsList .
-BaseType -> "record" | NumType | "bool" | "string" .
+BaseType -> "recordNameIdentifier" | NumType | "bool" | "string" .
 NumType -> "int" | "float" .
 IsList -> "[]" | .
 

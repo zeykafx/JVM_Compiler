@@ -1,15 +1,17 @@
 package compiler.SemanticAnalysis;
-import compiler.SemanticAnalysis.Types.Type;
+import compiler.SemanticAnalysis.Types.SemType;
 
 import java.util.HashMap;
 
 public class SymbolTable {
     private final SymbolTable parent;
-    private final HashMap<String, Type> symbols;
+    private final Integer scope;
+    private final HashMap<String, SemType> symbols;
 
 
     public SymbolTable(SymbolTable parent) {
         this.parent = parent;
+        this.scope = parent == null ? 0 : parent.scope + 1;
         this.symbols = new HashMap<>();
     }
 
@@ -17,17 +19,23 @@ public class SymbolTable {
         return parent;
     }
 
-    public void addSymbol(String name, Type node) {
+    public void addSymbol(String name, SemType node) {
         symbols.put(name, node);
     }
 
-    public Type getSymbol(String name) {
-        Type node = symbols.get(name);
+    public SemType getSymbol(String name) {
+        SemType node = symbols.get(name);
         if (node == null && parent != null) {
             return parent.getSymbol(name);
         }
         return node;
     }
+
+    public Integer getScope() {
+        return scope;
+    }
+
+
 
     // root new SymbolTable(null);
     // for elem in root :

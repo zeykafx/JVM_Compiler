@@ -1,6 +1,8 @@
 package compiler.Parser.ASTNodes.Statements.Expressions.Terms;
 
 import compiler.Parser.ASTNodes.Statements.Expressions.Expressions.Expression;
+import compiler.SemanticAnalysis.SymbolTable;
+import compiler.SemanticAnalysis.Types.SemType;
 import compiler.SemanticAnalysis.Visitor;
 
 public class ParenthesesTerm extends Term {
@@ -25,7 +27,7 @@ public class ParenthesesTerm extends Term {
     }
 
     @Override
-    public void accept(Visitor v) {
-        v.visitParenthesesTerm(this);
+    public SemType accept(Visitor<SemType> v, SymbolTable table) {
+        return v.visitParenthesesTerm(this, table);
     }
 }

@@ -1,6 +1,8 @@
 package compiler.Parser.ASTNodes;
 
 import compiler.Parser.ASTNodes.Statements.Statements.Statement;
+import compiler.SemanticAnalysis.SymbolTable;
+import compiler.SemanticAnalysis.Types.SemType;
 import compiler.SemanticAnalysis.Visitor;
 
 import java.util.ArrayList;
@@ -35,8 +37,8 @@ public class Block extends ASTNode {
     }
 
     @Override
-    public void accept(Visitor v) {
-        v.visitBlock(this);
+    public SemType accept(Visitor<SemType> v, SymbolTable table) {
+        return v.visitBlock(this, table);
     }
 
     @Override

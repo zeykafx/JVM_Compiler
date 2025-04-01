@@ -1,6 +1,8 @@
 package compiler.Parser.ASTNodes.Statements.Statements;
 
 import compiler.Lexer.Symbol;
+import compiler.SemanticAnalysis.SymbolTable;
+import compiler.SemanticAnalysis.Types.SemType;
 import compiler.SemanticAnalysis.Visitor;
 
 import java.util.ArrayList;
@@ -51,7 +53,7 @@ public class RecordDefinition extends Statement {
     }
 
     @Override
-    public void accept(Visitor v) {
-        v.visitRecordDefinition(this);
+    public SemType accept(Visitor<SemType> v, SymbolTable table) {
+        return v.visitRecordDefinition(this, table);
     }
 }

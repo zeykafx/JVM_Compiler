@@ -1,6 +1,8 @@
 package compiler.Parser.ASTNodes.Statements.Expressions.Access;
 
 import compiler.Lexer.Symbol;
+import compiler.SemanticAnalysis.SymbolTable;
+import compiler.SemanticAnalysis.Types.SemType;
 import compiler.SemanticAnalysis.Visitor;
 
 public class IdentifierAccess extends Access {
@@ -25,7 +27,7 @@ public class IdentifierAccess extends Access {
     }
 
 	@Override
-	public void accept(Visitor v) {
-		v.visitIdentifierAccess(this);
+	public SemType accept(Visitor<SemType> v, SymbolTable table) {
+		return v.visitIdentifierAccess(this, table);
 	}
 }

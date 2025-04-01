@@ -1,6 +1,8 @@
 package compiler.Parser.ASTNodes.Statements.Statements;
 import compiler.Parser.ASTNodes.Statements.Expressions.Access.Access;
 import compiler.Parser.ASTNodes.Statements.Expressions.Expressions.Expression;
+import compiler.SemanticAnalysis.SymbolTable;
+import compiler.SemanticAnalysis.Types.SemType;
 import compiler.SemanticAnalysis.Visitor;
 
 public class VariableAssignment extends Statement {
@@ -32,8 +34,8 @@ public class VariableAssignment extends Statement {
     }
 
 	@Override
-	public void accept(Visitor v) {
-		v.visitVariableAssignment(this);
+	public SemType accept(Visitor<SemType> v, SymbolTable table) {
+		return v.visitVariableAssignment(this, table);
 	}
 }
 

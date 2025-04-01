@@ -7,6 +7,8 @@ package compiler.Parser.ASTNodes.Statements.Statements;
 
 import compiler.Lexer.Symbol;
 import compiler.Parser.ASTNodes.Types.Type;
+import compiler.SemanticAnalysis.SymbolTable;
+import compiler.SemanticAnalysis.Types.SemType;
 import compiler.SemanticAnalysis.Visitor;
 
 public class ParamDefinition extends Statement {
@@ -37,7 +39,7 @@ public class ParamDefinition extends Statement {
     }
 
 	@Override
-	public void accept(Visitor v) {
-		v.visitParamDefinition(this);
+	public SemType accept(Visitor<SemType> v, SymbolTable table) {
+		return v.visitParamDefinition(this, table);
 	}
 }

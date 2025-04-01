@@ -1,6 +1,8 @@
 package compiler.Parser.ASTNodes.Statements.Statements;
 
 import compiler.Parser.ASTNodes.Statements.Expressions.Expressions.Expression;
+import compiler.SemanticAnalysis.SymbolTable;
+import compiler.SemanticAnalysis.Types.SemType;
 import compiler.SemanticAnalysis.Visitor;
 
 public class ReturnStatement extends Statement {
@@ -30,7 +32,7 @@ public class ReturnStatement extends Statement {
     }
 
     @Override
-    public void accept(Visitor v) {
-        v.visitReturnStatement(this);
+    public SemType accept(Visitor<SemType> v, SymbolTable table) {
+        return v.visitReturnStatement(this, table);
     }
 }

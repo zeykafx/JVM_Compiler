@@ -1,6 +1,8 @@
 package compiler.Parser.ASTNodes.Statements.Expressions.Access;
 
 import compiler.Parser.ASTNodes.Statements.Expressions.Expressions.Expression;
+import compiler.SemanticAnalysis.SymbolTable;
+import compiler.SemanticAnalysis.Types.SemType;
 import compiler.SemanticAnalysis.Visitor;
 
 public class ArrayAccess extends Access {
@@ -45,8 +47,8 @@ public class ArrayAccess extends Access {
     }
 
     @Override
-    public void accept(Visitor v) {
-        v.visitArrayAccess(this);
+    public SemType accept(Visitor<SemType> v, SymbolTable table) {
+        return v.visitArrayAccess(this, table);
     }
 }
 // a.x[myId]

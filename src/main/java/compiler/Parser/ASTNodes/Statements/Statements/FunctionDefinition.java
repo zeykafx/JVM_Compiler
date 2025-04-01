@@ -4,6 +4,8 @@ import compiler.Lexer.Symbol;
 import compiler.Lexer.TokenTypes;
 import compiler.Parser.ASTNodes.Block;
 import compiler.Parser.ASTNodes.Types.Type;
+import compiler.SemanticAnalysis.SymbolTable;
+import compiler.SemanticAnalysis.Types.SemType;
 import compiler.SemanticAnalysis.Visitor;
 
 import java.util.ArrayList;
@@ -86,7 +88,7 @@ public class FunctionDefinition extends Statement {
 	}
 
 	@Override
-	public void accept(Visitor v) {
-		v.visitFunctionDefinition(this);
+	public SemType accept(Visitor<SemType> v, SymbolTable table) {
+		return v.visitFunctionDefinition(this, table);
 	}
 }

@@ -1,6 +1,8 @@
 package compiler.Parser.ASTNodes.Statements.Expressions.Operators;
 
 import compiler.Lexer.Symbol;
+import compiler.SemanticAnalysis.SymbolTable;
+import compiler.SemanticAnalysis.Types.SemType;
 import compiler.SemanticAnalysis.Visitor;
 
 /*
@@ -28,7 +30,7 @@ public class UnaryOperator extends Operator {
     }
 
     @Override
-    public void accept(Visitor v) {
-        v.visitUnaryOperator(this);
+    public SemType accept(Visitor<SemType> v, SymbolTable table) {
+        return v.visitUnaryOperator(this, table);
     }
 }

@@ -4,6 +4,8 @@ package compiler.Parser.ASTNodes.Statements.Statements;
 import compiler.Lexer.Symbol;
 import compiler.Parser.ASTNodes.Statements.Expressions.Expressions.Expression;
 import compiler.Parser.ASTNodes.Types.Type;
+import compiler.SemanticAnalysis.SymbolTable;
+import compiler.SemanticAnalysis.Types.SemType;
 import compiler.SemanticAnalysis.Visitor;
 
 public class VariableDeclaration extends Statement {
@@ -79,8 +81,8 @@ public class VariableDeclaration extends Statement {
     }
 
 	@Override
-	public void accept(Visitor v) {
-		v.visitVariableDeclaration(this);
+	public SemType accept(Visitor<SemType> v, SymbolTable table) {
+		return v.visitVariableDeclaration(this, table);
 	}
 }
 

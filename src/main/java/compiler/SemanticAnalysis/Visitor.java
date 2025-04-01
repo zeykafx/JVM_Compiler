@@ -12,45 +12,46 @@ import compiler.Parser.ASTNodes.Statements.Expressions.Operators.*;
 
 public interface Visitor<T> {
 
-    T visitArrayAccess(ArrayAccess arrayAccess);
-    T visitIdentifierAccess(IdentifierAccess identifierAccess);
-    T visitRecordAccess(RecordAccess recordAccess);
+    T visitArrayAccess(ArrayAccess arrayAccess, SymbolTable localTable);
+    T visitIdentifierAccess(IdentifierAccess identifierAccess, SymbolTable localTable);
+    T visitRecordAccess(RecordAccess recordAccess, SymbolTable localTable);
 
-    T visitAloneExpression(AloneExpression aloneExpression);
-    T visitArrayExpression(ArrayExpression arrayExpression);
-    T visitAssignment(Assignment assignment);
-    T visitBinaryExpression(BinaryExpression binaryExpression);
-    T visitIdentifier(Identifier identifier);
-    T visitUnaryExpression(UnaryExpression unaryExpression);
+    T visitAloneExpression(AloneExpression aloneExpression, SymbolTable localTable);
+    T visitArrayExpression(ArrayExpression arrayExpression, SymbolTable localTable);
+    T visitAssignment(Assignment assignment, SymbolTable localTable);
+    T visitBinaryExpression(BinaryExpression binaryExpression, SymbolTable localTable);
+    T visitIdentifier(Identifier identifier, SymbolTable localTable);
+    T visitUnaryExpression(UnaryExpression unaryExpression, SymbolTable localTable);
 
 
-//    T visitOperator(Operator operator);
-    T visitBinaryOperator(BinaryOperator binaryOperator);
-    T visitUnaryOperator(UnaryOperator unaryOperator);
+//    T visitOperator(Operator operator, SymbolTable localTable);
+    T visitBinaryOperator(BinaryOperator binaryOperator, SymbolTable localTable);
+    T visitUnaryOperator(UnaryOperator unaryOperator, SymbolTable localTable);
 
-//    T visitTerm(Term term);
-    T visitConstValue(ConstVal constVal);
-    T visitFunctionCall(FunctionCall functionCall);
-    T visitNewRecord(NewRecord newRecord);
-    T visitParamCall(ParamCall paramCall);
-    T visitParenthesesTerm(ParenthesesTerm parenthesesTerm);
+//    T visitTerm(Term term, SymbolTable localTable);
+    T visitConstValue(ConstVal constVal, SymbolTable localTable);
+    T visitFunctionCall(FunctionCall functionCall, SymbolTable localTable);
+    T visitNewRecord(NewRecord newRecord, SymbolTable localTable);
+    T visitParamCall(ParamCall paramCall, SymbolTable localTable);
+    T visitParenthesesTerm(ParenthesesTerm parenthesesTerm, SymbolTable localTable);
 
-    T visitProgram(Program program);
-    T visitBlock(Block block);
+    T visitProgram(Program program, SymbolTable localTable);
+    T visitBlock(Block block, SymbolTable localTable);
 
-    T visitType(Type type);
-    T visitNumType(NumType numType);
+    T visitType(Type type, SymbolTable localTable);
+    T visitNumType(NumType numType, SymbolTable localTable);
 
-    T visitStatement(Statement statement);
-    T visitForLoop(ForLoop forLoop);
-    T visitFreeStatement(FreeStatement freeStatement);
-    T visitFunctionDefinition(FunctionDefinition functionDefinition);
-    T visitIfStatement(IfStatement  ifStatement);
-    T visitParamDefinition(ParamDefinition paramDefinition);
-    T visitRecordDefinition(RecordDefinition recordDefinition);
-    T visitRecordFieldDefinition(RecordFieldDefinition recordFieldDefinition);
-    T visitReturnStatement(ReturnStatement returnStatement);
-    T visitVariableAssignment(VariableAssignment variableAssignment);
-    T visitVariableDeclaration(VariableDeclaration variableDeclaration);
-    T visitWhileLoop(WhileLoop whileLoop);
+    T visitStatement(Statement statement, SymbolTable localTable);
+    T visitForLoop(ForLoop forLoop, SymbolTable localTable);
+    T visitFreeStatement(FreeStatement freeStatement, SymbolTable localTable);
+    T visitFunctionDefinition(FunctionDefinition functionDefinition, SymbolTable localTable);
+    T visitIfStatement(IfStatement  ifStatement, SymbolTable localTable);
+    T visitParamDefinition(ParamDefinition paramDefinition, SymbolTable localTable);
+    T visitRecordDefinition(RecordDefinition recordDefinition, SymbolTable localTable);
+    T visitRecordFieldDefinition(RecordFieldDefinition recordFieldDefinition, SymbolTable localTable);
+    T visitReturnStatement(ReturnStatement returnStatement, SymbolTable localTable);
+    T visitVariableAssignment(VariableAssignment variableAssignment, SymbolTable localTable);
+    T visitVariableDeclaration(VariableDeclaration variableDeclaration, SymbolTable localTable);
+
+    T visitWhileLoop(WhileLoop whileLoop, SymbolTable localTable);
 }

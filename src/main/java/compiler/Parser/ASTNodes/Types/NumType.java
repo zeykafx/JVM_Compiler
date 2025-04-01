@@ -1,6 +1,8 @@
 package compiler.Parser.ASTNodes.Types;
 
 import compiler.Lexer.Symbol;
+import compiler.SemanticAnalysis.SymbolTable;
+import compiler.SemanticAnalysis.Types.SemType;
 import compiler.SemanticAnalysis.Visitor;
 
 public class NumType extends Type {
@@ -35,7 +37,7 @@ public class NumType extends Type {
     }
 
 	@Override
-	public void accept(Visitor v) {
-		v.visitNumType(this);
+	public SemType accept(Visitor<SemType> v, SymbolTable table) {
+		return v.visitNumType(this, table);
 	}
 }

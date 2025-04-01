@@ -1,10 +1,12 @@
 package compiler.Parser.ASTNodes;
 
+import compiler.SemanticAnalysis.SymbolTable;
+import compiler.SemanticAnalysis.Types.SemType;
 import compiler.SemanticAnalysis.Visitor;
 
 public abstract class ASTNode {
 
-    public abstract void accept(Visitor v);
+    public abstract SemType accept(Visitor<SemType> v, SymbolTable table);
 
     public abstract String toString();
 

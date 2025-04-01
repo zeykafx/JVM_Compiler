@@ -2,6 +2,8 @@ package compiler.Parser.ASTNodes.Statements.Expressions.Expressions;
 
 import compiler.Lexer.Symbol;
 import compiler.Parser.ASTNodes.Statements.Expressions.Terms.Term;
+import compiler.SemanticAnalysis.SymbolTable;
+import compiler.SemanticAnalysis.Types.SemType;
 import compiler.SemanticAnalysis.Visitor;
 
 public class Identifier extends Term {
@@ -26,7 +28,7 @@ public class Identifier extends Term {
     }
 
     @Override
-    public void accept(Visitor v) {
-        v.visitIdentifier(this);
+    public SemType accept(Visitor<SemType> v, SymbolTable table) {
+        return v.visitIdentifier(this, table);
     }
 }

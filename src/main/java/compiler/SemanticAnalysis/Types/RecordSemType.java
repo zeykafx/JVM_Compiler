@@ -2,11 +2,11 @@ package compiler.SemanticAnalysis.Types;
 
 import java.util.HashMap;
 
-public class RecordType extends Type {
-	HashMap<String,Type> fields;
+public class RecordSemType extends SemType {
+	HashMap<String, SemType> fields;
 
-	public RecordType(String type, HashMap<String,Type> fields) {
-		super(type);
+	public RecordSemType(HashMap<String, SemType> fields) {
+		super("rec");
 		this.fields = fields;
 	}
 

@@ -1,6 +1,8 @@
 package compiler.Parser.ASTNodes.Statements.Expressions.Expressions;
 
 import compiler.Parser.ASTNodes.Types.Type;
+import compiler.SemanticAnalysis.SymbolTable;
+import compiler.SemanticAnalysis.Types.SemType;
 import compiler.SemanticAnalysis.Visitor;
 
 public class ArrayExpression extends Expression {
@@ -40,7 +42,7 @@ public class ArrayExpression extends Expression {
     }
 
     @Override
-    public void accept(Visitor v) {
-        v.visitArrayExpression(this);
+    public SemType accept(Visitor<SemType> v, SymbolTable table) {
+        return v.visitArrayExpression(this, table);
     }
 }

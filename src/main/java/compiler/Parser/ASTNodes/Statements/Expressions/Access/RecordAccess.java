@@ -1,6 +1,8 @@
 package compiler.Parser.ASTNodes.Statements.Expressions.Access;
 
 import compiler.Lexer.Symbol;
+import compiler.SemanticAnalysis.SymbolTable;
+import compiler.SemanticAnalysis.Types.SemType;
 import compiler.SemanticAnalysis.Visitor;
 
 public class RecordAccess extends Access {
@@ -46,7 +48,7 @@ public class RecordAccess extends Access {
     }
 
     @Override
-    public void accept(Visitor v) {
-        v.visitRecordAccess(this);
+    public SemType accept(Visitor<SemType> v, SymbolTable table) {
+        return v.visitRecordAccess(this, table);
     }
 }

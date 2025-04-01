@@ -1,6 +1,8 @@
 package compiler.Parser.ASTNodes.Statements.Expressions.Terms;
 
 import compiler.Lexer.Symbol;
+import compiler.SemanticAnalysis.SymbolTable;
+import compiler.SemanticAnalysis.Types.SemType;
 import compiler.SemanticAnalysis.Visitor;
 
 import java.util.ArrayList;
@@ -39,7 +41,7 @@ public class FunctionCall extends Term {
     }
 
 	@Override
-	public void accept(Visitor v) {
-		v.visitFunctionCall(this);
+	public SemType accept(Visitor<SemType> v, SymbolTable table) {
+		return v.visitFunctionCall(this, table);
 	}
 }

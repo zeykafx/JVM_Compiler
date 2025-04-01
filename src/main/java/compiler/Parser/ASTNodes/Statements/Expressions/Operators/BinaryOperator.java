@@ -1,6 +1,8 @@
 package compiler.Parser.ASTNodes.Statements.Expressions.Operators;
 
 import compiler.Lexer.Symbol;
+import compiler.SemanticAnalysis.SymbolTable;
+import compiler.SemanticAnalysis.Types.SemType;
 import compiler.SemanticAnalysis.Visitor;
 
 
@@ -30,7 +32,7 @@ public class BinaryOperator extends Operator {
     }
 
     @Override
-    public void accept(Visitor v) {
-        v.visitBinaryOperator(this);
+    public SemType accept(Visitor<SemType> v, SymbolTable table) {
+        return v.visitBinaryOperator(this, table);
     }
 }

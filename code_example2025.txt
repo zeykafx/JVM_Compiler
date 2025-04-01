@@ -174,7 +174,16 @@ $ "writeInt" and "writeFloat" take an "int" and "float" as argument respectively
 
 $ "write" and "writeln" can take anything as argument (including any primitive type). "writeln" will add an end-of-line at the end of what is written. The output is the same as the other "write" functions 
 
-$ Hint: writeFloat should accept “-a” as an argument, where “a” is a float variable.  
+$ Hint: writeFloat should accept “-a” as an argument, where “a” is a float variable.
+
+$ Function
+$    Parameters :
+$         UnaryExpression
+$             UnaryOperator:
+$                 Operator
+$                     Symbol (Minus)
+$             Identifier
+$                 "a"
 
 $ Function calls can forward-reference functions, even in initialisers of global 
 

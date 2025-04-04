@@ -1,6 +1,7 @@
 package compiler.Parser.ASTNodes.Statements.Expressions.Expressions;
 
 import compiler.Parser.ASTNodes.Statements.Expressions.Terms.Term;
+import compiler.SemanticAnalysis.Errors.SemanticException;
 import compiler.SemanticAnalysis.SymbolTable;
 import compiler.SemanticAnalysis.Types.SemType;
 import compiler.SemanticAnalysis.Visitor;
@@ -24,7 +25,7 @@ public class AloneExpression extends Expression {
     }
 
     @Override
-    public SemType accept(Visitor<SemType> v, SymbolTable table) {
+    public SemType accept(Visitor<SemType> v, SymbolTable table) throws SemanticException {
         return v.visitAloneExpression(this, table);
     }
 }

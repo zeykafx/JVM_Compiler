@@ -438,7 +438,8 @@ public class Parser {
         //Block -> "{" Stmts ReturnStmt "}" .
         //Stmts -> Stmt Stmts | .
         //Stmt -> IfStmt | ForLoop | WhileLoop | FunctionDefinition | BaseStatement ";" .
-        //ReturnStmt -> "return" Expression ";" | .
+        //ReturnStmt -> "return" ReturnTail .
+        //ReturnTail -> ";" | Expression ";" .
 
         match(TokenTypes.LEFT_BRACKET);
         ArrayList<Statement> statements = new ArrayList<>();
@@ -447,6 +448,11 @@ public class Parser {
         while (lookAheadSymbol.type != TokenTypes.RIGHT_BRACKET) {
             if (lookAheadSymbol.type == TokenTypes.RETURN) {
                 match(TokenTypes.RETURN);
+                if (lookAheadSymbol.type == TokenTypes.SEMICOLON) {
+                    match(TokenTypes.SEMICOLON);
+                    returnStatement = new ReturnStatement(null);
+                    break;
+                }
                 Expression returnExpression = parseExpression();
                 match(TokenTypes.SEMICOLON);
                 returnStatement = new ReturnStatement(returnExpression);

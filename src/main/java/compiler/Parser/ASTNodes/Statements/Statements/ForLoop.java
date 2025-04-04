@@ -2,6 +2,7 @@ package compiler.Parser.ASTNodes.Statements.Statements;
 
 import compiler.Lexer.Symbol;
 import compiler.Parser.ASTNodes.Block;
+import compiler.SemanticAnalysis.Errors.SemanticException;
 import compiler.SemanticAnalysis.SymbolTable;
 import compiler.SemanticAnalysis.Types.SemType;
 import compiler.SemanticAnalysis.Visitor;
@@ -54,7 +55,7 @@ public class ForLoop extends Statement {
     }
 
 	@Override
-	public SemType accept(Visitor<SemType> v, SymbolTable table) {
+	public SemType accept(Visitor<SemType> v, SymbolTable table) throws SemanticException {
 		return v.visitForLoop(this, table);
 	}
 }

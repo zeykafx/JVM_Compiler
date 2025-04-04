@@ -14,6 +14,8 @@ import compiler.Parser.ASTNodes.Statements.Expressions.Terms.*;
 import compiler.Parser.ASTNodes.Statements.Statements.*;
 import compiler.Parser.ASTNodes.Types.NumType;
 import compiler.Parser.ASTNodes.Types.Type;
+import compiler.SemanticAnalysis.Errors.ReturnError;
+import compiler.SemanticAnalysis.Errors.SemanticException;
 import compiler.SemanticAnalysis.Types.ArraySemType;
 import compiler.SemanticAnalysis.Types.FunctionSemType;
 import compiler.SemanticAnalysis.Types.RecordSemType;
@@ -21,6 +23,7 @@ import compiler.SemanticAnalysis.Types.SemType;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.Objects;
 
 public class SemanticAnalysis implements Visitor<SemType> {
 
@@ -108,7 +111,7 @@ public class SemanticAnalysis implements Visitor<SemType> {
 	}
 
 	@Override
-	public SemType visitProgram(Program program, SymbolTable table) {
+	public SemType visitProgram(Program program, SymbolTable table) throws SemanticException {
 		// add constants to the symbol table
 		ArrayList<VariableDeclaration> constants = program.getConstants();
 		for (VariableDeclaration constant : constants) {
@@ -132,7 +135,7 @@ public class SemanticAnalysis implements Visitor<SemType> {
 			FunctionSemType functionSemType = (FunctionSemType) function.accept(this, table);
 
 
-			// ! maybe we should deallocate functiontable at the end
+			// ! maybe we should deallocate function table at the end
 		}
 
 
@@ -140,140 +143,180 @@ public class SemanticAnalysis implements Visitor<SemType> {
 	}
 
 	@Override
-	public SemType visitArrayAccess(ArrayAccess arrayAccess, SymbolTable table) {
+	public SemType visitArrayAccess(ArrayAccess arrayAccess, SymbolTable table) throws SemanticException {
 
 	}
 
 	@Override
-	public SemType visitIdentifierAccess(IdentifierAccess identifierAccess, SymbolTable table) {
+	public SemType visitIdentifierAccess(IdentifierAccess identifierAccess, SymbolTable table) throws SemanticException {
 
 	}
 
 	@Override
-	public SemType visitRecordAccess(RecordAccess recordAccess, SymbolTable table) {
+	public SemType visitRecordAccess(RecordAccess recordAccess, SymbolTable table) throws SemanticException {
 
 	}
 
 	@Override
-	public SemType visitAloneExpression(AloneExpression aloneExpression, SymbolTable table) {
+	public SemType visitAloneExpression(AloneExpression aloneExpression, SymbolTable table) throws SemanticException {
 
 	}
 
 	@Override
-	public SemType visitArrayExpression(ArrayExpression arrayExpression, SymbolTable table) {
+	public SemType visitArrayExpression(ArrayExpression arrayExpression, SymbolTable table) throws SemanticException {
 
 	}
 
 	@Override
-	public SemType visitAssignment(Assignment assignment, SymbolTable table) {
+	public SemType visitAssignment(Assignment assignment, SymbolTable table) throws SemanticException {
 
 	}
 
 	@Override
-	public SemType visitBinaryExpression(BinaryExpression binaryExpression, SymbolTable table) {
+	public SemType visitBinaryExpression(BinaryExpression binaryExpression, SymbolTable table) throws SemanticException {
 		// check if the left and right expressions are of the same SemType
 	}
 
 	@Override
-	public SemType visitIdentifier(Identifier identifier, SymbolTable table) {
+	public SemType visitIdentifier(Identifier identifier, SymbolTable table) throws SemanticException {
 
 	}
 
 	@Override
-	public SemType visitUnaryExpression(UnaryExpression unaryExpression, SymbolTable table) {
+	public SemType visitUnaryExpression(UnaryExpression unaryExpression, SymbolTable table) throws SemanticException {
 
 	}
 
 	@Override
-	public SemType visitBinaryOperator(BinaryOperator binaryOperator, SymbolTable table) {
+	public SemType visitBinaryOperator(BinaryOperator binaryOperator, SymbolTable table) throws SemanticException {
 
 	}
 
 	@Override
-	public SemType visitUnaryOperator(UnaryOperator unaryOperator, SymbolTable table) {
+	public SemType visitUnaryOperator(UnaryOperator unaryOperator, SymbolTable table) throws SemanticException {
 
 	}
 
 	@Override
-	public SemType visitConstValue(ConstVal constVal, SymbolTable table) {
+	public SemType visitConstValue(ConstVal constVal, SymbolTable table) throws SemanticException {
 
 	}
 
 	@Override
-	public SemType visitFunctionCall(FunctionCall functionCall, SymbolTable table) {
+	public SemType visitFunctionCall(FunctionCall functionCall, SymbolTable table) throws SemanticException {
 
 	}
 
 	@Override
-	public SemType visitNewRecord(NewRecord newRecord, SymbolTable table) {
+	public SemType visitNewRecord(NewRecord newRecord, SymbolTable table) throws SemanticException {
 
 	}
 
 	@Override
-	public SemType visitParamCall(ParamCall paramCall, SymbolTable table) {
+	public SemType visitParamCall(ParamCall paramCall, SymbolTable table) throws SemanticException {
 
 	}
 
 	@Override
-	public SemType visitParenthesesTerm(ParenthesesTerm parenthesesTerm, SymbolTable table) {
+	public SemType visitParenthesesTerm(ParenthesesTerm parenthesesTerm, SymbolTable table) throws SemanticException {
 
 	}
 
 	@Override
-	public SemType visitBlock(Block block, SymbolTable table) {
+	public SemType visitType(Type type, SymbolTable table) throws SemanticException {
 
 	}
 
 	@Override
-	public SemType visitType(Type type, SymbolTable table) {
+	public SemType visitNumType(NumType numType, SymbolTable table) throws SemanticException {
 
 	}
 
 	@Override
-	public SemType visitNumType(NumType numType, SymbolTable table) {
-
+	public SemType visitStatement(Statement statement, SymbolTable table) throws SemanticException {
+		throw new SemanticException("this should never be called");
 	}
 
 	@Override
-	public SemType visitStatement(Statement statement, SymbolTable table) {
-
+	public SemType visitForLoop(ForLoop forLoop, SymbolTable table) throws SemanticException {
+		// ForCondition -> "identifier" "," Term "," Term "," Term .
+		//
+		// the increment shouldn't be 0
+		// if the variable is an int, the start, step, and stop should all be ints
+		// but if the variable is a float, start, step, and stop can be ints (they'll be converted to floats)
+		// check all identifiers are Term
 	}
 
 	@Override
-	public SemType visitForLoop(ForLoop forLoop, SymbolTable table) {
-
+	public SemType visitFreeStatement(FreeStatement freeStatement, SymbolTable table) throws SemanticException {
+		// check if the identifier is defined in the symbol table
+		IdentifierAccess identifierAccess = freeStatement.getIdentifierAccess();
+		Symbol name = identifierAccess.getIdentifier();
+		SemType semType = table.lookup(name.lexeme);
+		if (semType == null) {
+			// if the identifier is not found, throw an error
+			throw new SemanticException("Identifier " + name.lexeme + " not found in symbol table");
+		}
+		return null;
 	}
 
 	@Override
-	public SemType visitFreeStatement(FreeStatement freeStatement, SymbolTable table) {
+	public SemType visitFunctionDefinition(FunctionDefinition functionDefinition, SymbolTable table) throws SemanticException {
+		Symbol name = functionDefinition.getName();
 
-	}
+		// create local table
+		SymbolTable localTable = new SymbolTable(table, name.lexeme);
 
-	@Override
-	public SemType visitFunctionDefinition(FunctionDefinition functionDefinition, SymbolTable table) {
-//		Symbol name = functionDefinition.getIdentifier();
+		// add parameters to the local symbol table
+		ArrayList<SemType> paramTypes = new ArrayList<>();
+		for (ParamDefinition param : functionDefinition.getParamDefinitions()){
+			param.accept(this, localTable);
+			SemType paramType = new SemType(param.getIdentifier().lexeme);
+			paramTypes.add(paramType);
+		}
 
-		// check types of parameters
+		// add function to the symbol table
+		Type returnType = functionDefinition.getReturnType();
+		FunctionSemType semType = new FunctionSemType(returnType.symbol.lexeme, paramTypes.toArray(new SemType[0]));
+		table.addSymbol(name.lexeme, semType);
 
 		// check types of block
+		Block block = functionDefinition.getBlock();
+		block.accept(this, localTable);
 
-		// check type of return expression (?)
-
-		// add function to the global symbol table
+		// check type of return expression (done in block)
+		return null;
 	}
 
 	@Override
-	public SemType visitIfStatement(IfStatement ifStatement, SymbolTable table) {
+	public SemType visitBlock(Block block, SymbolTable table) throws SemanticException {
+		for (Statement stmt : block.getStatements()) {
+			stmt.accept(this, table);
+		}
+		if (block.getReturnStatement() != null) {
+			block.getReturnStatement().accept(this, table);
+		}
+		return null;
+	}
+
+	@Override
+	public SemType visitIfStatement(IfStatement ifStatement, SymbolTable table) throws SemanticException {
 
 	}
 
 	@Override
-	public SemType visitParamDefinition(ParamDefinition paramDefinition, SymbolTable table) {
+	public SemType visitParamDefinition(ParamDefinition paramDefinition, SymbolTable table) throws SemanticException {
+		// add param to local symbol table
+		Symbol name = paramDefinition.getIdentifier();
+		Type type = paramDefinition.getType();
 
+		SemType semType = new SemType(type.symbol.lexeme);
+		table.addSymbol(name.lexeme, semType);
+		return semType;
 	}
 
 	@Override
-	public SemType visitRecordDefinition(RecordDefinition recordDefinition, SymbolTable table) {
+	public SemType visitRecordDefinition(RecordDefinition recordDefinition, SymbolTable table) throws SemanticException {
 		HashMap<String, SemType> fields = new HashMap<>();
 
 		for (RecordFieldDefinition field : recordDefinition.getFields()) {
@@ -290,7 +333,7 @@ public class SemanticAnalysis implements Visitor<SemType> {
 	}
 
 	@Override
-	public SemType visitRecordFieldDefinition(RecordFieldDefinition recordFieldDefinition, SymbolTable table) {
+	public SemType visitRecordFieldDefinition(RecordFieldDefinition recordFieldDefinition, SymbolTable table) throws SemanticException {
 		SemType semType;
 		if (recordFieldDefinition.getType().isList) {
 			SemType elementSemType = new SemType(recordFieldDefinition.getType().symbol.lexeme);
@@ -302,17 +345,51 @@ public class SemanticAnalysis implements Visitor<SemType> {
 	}
 
 	@Override
-	public SemType visitReturnStatement(ReturnStatement returnStatement, SymbolTable table) {
+	public SemType visitReturnStatement(ReturnStatement returnStatement, SymbolTable table) throws SemanticException{
+		String localFunctionName = table.getLocalFunctionName();
+		FunctionSemType functionSemType = (FunctionSemType) table.lookup(localFunctionName);
+		if (functionSemType == null) {
+			// if localFunctionName is null => throw Error
+			// couldn't find function
+			throw new SemanticException("Function not found in symbol table");
+		}
+
+		SemType returnSemType;
+		if (returnStatement.getExpression() == null) {
+			returnSemType = voidType;
+		} else {
+			returnSemType = returnStatement.getExpression().accept(this, table);
+		}
+
+		if (!Objects.equals(returnSemType.type, functionSemType.type)) {
+			throw new SemanticException("Return type does not match function return type. Expected: " + functionSemType + ", found: " + returnSemType);
+		}
+
+		return null;
+		/*  AS A BONUS : CHECK IF FUNCTION ALWAYS RETURNS A VALUE
+		notre idée : ajouter un attribut "retNumber" à la localSymbolTable,
+		TODO trouver l'algorithme qui permet de vérifier que la fonction retourne toujours une valeur
+
+			fun f (a int) int { // <-- f(int) -> int, retNumber = 1
+				if (qsdf) {
+				   someExpres;
+				   if {
+					 return 1;
+				   }
+				}
+				return 2;
+			}
+
+		 */
+	}
+
+	@Override
+	public SemType visitVariableAssignment(VariableAssignment variableAssignment, SymbolTable table) throws SemanticException {
 
 	}
 
 	@Override
-	public SemType visitVariableAssignment(VariableAssignment variableAssignment, SymbolTable table) {
-
-	}
-
-	@Override
-	public SemType visitVariableDeclaration(VariableDeclaration variableDeclaration, SymbolTable table) {
+	public SemType visitVariableDeclaration(VariableDeclaration variableDeclaration, SymbolTable table) throws SemanticException {
 		Symbol name = variableDeclaration.getName();
 		Type type = variableDeclaration.getType();
 		SemType semType = new SemType(type.symbol.lexeme, variableDeclaration.isConstant());
@@ -323,7 +400,7 @@ public class SemanticAnalysis implements Visitor<SemType> {
 	}
 
 	@Override
-	public SemType visitWhileLoop(WhileLoop whileLoop, SymbolTable table) {
+	public SemType visitWhileLoop(WhileLoop whileLoop, SymbolTable table) throws SemanticException {
 
 	}
 }

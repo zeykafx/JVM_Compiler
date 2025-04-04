@@ -1,6 +1,7 @@
 package compiler.Parser.ASTNodes.Statements.Statements;
 
 import compiler.Parser.ASTNodes.Statements.Expressions.Access.IdentifierAccess;
+import compiler.SemanticAnalysis.Errors.SemanticException;
 import compiler.SemanticAnalysis.SymbolTable;
 import compiler.SemanticAnalysis.Types.SemType;
 import compiler.SemanticAnalysis.Visitor;
@@ -27,7 +28,7 @@ public class FreeStatement extends Statement {
 	}
 
 	@Override
-	public SemType accept(Visitor<SemType> v, SymbolTable table) {
+	public SemType accept(Visitor<SemType> v, SymbolTable table) throws SemanticException {
 		return v.visitFreeStatement(this, table);
 	}
 }

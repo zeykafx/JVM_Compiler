@@ -2,6 +2,7 @@ package compiler.Parser.ASTNodes.Statements.Expressions.Expressions;
 
 import compiler.Parser.ASTNodes.Statements.Expressions.Operators.Operator;
 import compiler.Parser.ASTNodes.Statements.Expressions.Terms.Term;
+import compiler.SemanticAnalysis.Errors.SemanticException;
 import compiler.SemanticAnalysis.SymbolTable;
 import compiler.SemanticAnalysis.Types.SemType;
 import compiler.SemanticAnalysis.Visitor;
@@ -35,7 +36,7 @@ public class UnaryExpression extends Expression {
     }
 
     @Override
-    public SemType accept(Visitor<SemType> v, SymbolTable table) {
+    public SemType accept(Visitor<SemType> v, SymbolTable table) throws SemanticException {
         return v.visitUnaryExpression(this, table);
     }
 }

@@ -3,6 +3,7 @@ package compiler.Parser.ASTNodes;
 import compiler.Parser.ASTNodes.Statements.Statements.FunctionDefinition;
 import compiler.Parser.ASTNodes.Statements.Statements.RecordDefinition;
 import compiler.Parser.ASTNodes.Statements.Statements.VariableDeclaration;
+import compiler.SemanticAnalysis.Errors.SemanticException;
 import compiler.SemanticAnalysis.SymbolTable;
 import compiler.SemanticAnalysis.Types.SemType;
 import compiler.SemanticAnalysis.Visitor;
@@ -40,7 +41,7 @@ public class Program extends ASTNode {
 	}
 
     @Override
-    public SemType accept(Visitor<SemType> v, SymbolTable table) {
+    public SemType accept(Visitor<SemType> v, SymbolTable table) throws SemanticException {
         return v.visitProgram(this, table);
     }
 

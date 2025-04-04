@@ -1,6 +1,7 @@
 package compiler.Parser.ASTNodes;
 
 import compiler.Parser.ASTNodes.Statements.Statements.Statement;
+import compiler.SemanticAnalysis.Errors.SemanticException;
 import compiler.SemanticAnalysis.SymbolTable;
 import compiler.SemanticAnalysis.Types.SemType;
 import compiler.SemanticAnalysis.Visitor;
@@ -37,7 +38,7 @@ public class Block extends ASTNode {
     }
 
     @Override
-    public SemType accept(Visitor<SemType> v, SymbolTable table) {
+    public SemType accept(Visitor<SemType> v, SymbolTable table) throws SemanticException {
         return v.visitBlock(this, table);
     }
 

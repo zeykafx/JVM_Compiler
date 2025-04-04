@@ -2,6 +2,7 @@ package compiler.Parser.ASTNodes.Types;
 
 import compiler.Lexer.Symbol;
 import compiler.Parser.ASTNodes.ASTNode;
+import compiler.SemanticAnalysis.Errors.SemanticException;
 import compiler.SemanticAnalysis.SymbolTable;
 import compiler.SemanticAnalysis.Types.SemType;
 import compiler.SemanticAnalysis.Visitor;
@@ -31,7 +32,7 @@ public class Type extends ASTNode {
 	}
 
 	@Override
-	public SemType accept(Visitor<SemType> v, SymbolTable table) {
+	public SemType accept(Visitor<SemType> v, SymbolTable table) throws SemanticException {
 		return v.visitType(this, table);
 	}
 

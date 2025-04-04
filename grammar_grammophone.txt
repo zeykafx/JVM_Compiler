@@ -9,7 +9,8 @@ IsList -> "[]" | .
 Block -> "{" Stmts ReturnStmt "}" .
 Stmts -> Stmt Stmts | .
 Stmt -> IfStmt | ForLoop | WhileLoop | FunctionDefinition | BaseStatement ";" .
-ReturnStmt -> "return" Expression ";" | .
+ReturnStmt -> "return" ReturnTail .
+ReturnTail -> ";" | Expression ";" .
 
 BaseStatement -> Declaration | VariableAssignment | RecordDefinition .
 

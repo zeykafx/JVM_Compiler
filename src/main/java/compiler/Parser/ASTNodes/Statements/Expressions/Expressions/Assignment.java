@@ -1,6 +1,7 @@
 package compiler.Parser.ASTNodes.Statements.Expressions.Expressions;
 
 import compiler.Lexer.Symbol;
+import compiler.SemanticAnalysis.Errors.SemanticException;
 import compiler.SemanticAnalysis.SymbolTable;
 import compiler.SemanticAnalysis.Types.SemType;
 import compiler.SemanticAnalysis.Visitor;
@@ -33,7 +34,7 @@ public class Assignment extends Expression {
     }
 
 	@Override
-	public SemType accept(Visitor<SemType> v, SymbolTable table) {
+	public SemType accept(Visitor<SemType> v, SymbolTable table) throws SemanticException {
 		return v.visitAssignment(this, table);
 	}
 }

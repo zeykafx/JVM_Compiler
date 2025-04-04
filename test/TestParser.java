@@ -905,4 +905,62 @@ public class TestParser {
         }
 
     }
+
+    @Test
+    public void testForLoopVoidRetStatement() throws Exception {
+        String input = """
+                fun main() int {
+                    i int;
+                    for (i, 0, 10, 1) {
+                        writeln(i);
+                        return;
+                    }
+                }
+                """;
+
+        StringReader reader = new StringReader(input);
+        Lexer lexer = new Lexer(reader);
+        Parser parser = new Parser(lexer);
+
+        ASTNode node = parser.getAST();
+        assertNotNull(node);
+
+        assertTrue(node instanceof Program);
+        Program program = (Program) node;
+        assertEquals(1, program.getFunctions().size());
+
+        FunctionDefinition function = program.getFunctions().getFirst();
+        assertEquals("main", function.getName().lexeme);
+
+        assertNotNull(function.getBlock());
+        Block block = (Block) function.getBlock();
+        assertEquals(2, block.getStatements().size());
+
+        Statement statement = block.getStatements().getFirst();
+        assertTrue(statement instanceof VariableDeclaration);
+
+        VariableDeclaration decl = (VariableDeclaration) statement;
+        assertFalse(decl.isConstant());
+        assertEquals("i", decl.getName().lexeme);
+        assertEquals(TokenTypes.INT, decl.getType().symbol.type);
+
+        assertTrue(block.getStatements().get(1) instanceof ForLoop);
+        ForLoop forLoop = (ForLoop) block.getStatements().get(1);
+        assertNotNull(forLoop.getVariable());
+
+        assertNotNull(forLoop.getBlock());
+        Block forBlock = (Block) forLoop.getBlock();
+        assertEquals(1, forBlock.getStatements().size());
+        Statement forStatement = forBlock.getStatements().getFirst();
+        assertTrue(forStatement instanceof FunctionCall);
+        FunctionCall functionCall = (FunctionCall) forStatement;
+        assertEquals("writeln", functionCall.getIdentifier().lexeme);
+        assertEquals(1, functionCall.getParameters().size());
+
+        // check that the return statement has a null expression
+        assertTrue(forBlock.getReturnStatement() instanceof ReturnStatement);
+        ReturnStatement returnStmt = (ReturnStatement) forBlock.getReturnStatement();
+        assertNull(returnStmt.getExpression());
+
+    }
 }

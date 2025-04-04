@@ -2,6 +2,7 @@ package compiler.Parser.ASTNodes.Statements.Statements;
 
 import compiler.Lexer.Symbol;
 import compiler.Parser.ASTNodes.Types.Type;
+import compiler.SemanticAnalysis.Errors.SemanticException;
 import compiler.SemanticAnalysis.SymbolTable;
 import compiler.SemanticAnalysis.Types.SemType;
 import compiler.SemanticAnalysis.Visitor;
@@ -32,11 +33,11 @@ public class RecordFieldDefinition extends Statement {
     public String prettyPrint(int indent) {
         StringBuilder sb = new StringBuilder();
         sb.append("  ".repeat(indent)).append("RecordField: ").append(identifier.lexeme).append(", ").append(type.toString());
-        return sb.toString();
+		return sb.toString();
     }
 
 	@Override
-	public SemType accept(Visitor<SemType> v, SymbolTable table) {
+	public SemType accept(Visitor<SemType> v, SymbolTable table) throws SemanticException {
 		return v.visitRecordFieldDefinition(this, table);
 	}
 }

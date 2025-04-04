@@ -7,12 +7,20 @@ public class SymbolTable {
     private final SymbolTable parent;
     private final Integer scope;
     private final HashMap<String, SemType> symbols;
+    private String localFunctionName;
 
 
     public SymbolTable(SymbolTable parent) {
         this.parent = parent;
         this.scope = parent == null ? 0 : parent.scope + 1;
         this.symbols = new HashMap<>();
+    }
+
+    public SymbolTable(SymbolTable parent, String localFunctionName) {
+        this.parent = parent;
+        this.scope = parent == null ? 0 : parent.scope + 1;
+        this.symbols = new HashMap<>();
+        this.localFunctionName = localFunctionName;
     }
 
     public SymbolTable getParent() {
@@ -23,10 +31,10 @@ public class SymbolTable {
         symbols.put(name, node);
     }
 
-    public SemType getSymbol(String name) {
+    public SemType lookup(String name) {
         SemType node = symbols.get(name);
         if (node == null && parent != null) {
-            return parent.getSymbol(name);
+            return parent.lookup(name);
         }
         return node;
     }
@@ -35,7 +43,13 @@ public class SymbolTable {
         return scope;
     }
 
+    public void setLocalFunctionName(String localFunctionName) {
+        this.localFunctionName = localFunctionName;
+    }
 
+    public String getLocalFunctionName() {
+        return localFunctionName;
+    }
 
     // root new SymbolTable(null);
     // for elem in root :

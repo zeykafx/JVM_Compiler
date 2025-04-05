@@ -3,7 +3,7 @@ package compiler.SemanticAnalysis.Types;
 import java.util.HashMap;
 
 public class RecordSemType extends SemType {
-	HashMap<String, SemType> fields;
+	public HashMap<String, SemType> fields;
 
 	public RecordSemType(HashMap<String, SemType> fields) {
 		super("rec");

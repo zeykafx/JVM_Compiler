@@ -18,9 +18,7 @@ public interface Visitor<T> {
     T visitIdentifierAccess(IdentifierAccess identifierAccess, SymbolTable localTable) throws SemanticException;
     T visitRecordAccess(RecordAccess recordAccess, SymbolTable localTable) throws SemanticException;
 
-    T visitAloneExpression(AloneExpression aloneExpression, SymbolTable localTable) throws SemanticException;
     T visitArrayExpression(ArrayExpression arrayExpression, SymbolTable localTable) throws SemanticException;
-    T visitAssignment(Assignment assignment, SymbolTable localTable) throws SemanticException;
     T visitBinaryExpression(BinaryExpression binaryExpression, SymbolTable localTable) throws SemanticException;
     T visitIdentifier(Identifier identifier, SymbolTable localTable) throws SemanticException;
     T visitUnaryExpression(UnaryExpression unaryExpression, SymbolTable localTable) throws SemanticException;

@@ -14,4 +14,8 @@ public class ArraySemType extends SemType {
 		super("array");
 		this.elementSemType = elementSemType;
 	}
+
+	public SemType getElementSemType() {
+		return elementSemType;
+	}
 }

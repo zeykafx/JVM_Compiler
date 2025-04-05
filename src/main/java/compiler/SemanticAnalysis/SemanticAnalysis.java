@@ -5,6 +5,7 @@ import compiler.Lexer.TokenTypes;
 import compiler.Parser.ASTNodes.ASTNode;
 import compiler.Parser.ASTNodes.Block;
 import compiler.Parser.ASTNodes.Program;
+import compiler.Parser.ASTNodes.Statements.Expressions.Access.Access;
 import compiler.Parser.ASTNodes.Statements.Expressions.Access.ArrayAccess;
 import compiler.Parser.ASTNodes.Statements.Expressions.Access.IdentifierAccess;
 import compiler.Parser.ASTNodes.Statements.Expressions.Access.RecordAccess;
@@ -141,31 +142,67 @@ public class SemanticAnalysis implements Visitor<SemType> {
 
 	@Override
 	public SemType visitArrayAccess(ArrayAccess arrayAccess, SymbolTable table) throws SemanticException {
+		// ArrayAccess -> "[" Expression "]"
 
+		// check if the head is an array
+		SemType headType = arrayAccess.getHeadAccess().accept(this, table);
+
+		if (!(headType instanceof ArraySemType)) {
+			throw new TypeError("The head of the array access at line " + arrayAccess.line + " is not an array");
+		}
+
+		// check if the index is an int
+		SemType indexType = arrayAccess.getIndexExpression().accept(this, table);
+		if (!indexType.equals(intType)) {
+			throw new TypeError("The index of the array access at line " + arrayAccess.line + " is not an int");
+		}
+
+		return (ArraySemType) headType;
 	}
 
 	@Override
 	public SemType visitIdentifierAccess(IdentifierAccess identifierAccess, SymbolTable table) throws SemanticException {
+		// IdentifierAccess -> "identifier" AccessChain .
+		// AccessChain -> Access AccessChain | .
 
+		// check if the identifier is defined in the symbol table
+		Symbol name = identifierAccess.getIdentifier();
+		SemType semType = table.lookup(name.lexeme);
+		if (semType == null) {
+			// if the identifier is not found throw an error
+			throw new ScopeError("Identifier " + name.lexeme + " not found in symbol table");
+		}
+
+		return semType;
 	}
 
 	@Override
 	public SemType visitRecordAccess(RecordAccess recordAccess, SymbolTable table) throws SemanticException {
+		// IdentifierAccess -> "identifier" AccessChain .
+		// AccessChain -> Access AccessChain | .
+		// Access -> "[" Expression "]" | "." "identifier" .
 
-	}
+		// check if the identifier is defined in the symbol table
+		Access headAccess = recordAccess.getHeadAccess();
+		SemType headType = headAccess.accept(this, table);
+		if (!(headType instanceof RecordSemType recordSemType)) {
+			throw new TypeError("The head of the record access at line " + recordAccess.line + " is not a record");
+		}
 
-	@Override
-	public SemType visitAloneExpression(AloneExpression aloneExpression, SymbolTable table) throws SemanticException {
+		// check if the field is defined in the record
+		Symbol field = recordAccess.getIdentifier();
+		SemType fieldType = recordSemType.fields.get(field.lexeme);
+		if (fieldType == null) {
+			throw new SemanticException("Field "+ field.lexeme + " is not defined on record type " + recordAccess.getHeadAccess().toString());
+		}
 
-	}
+		// return type of accessed field
+		return fieldType;
+ 	}
+
 
 	@Override
 	public SemType visitArrayExpression(ArrayExpression arrayExpression, SymbolTable table) throws SemanticException {
-
-	}
-
-	@Override
-	public SemType visitAssignment(Assignment assignment, SymbolTable table) throws SemanticException {
 
 	}
 
@@ -221,12 +258,18 @@ public class SemanticAnalysis implements Visitor<SemType> {
 
 	@Override
 	public SemType visitType(Type type, SymbolTable table) throws SemanticException {
-
+		if (type.isList) {
+			return new ArraySemType(new SemType(type.symbol.lexeme));
+		}
+		return new SemType(type.symbol.lexeme);
 	}
 
 	@Override
 	public SemType visitNumType(NumType numType, SymbolTable table) throws SemanticException {
-
+		if (numType.isList) {
+			return new ArraySemType(new SemType(numType.symbol.lexeme));
+		}
+		return new SemType(numType.symbol.lexeme);
 	}
 
 	@Override
@@ -248,7 +291,7 @@ public class SemanticAnalysis implements Visitor<SemType> {
 		SemType varType = table.lookup(varSymbol.lexeme);
 		if (varType == null) {
             // if the identifier is not found, throw an error
-            throw new SemanticException("Identifier " + varSymbol.lexeme + " in for loop at line "+ varSymbol.line +" was not found in symbol table");
+            throw new ScopeError("Identifier " + varSymbol.lexeme + " in for loop at line "+ varSymbol.line +" was not found in symbol table");
         }
 
 		boolean loopVarIsInt = false;
@@ -269,6 +312,15 @@ public class SemanticAnalysis implements Visitor<SemType> {
 
 		Symbol step = forLoop.getStep();
 		typeCheckLoopFields(table,loopVarIsInt, step, "step");
+
+		// check that the increment is not 0 (we only check if it is a literal, otherwise we can't check atp)
+		if (step.type == TokenTypes.INT_LITERAL && step.value == (Integer) 0) {
+			throw new SemanticException("The step of the for loop at line " + step.line + " is 0, this loop will never make progress");
+		}
+
+		if (step.type == TokenTypes.FLOAT_LITERAL && step.value == (Float) 0.0f) {
+			throw new SemanticException("The step of the for loop at line " + step.line + " is 0.0 (float), this loop will never make progress");
+		}
 
 		Symbol end = forLoop.getEnd();
 		typeCheckLoopFields(table,loopVarIsInt, end, "end");
@@ -302,6 +354,20 @@ public class SemanticAnalysis implements Visitor<SemType> {
 	}
 
 	@Override
+	public SemType visitWhileLoop(WhileLoop whileLoop, SymbolTable table) throws SemanticException {
+		// WhileLoop -> "while" "(" Expression ")" Block .
+
+		// check that the expression evaluates to a boolean
+		SemType conditionType = whileLoop.getCondition().accept(this, table);
+		if (!conditionType.equals(boolType)) {
+			throw new MissingConditionError("The while loop's condition at line "+ whileLoop.line +" does not evaluate to a boolean.");
+		}
+
+		// then check the block
+		whileLoop.getBlock().accept(this, table);
+	}
+
+	@Override
 	public SemType visitFreeStatement(FreeStatement freeStatement, SymbolTable table) throws SemanticException {
 		// check if the identifier is defined in the symbol table
 		IdentifierAccess identifierAccess = freeStatement.getIdentifierAccess();
@@ -309,7 +375,7 @@ public class SemanticAnalysis implements Visitor<SemType> {
 		SemType semType = table.lookup(name.lexeme);
 		if (semType == null) {
 			// if the identifier is not found, throw an error
-			throw new SemanticException("Identifier " + name.lexeme + " not found in symbol table");
+			throw new ScopeError("Identifier " + name.lexeme + " not found in symbol table");
 		}
 		return null;
 	}
@@ -356,7 +422,14 @@ public class SemanticAnalysis implements Visitor<SemType> {
 
 	@Override
 	public SemType visitIfStatement(IfStatement ifStatement, SymbolTable table) throws SemanticException {
+		// IfStmt -> "if" "(" Expression ")" Block ElseStmt .
+		//ElseStmt -> "else" Block | .
 
+		// first check that the condition is a boolean
+		SemType conditionType = ifStatement.getCondition().accept(this, table);
+		if (!conditionType.equals(boolType)) {
+			throw new MissingConditionError("The if statement's condition at line " + ifStatement.line + " does not evaluate to a boolean.");
+		}
 	}
 
 	@Override
@@ -382,6 +455,12 @@ public class SemanticAnalysis implements Visitor<SemType> {
 
 		RecordSemType recordSemType = new RecordSemType(fields);
 
+		// check that the new record identifier does not shadow any other identifier in the table (this includes other record, but also predefined functions)
+		SemType existingRecord = table.lookup(recordDefinition.getIdentifier().lexeme);
+		if (existingRecord != null) { // IF IT'S NOT NULL, then throw an error
+			throw new RecordError("Record " + recordDefinition.getIdentifier().lexeme + " already exists in the symbol table");
+		}
+
 		table.addSymbol(recordDefinition.getIdentifier().lexeme, recordSemType);
 
 		return recordSemType;
@@ -406,7 +485,7 @@ public class SemanticAnalysis implements Visitor<SemType> {
 		if (functionSemType == null) {
 			// if localFunctionName is null => throw Error
 			// couldn't find function
-			throw new SemanticException("Function not found in symbol table");
+			throw new ScopeError("Function not found in symbol table");
 		}
 
 		SemType returnSemType;
@@ -417,7 +496,7 @@ public class SemanticAnalysis implements Visitor<SemType> {
 		}
 
 		if (!Objects.equals(returnSemType.type, functionSemType.type)) {
-			throw new SemanticException("Return type does not match function return type. Expected: " + functionSemType + ", found: " + returnSemType);
+			throw new TypeError("Return type does not match function return type. Expected: " + functionSemType + ", found: " + returnSemType);
 		}
 
 		return null;
@@ -440,7 +519,21 @@ public class SemanticAnalysis implements Visitor<SemType> {
 
 	@Override
 	public SemType visitVariableAssignment(VariableAssignment variableAssignment, SymbolTable table) throws SemanticException {
+		// VariableAssignment -> IdentifierAccess "=" Expression .
+		// IdentifierAccess -> "identifier" AccessChain .
+		// AccessChain -> Access AccessChain | .
+		// Access -> "[" Expression "]" | "." "identifier" .
 
+		// first get the type of the variable
+		SemType varType = variableAssignment.getAccess().accept(this, table);
+
+		// then get the type of the expression
+		SemType expressionType = variableAssignment.getExpression().accept(this, table);
+
+		// and check that they match
+		if (!varType.equals(expressionType)) {
+			throw new TypeError("Type of the access " + variableAssignment.getAccess().toString() + " at line " + variableAssignment.line + " does not match the type of the expression " + variableAssignment.getExpression().toString());
+		}
 	}
 
 	@Override
@@ -452,10 +545,5 @@ public class SemanticAnalysis implements Visitor<SemType> {
 		table.addSymbol(name.lexeme, semType);
 
 		return semType;
-	}
-
-	@Override
-	public SemType visitWhileLoop(WhileLoop whileLoop, SymbolTable table) throws SemanticException {
-
 	}
 }

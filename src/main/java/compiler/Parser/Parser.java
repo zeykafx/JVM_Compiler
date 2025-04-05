@@ -477,7 +477,7 @@ public class Parser {
         } else if (lookAheadSymbol.type == TokenTypes.FUN) {
             return parseFunction();
         } else {
-            // BaseStatement -> VariableDeclaration | Assignment | RecordDefinition | free IdentifierAccess | Expression ";"
+            // BaseStatement -> VariableDeclaration | variableAssignment | RecordDefinition | free IdentifierAccess | Expression ";"
             Statement statement = parseBaseStatement();
             if (lookAheadSymbol.type == TokenTypes.SEMICOLON) {
                 match(TokenTypes.SEMICOLON);

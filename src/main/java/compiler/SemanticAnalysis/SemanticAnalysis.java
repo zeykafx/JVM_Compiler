@@ -1,6 +1,7 @@
 package compiler.SemanticAnalysis;
 
 import compiler.Lexer.Symbol;
+import compiler.Lexer.TokenTypes;
 import compiler.Parser.ASTNodes.ASTNode;
 import compiler.Parser.ASTNodes.Block;
 import compiler.Parser.ASTNodes.Program;
@@ -14,8 +15,7 @@ import compiler.Parser.ASTNodes.Statements.Expressions.Terms.*;
 import compiler.Parser.ASTNodes.Statements.Statements.*;
 import compiler.Parser.ASTNodes.Types.NumType;
 import compiler.Parser.ASTNodes.Types.Type;
-import compiler.SemanticAnalysis.Errors.ReturnError;
-import compiler.SemanticAnalysis.Errors.SemanticException;
+import compiler.SemanticAnalysis.Errors.*;
 import compiler.SemanticAnalysis.Types.ArraySemType;
 import compiler.SemanticAnalysis.Types.FunctionSemType;
 import compiler.SemanticAnalysis.Types.RecordSemType;
@@ -132,10 +132,7 @@ public class SemanticAnalysis implements Visitor<SemType> {
 		ArrayList<FunctionDefinition> functions = program.getFunctions();
 		for (FunctionDefinition function : functions) {
 
-			FunctionSemType functionSemType = (FunctionSemType) function.accept(this, table);
-
-
-			// ! maybe we should deallocate function table at the end
+			function.accept(this, table);
 		}
 
 
@@ -245,6 +242,63 @@ public class SemanticAnalysis implements Visitor<SemType> {
 		// if the variable is an int, the start, step, and stop should all be ints
 		// but if the variable is a float, start, step, and stop can be ints (they'll be converted to floats)
 		// check all identifiers are Term
+
+		// check if the variable is defined in the symbol table
+		Symbol varSymbol = forLoop.getVariable();
+		SemType varType = table.lookup(varSymbol.lexeme);
+		if (varType == null) {
+            // if the identifier is not found, throw an error
+            throw new SemanticException("Identifier " + varSymbol.lexeme + " in for loop at line "+ varSymbol.line +" was not found in symbol table");
+        }
+
+		boolean loopVarIsInt = false;
+
+        // check if the variable is a number
+        if (!(varType.equals(intType) || varType.equals(floatType))) {
+            throw new TypeError("Variable " + varSymbol.lexeme + " in for loop at line "+ varSymbol.line +" is not a number");
+        }
+
+		// if the loop var is an int, then this is the most restrictive case, the start, step, and stop vars must also all be ints
+		if (varType.equals(intType)) {
+			loopVarIsInt = true;
+		}
+
+        // check if the start, step, and stop are of the same type as the variable
+        Symbol start = forLoop.getStart();
+		typeCheckLoopFields(table,loopVarIsInt, start, "start");
+
+		Symbol step = forLoop.getStep();
+		typeCheckLoopFields(table,loopVarIsInt, step, "step");
+
+		Symbol end = forLoop.getEnd();
+		typeCheckLoopFields(table,loopVarIsInt, end, "end");
+
+		// then visit the block
+		forLoop.getBlock().accept(this, table);
+
+		return null;
+	}
+
+	private void typeCheckLoopFields(SymbolTable table, boolean loopVarIsInt, Symbol fieldSymbol, String fieldName) throws TypeError {
+		if (fieldSymbol.type == TokenTypes.INT_LITERAL || fieldSymbol.type == TokenTypes.FLOAT_LITERAL) {
+
+			// if the loop var is an int and the field (start, step, stop) number is a float, we throw an error
+			if (loopVarIsInt && fieldSymbol.type == TokenTypes.FLOAT_LITERAL) {
+				throw new TypeError("The "+fieldName+" number in the for loop at line" + fieldSymbol.line + ": '"+ fieldSymbol.lexeme +"' is not an integer but the loop variable is.");
+			}
+			// otherwise we're good
+
+		} else if (fieldSymbol.type == TokenTypes.IDENTIFIER) {
+        	SemType fieldType = table.lookup(fieldSymbol.lexeme);
+
+			// if the loop var is an int and field var is a float, then we throw an error
+			if (loopVarIsInt && fieldType.equals(floatType)) {
+				throw new TypeError("The "+fieldName+" variable in the for loop at line" + fieldSymbol.line + ": '"+ fieldSymbol.lexeme +"' is not an integer but the loop variable is.");
+			}
+			// otherwise we're good (I think)
+		} else {
+			throw new TypeError("Type of the '"+fieldName+"' field in the for loop at line " + fieldSymbol.line + " is not valid, it should either be a variable identifier, int, or float");
+		}
 	}
 
 	@Override
@@ -293,8 +347,9 @@ public class SemanticAnalysis implements Visitor<SemType> {
 		for (Statement stmt : block.getStatements()) {
 			stmt.accept(this, table);
 		}
-		if (block.getReturnStatement() != null) {
-			block.getReturnStatement().accept(this, table);
+		ReturnStatement returnStatement = (ReturnStatement) block.getReturnStatement();
+		if (returnStatement != null) {
+			returnStatement.accept(this, table);
 		}
 		return null;
 	}

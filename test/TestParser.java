@@ -962,5 +962,7 @@ public class TestParser {
         ReturnStatement returnStmt = (ReturnStatement) forBlock.getReturnStatement();
         assertNull(returnStmt.getExpression());
 
+        System.out.println(forLoop.getStart());
+
     }
 }

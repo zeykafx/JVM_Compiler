@@ -15,12 +15,15 @@ import compiler.SemanticAnalysis.Visitor;
 public class ParamDefinition extends Statement {
 	private final Symbol identifier;
 	private final Type type;
+	private final Integer paramIndex;
 
-	public ParamDefinition(Symbol identifier, Type type, int line, int column) {
+
+	public ParamDefinition(Symbol identifier, Type type, Integer paramIndex, int line, int column) {
 		super(line, column);
 
 		this.identifier = identifier;
 		this.type = type;
+		this.paramIndex = paramIndex;
 	}
 
 	public Symbol getIdentifier() {
@@ -29,6 +32,10 @@ public class ParamDefinition extends Statement {
 
 	public Type getType() {
 		return type;
+	}
+
+	public Integer getParamIndex() {
+		return paramIndex;
 	}
 
 	@Override

@@ -2,6 +2,8 @@ package compiler.SemanticAnalysis.Types;
 
 import compiler.Lexer.Symbol;
 
+import java.util.Objects;
+
 public class SemType {
 
 	public String type;
@@ -28,5 +30,17 @@ public class SemType {
 
 	public Boolean getConstant() {
 		return isConstant;
+	}
+
+	@Override
+	public boolean equals(Object o) {
+		if (o == null || getClass() != o.getClass()) return false;
+		SemType semType = (SemType) o;
+		return Objects.equals(type, semType.type) && Objects.equals(isConstant, semType.isConstant);
+	}
+
+	@Override
+	public int hashCode() {
+		return Objects.hash(type, isConstant);
 	}
 }

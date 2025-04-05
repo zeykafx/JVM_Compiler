@@ -8,4 +8,8 @@ public class FunctionSemType extends SemType {
 		super(type);
 		this.paramSemTypes = paramSemTypes;
 	}
+
+	public SemType[] getParamSemTypes() {
+		return paramSemTypes;
+	}
 }

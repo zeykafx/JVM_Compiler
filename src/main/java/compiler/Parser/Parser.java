@@ -427,21 +427,24 @@ public class Parser {
         // Param -> "identifier" Type .
 
         ArrayList<ParamDefinition> params = new ArrayList<>();
+        int paramIndex = 0;
         if (lookAheadSymbol.type != TokenTypes.RIGHT_PAR) {
-            params.add(parseParamDefinition());
+            params.add(parseParamDefinition(paramIndex));
+            paramIndex++;
             while (lookAheadSymbol.type == TokenTypes.COMMA) {
                 match(TokenTypes.COMMA);
-                params.add(parseParamDefinition());
+                params.add(parseParamDefinition(paramIndex));
+                paramIndex++;
             }
         }
         return params;
     }
 
-    public ParamDefinition parseParamDefinition() throws Exception {
+    public ParamDefinition parseParamDefinition(int paramIndex) throws Exception {
         // Param -> "identifier" Type
         Symbol identifier = match(TokenTypes.IDENTIFIER);
         Type type = parseType(); // Post typing
-        return new ParamDefinition(identifier, type, identifier.line, identifier.column);
+        return new ParamDefinition(identifier, type, paramIndex, identifier.line, identifier.column);
     }
 
     public Block parseBlock() throws Exception {

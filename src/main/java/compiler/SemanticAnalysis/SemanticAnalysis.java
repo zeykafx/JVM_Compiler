@@ -1,5 +1,6 @@
 package compiler.SemanticAnalysis;
 
+import com.sun.source.tree.Tree;
 import compiler.Lexer.Symbol;
 import compiler.Lexer.TokenTypes;
 import compiler.Parser.ASTNodes.ASTNode;
@@ -25,6 +26,7 @@ import compiler.SemanticAnalysis.Types.SemType;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Objects;
+import java.util.TreeMap;
 
 import static compiler.Lexer.TokenTypes.*;
 
@@ -244,7 +246,39 @@ public class SemanticAnalysis implements Visitor<SemType> {
 
 	@Override
 	public SemType visitFunctionCall(FunctionCall functionCall, SymbolTable table) throws SemanticException {
+		// get the FunctionSemType of the function from the symbol table
+		FunctionSemType functionSemType =(FunctionSemType) table.lookup(functionCall.getIdentifier().lexeme);
+		if (functionSemType == null) {
+			throw new ScopeError("function "+functionCall.getIdentifier().lexeme+" doesn't exist");
+		}
 
+		// for each argument/param, compared the present types to the types from the definition
+		for (ParamCall paramCall : functionCall.getParameters()) {
+			// get the SemType of the parameter
+			SemType paramCallSemType = paramCall.accept(this, table);
+
+			SemType[] functionDefParamsSemTypes = functionSemType.getParamSemTypes();
+			if (paramCall.getParamIndex() > functionDefParamsSemTypes.length) {
+				throw new TypeError("Too many arguments " + paramCall.getParamIndex() + " for function " + functionCall.getIdentifier().lexeme + " with " + functionDefParamsSemTypes.length + " arguments");
+			}
+
+			// get the argumentSemType
+			SemType argSemType = functionDefParamsSemTypes[paramCall.getParamIndex()];
+
+			if (!paramCallSemType.equals(argSemType)) {
+				// the types didn't match, but if the expected type is a float and the given type is an int, we can convert it (here that means we keep going)
+
+				// if we can't convert the type, we throw an error: here if it's not the convertable case, we throw
+				if (!(argSemType.equals(floatType) && paramCallSemType.equals(intType))) {
+					throw new TypeError("Type of the argument index " + paramCall.getParamIndex() + " in the function call " + functionCall.getIdentifier().lexeme + " does not match the type of the argument " + argSemType);
+
+				}
+
+			}
+		}
+
+		// return the SemType of the return value (e.g., intType if the function returns an integer)
+		return new SemType(functionSemType.type);
 	}
 
 	@Override
@@ -260,19 +294,26 @@ public class SemanticAnalysis implements Visitor<SemType> {
 		}
 
 		// check that the types of the record fields are correct and correspond to the definition
+
 		for (ParamCall paramCall : newRecord.getTerms()) {
 			// get the SemType
 			SemType paramCallSemType = paramCall.accept(this, table);
 
 			// get the fieldSemType
-			SemType fieldSemType = recordSemType.fields.get(paramCall.getParamIndex());
+			// TODO: CHECK THIS BECAUSE IM NOT SURE AT ALL!!
+			SemType fieldSemType = recordSemType.fields.values().toArray(new SemType[0])[paramCall.getParamIndex()];
 			if (fieldSemType == null) {
 				throw new TypeError("Field " + paramCall.getParamIndex() + " does not exist in record type " + newRecord.getIdentifier().lexeme);
 			}
 
 			// check that the types match
 			if (!paramCallSemType.equals(fieldSemType)) {
-				throw new TypeError("Type of the parameter index " + paramCall.getParamIndex() + " in the record " + newRecord.getIdentifier().lexeme + " does not match the type of the field " + fieldSemType);
+				// the types didn't match, but if the expected type is a float and the given type is an int, we can convert it (here that means we keep going)
+
+				// otherwise: throw
+				if (!(fieldSemType.equals(floatType) && paramCallSemType.equals(intType))) {
+					throw new TypeError("Type of the parameter index " + paramCall.getParamIndex() + " in the record " + newRecord.getIdentifier().lexeme + " does not match the type of the field " + fieldSemType);
+				}
 			}
 		}
 
@@ -502,12 +543,12 @@ public class SemanticAnalysis implements Visitor<SemType> {
 
 	@Override
 	public SemType visitRecordDefinition(RecordDefinition recordDefinition, SymbolTable table) throws SemanticException {
-		HashMap<Integer, SemType> fields = new HashMap<>();
+		TreeMap<String, SemType> fields = new TreeMap<>();
 
 		for (RecordFieldDefinition field : recordDefinition.getFields()) {
 			SemType semType = field.accept(this, table);
 
-			fields.put(field.getFieldIndex(), semType);
+			fields.put(field.getIdentifier().lexeme, semType);
 		}
 
 		RecordSemType recordSemType = new RecordSemType(fields);
@@ -589,8 +630,22 @@ public class SemanticAnalysis implements Visitor<SemType> {
 
 		// and check that they match
 		if (!varType.equals(expressionType)) {
-			throw new TypeError("Type of the access " + variableAssignment.getAccess().toString() + " at line " + variableAssignment.line + " does not match the type of the expression " + variableAssignment.getExpression().toString());
+
+			// the types didn't match, but if the expected type is a float and the given type is an int, we can convert it (here that means we keep going)
+
+			// if we can't convert the type, we throw an error: here if it's not the convertable case, we throw
+			if (!(varType.equals(floatType) && expressionType.equals(intType))) {
+				throw new TypeError("Type of the variable " + variableAssignment.getAccess().toString() + " at line " + variableAssignment.line + " does not match the type of the expression " + variableAssignment.getExpression().toString());
+			}
+
 		}
+
+		// then check that the variable is not a constant
+		if (varType.isConstant) {
+			throw new TypeError("Cannot assign to a constant variable " + variableAssignment.getAccess().toString() + " at line " + variableAssignment.line);
+		}
+
+		return null;
 	}
 
 	@Override

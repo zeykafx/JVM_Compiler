@@ -20,7 +20,6 @@ public interface Visitor<T> {
 
     T visitArrayExpression(ArrayExpression arrayExpression, SymbolTable localTable) throws SemanticException;
     T visitBinaryExpression(BinaryExpression binaryExpression, SymbolTable localTable) throws SemanticException;
-    T visitIdentifier(Identifier identifier, SymbolTable localTable) throws SemanticException;
     T visitUnaryExpression(UnaryExpression unaryExpression, SymbolTable localTable) throws SemanticException;
 
 

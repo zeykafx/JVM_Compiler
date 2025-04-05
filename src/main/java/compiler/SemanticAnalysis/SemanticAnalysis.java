@@ -212,11 +212,6 @@ public class SemanticAnalysis implements Visitor<SemType> {
 	}
 
 	@Override
-	public SemType visitIdentifier(Identifier identifier, SymbolTable table) throws SemanticException {
-
-	}
-
-	@Override
 	public SemType visitUnaryExpression(UnaryExpression unaryExpression, SymbolTable table) throws SemanticException {
 
 	}

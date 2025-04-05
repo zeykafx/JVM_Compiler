@@ -10,12 +10,14 @@ import compiler.SemanticAnalysis.Visitor;
 public class RecordFieldDefinition extends Statement {
 	Symbol identifier;
 	Type type;
+	int fieldIndex;
 
-	public RecordFieldDefinition(Symbol identifier, Type type, int line, int column) {
+	public RecordFieldDefinition(Symbol identifier, Type type, int fieldIndex, int line, int column) {
 		super(line, column);
 
 		this.identifier = identifier;
 		this.type = type;
+		this.fieldIndex = fieldIndex;
 	}
 
 	public Symbol getIdentifier() {
@@ -24,6 +26,10 @@ public class RecordFieldDefinition extends Statement {
 
 	public Type getType() {
 		return type;
+	}
+
+	public int getFieldIndex() {
+		return fieldIndex;
 	}
 
 	@Override

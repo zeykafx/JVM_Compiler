@@ -33,26 +33,15 @@ public class ConstVal extends Term {
 
     @Override
     public String prettyPrint(int indent) {
-        String typeStr = "";
-        switch (symbol.type) {
-            case INT_LITERAL:
-                typeStr = "Integer";
-                break;
-            case FLOAT_LITERAL:
-                typeStr = "Float";
-                break;
-            case STRING_LITERAL:
-                typeStr = "String";
-                break;
-            case BOOL_TRUE:
-            case BOOL_FALSE:
-                typeStr = "Boolean";
-                break;
-            default:
-                typeStr = "Literal";
-        }
+        String typeStr = switch (symbol.type) {
+			case INT_LITERAL -> "Integer";
+			case FLOAT_LITERAL -> "Float";
+			case STRING_LITERAL -> "String";
+			case BOOL_TRUE, BOOL_FALSE -> "Boolean";
+			default -> "Literal";
+		};
 
-        return "  ".repeat(indent) + typeStr + ", " + value;
+		return "  ".repeat(indent) + typeStr + ", " + value;
     }
 
     @Override

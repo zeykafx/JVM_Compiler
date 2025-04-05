@@ -8,15 +8,21 @@ import compiler.SemanticAnalysis.Visitor;
 
 public class ParamCall extends Term {
 	private final Expression paramExpression;
+	private final Integer paramIndex;
 
-	public ParamCall(Expression paramExpression, int line, int column) {
+	public ParamCall(Expression paramExpression, Integer paramIndex, int line, int column) {
 		super(line, column);
 
 		this.paramExpression = paramExpression;
+		this.paramIndex = paramIndex;
 	}
 
 	public Expression getParamExpression() {
 		return paramExpression;
+	}
+
+	public Integer getParamIndex() {
+		return paramIndex;
 	}
 
 	@Override

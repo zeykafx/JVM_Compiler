@@ -26,6 +26,8 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Objects;
 
+import static compiler.Lexer.TokenTypes.*;
+
 public class SemanticAnalysis implements Visitor<SemType> {
 
 	ASTNode rootNode;
@@ -228,7 +230,16 @@ public class SemanticAnalysis implements Visitor<SemType> {
 
 	@Override
 	public SemType visitConstValue(ConstVal constVal, SymbolTable table) throws SemanticException {
+		// create SemType from this constant value
+		String type = switch (constVal.getSymbol().type) {
+			case INT_LITERAL -> "int";
+			case FLOAT_LITERAL -> "float";
+			case STRING_LITERAL -> "string";
+			case BOOL_TRUE, BOOL_FALSE -> "bool";
+			default -> null;
+		};
 
+		return new SemType(type, true);
 	}
 
 	@Override
@@ -238,17 +249,56 @@ public class SemanticAnalysis implements Visitor<SemType> {
 
 	@Override
 	public SemType visitNewRecord(NewRecord newRecord, SymbolTable table) throws SemanticException {
+		// NewRecord means a record instance creation
+		// example: p Product = Product(1, "Phone", 699);
+		//                      ^^^^^^^^^^^^^^^^^^^^^^^^
 
+		// check that the record type exists
+		RecordSemType recordSemType = (RecordSemType) table.lookup(newRecord.getIdentifier().lexeme);
+		if (recordSemType == null) {
+			throw new ScopeError("Record type "+newRecord.getIdentifier().lexeme+" doesn't exist");
+		}
+
+		// check that the types of the record fields are correct and correspond to the definition
+		for (ParamCall paramCall : newRecord.getTerms()) {
+			// get the SemType
+			SemType paramCallSemType = paramCall.accept(this, table);
+
+			// get the fieldSemType
+			SemType fieldSemType = recordSemType.fields.get(paramCall.getParamIndex());
+			if (fieldSemType == null) {
+				throw new TypeError("Field " + paramCall.getParamIndex() + " does not exist in record type " + newRecord.getIdentifier().lexeme);
+			}
+
+			// check that the types match
+			if (!paramCallSemType.equals(fieldSemType)) {
+				throw new TypeError("Type of the parameter index " + paramCall.getParamIndex() + " in the record " + newRecord.getIdentifier().lexeme + " does not match the type of the field " + fieldSemType);
+			}
+		}
+
+		// check that the number of parameters is correct
+		if (newRecord.getTerms().size() != recordSemType.fields.size()) {
+			throw new TypeError("Number of parameters in the record " + newRecord.getIdentifier().lexeme + " does not match the number of fields " + recordSemType.fields.size());
+		}
+
+		return recordSemType;
 	}
 
 	@Override
 	public SemType visitParamCall(ParamCall paramCall, SymbolTable table) throws SemanticException {
+		// ParamCall is one parameter assignment when creating a new record or when calling a function
+		// example: p Product = Product(1, "Phone", 699);
+		//                              ^  ^^^^^^^  ^^^
+		//                              -> Each of these is a ParamCall
 
+		// we just return the type of the expression
+		return paramCall.getParamExpression().accept(this, table);
 	}
 
 	@Override
 	public SemType visitParenthesesTerm(ParenthesesTerm parenthesesTerm, SymbolTable table) throws SemanticException {
-
+		// return the SemType of the expression that is inside the parentheses
+		return parenthesesTerm.getExpression().accept(this, table);
 	}
 
 	@Override
@@ -309,7 +359,7 @@ public class SemanticAnalysis implements Visitor<SemType> {
 		typeCheckLoopFields(table,loopVarIsInt, step, "step");
 
 		// check that the increment is not 0 (we only check if it is a literal, otherwise we can't check atp)
-		if (step.type == TokenTypes.INT_LITERAL && step.value == (Integer) 0) {
+		if (step.type == INT_LITERAL && step.value == (Integer) 0) {
 			throw new SemanticException("The step of the for loop at line " + step.line + " is 0, this loop will never make progress");
 		}
 
@@ -327,7 +377,7 @@ public class SemanticAnalysis implements Visitor<SemType> {
 	}
 
 	private void typeCheckLoopFields(SymbolTable table, boolean loopVarIsInt, Symbol fieldSymbol, String fieldName) throws TypeError {
-		if (fieldSymbol.type == TokenTypes.INT_LITERAL || fieldSymbol.type == TokenTypes.FLOAT_LITERAL) {
+		if (fieldSymbol.type == INT_LITERAL || fieldSymbol.type == TokenTypes.FLOAT_LITERAL) {
 
 			// if the loop var is an int and the field (start, step, stop) number is a float, we throw an error
 			if (loopVarIsInt && fieldSymbol.type == TokenTypes.FLOAT_LITERAL) {
@@ -360,6 +410,8 @@ public class SemanticAnalysis implements Visitor<SemType> {
 
 		// then check the block
 		whileLoop.getBlock().accept(this, table);
+
+		return null;
 	}
 
 	@Override
@@ -425,6 +477,16 @@ public class SemanticAnalysis implements Visitor<SemType> {
 		if (!conditionType.equals(boolType)) {
 			throw new MissingConditionError("The if statement's condition at line " + ifStatement.line + " does not evaluate to a boolean.");
 		}
+
+		// then check the block
+		ifStatement.getThenBlock().accept(this, table);
+
+		// check the else block if it exists
+		if (ifStatement.isElse()) {
+			ifStatement.getElseBlock().accept(this, table);
+		}
+
+		return null;
 	}
 
 	@Override
@@ -440,12 +502,12 @@ public class SemanticAnalysis implements Visitor<SemType> {
 
 	@Override
 	public SemType visitRecordDefinition(RecordDefinition recordDefinition, SymbolTable table) throws SemanticException {
-		HashMap<String, SemType> fields = new HashMap<>();
+		HashMap<Integer, SemType> fields = new HashMap<>();
 
 		for (RecordFieldDefinition field : recordDefinition.getFields()) {
 			SemType semType = field.accept(this, table);
 
-			fields.put(field.getIdentifier().lexeme, semType);
+			fields.put(field.getFieldIndex(), semType);
 		}
 
 		RecordSemType recordSemType = new RecordSemType(fields);

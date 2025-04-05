@@ -320,22 +320,26 @@ public class Parser {
 
     public ArrayList<ParamCall> parseParamsCall() throws Exception {
         ArrayList<ParamCall> params = new ArrayList<>();
+        int paramIndex = 0;
 
         if (lookAheadSymbol.type != TokenTypes.RIGHT_PAR) {
             // ParamsCall -> Expression "," ParamsCall | Expression
-            params.add(parseParam());
+            params.add(parseParam(paramIndex));
+            paramIndex++;
+
             while (lookAheadSymbol.type == TokenTypes.COMMA) {
                 match(TokenTypes.COMMA);
-                params.add(parseParam());
+                params.add(parseParam(paramIndex));
+                paramIndex++;
             }
         }
         return params;
     }
 
-    public ParamCall parseParam() throws Exception {
+    public ParamCall parseParam(int currentParamIndex) throws Exception {
         // ParamCall -> Expression
         Expression expression = parseExpression();
-        return new ParamCall(expression, expression.line, expression.column);
+        return new ParamCall(expression, currentParamIndex, expression.line, expression.column);
     }
 
     public ArrayList<RecordDefinition> parseRecords() throws Exception {
@@ -364,9 +368,13 @@ public class Parser {
         match(TokenTypes.REC); // REC is the keyword "rec"
         match(TokenTypes.LEFT_BRACKET); // "{"
         ArrayList<RecordFieldDefinition> fields = new ArrayList<>();
+        int fieldIndex = 0;
         while (lookAheadSymbol.type != TokenTypes.RIGHT_BRACKET) {
-            RecordFieldDefinition field = parseRecordField();
+            RecordFieldDefinition field = parseRecordField(fieldIndex);
             fields.add(field);
+
+            fieldIndex++;
+
             if (lookAheadSymbol.type == TokenTypes.SEMICOLON) {
                 match(TokenTypes.SEMICOLON);
             }
@@ -375,11 +383,11 @@ public class Parser {
         return new RecordDefinition(recordIdentifier, fields, recordIdentifier.line, recordIdentifier.column);
     }
 
-    public RecordFieldDefinition parseRecordField() throws Exception {
+    public RecordFieldDefinition parseRecordField(int fieldIndex) throws Exception {
         // RecordField -> "identifier" Type
         Symbol identifier = match(TokenTypes.IDENTIFIER);
         Type type = parseType();
-        return new RecordFieldDefinition(identifier, type, identifier.line, identifier.column);
+        return new RecordFieldDefinition(identifier, type, fieldIndex, identifier.line, identifier.column);
     }
 
     public ArrayList<FunctionDefinition> parseFunctions() throws Exception {

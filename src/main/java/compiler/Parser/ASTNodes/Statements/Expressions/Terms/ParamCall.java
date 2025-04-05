@@ -9,7 +9,9 @@ import compiler.SemanticAnalysis.Visitor;
 public class ParamCall extends Term {
 	private final Expression paramExpression;
 
-	public ParamCall(Expression paramExpression) {
+	public ParamCall(Expression paramExpression, int line, int column) {
+		super(line, column);
+
 		this.paramExpression = paramExpression;
 	}
 

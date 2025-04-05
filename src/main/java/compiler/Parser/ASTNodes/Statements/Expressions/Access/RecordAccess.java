@@ -11,7 +11,9 @@ public class RecordAccess extends Access {
     private final Access headAccess;
     private final Symbol identifier;
 
-    public RecordAccess(Access head, Symbol identifier) {
+    public RecordAccess(Access head, Symbol identifier, int line, int column) {
+        super(line, column);
+
         this.headAccess = head;
         this.identifier = identifier;
     }

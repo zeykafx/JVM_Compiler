@@ -13,12 +13,16 @@ public class Type extends ASTNode {
 
 	public boolean isList;
 
-	public Type(Symbol type) {
+	public Type(Symbol type, int line, int column) {
+		super(line, column);
+
 		this.symbol = type;
 		this.isList = false;
 	}
 
-	public Type(Symbol type, boolean isList) {
+	public Type(Symbol type, boolean isList, int line, int column) {
+		super(line, column);
+
 		this.symbol = type;
 		this.isList = isList;
 	}

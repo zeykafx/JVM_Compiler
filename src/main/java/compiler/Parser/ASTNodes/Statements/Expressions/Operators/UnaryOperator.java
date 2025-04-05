@@ -12,7 +12,9 @@ import compiler.SemanticAnalysis.Visitor;
 public class UnaryOperator extends Operator {
     private final Symbol operator;
 
-    public UnaryOperator(Symbol operator) {
+    public UnaryOperator(Symbol operator, int line, int column) {
+        super(line, column);
+
         this.operator = operator;
     }
 

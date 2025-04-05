@@ -17,7 +17,8 @@ public class Program extends ASTNode {
 	ArrayList<FunctionDefinition> functions;
 
 
-	public Program(ArrayList<VariableDeclaration> constants, ArrayList<RecordDefinition> records, ArrayList<VariableDeclaration> globals, ArrayList<FunctionDefinition> functions) {
+	public Program(ArrayList<VariableDeclaration> constants, ArrayList<RecordDefinition> records, ArrayList<VariableDeclaration> globals, ArrayList<FunctionDefinition> functions, int line, int column) {
+		super(line, column);
 		this.constants = constants;
 		this.records = records;
 		this.globals = globals;

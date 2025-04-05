@@ -12,7 +12,9 @@ public class UnaryExpression extends Expression {
     private final Operator operator;
     private final Term term;
 
-    public UnaryExpression(Operator operator, Term term) {
+    public UnaryExpression(Operator operator, Term term, int line, int column) {
+        super(line, column);
+
         this.operator = operator;
         this.term = term;
     }

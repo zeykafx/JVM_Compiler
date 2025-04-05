@@ -19,13 +19,15 @@ public class FunctionDefinition extends Statement {
 	private final Block block;
 	private final boolean voidReturnType;
 
-	public FunctionDefinition(Symbol name, Type returnType, ArrayList<ParamDefinition> paramDefinitions, Block block) {
+	public FunctionDefinition(Symbol name, Type returnType, ArrayList<ParamDefinition> paramDefinitions, Block block, int line, int column) {
+		super(line, column);
+
 		this.name = name;
 		this.paramDefinitions = paramDefinitions;
 		this.block = block;
 
 		if (returnType == null) {
-			this.returnType = new Type(new Symbol(TokenTypes.VOID, "void", 0, 0), false);
+			this.returnType = new Type(new Symbol(TokenTypes.VOID, "void", 0, 0), false, line, column);
 			this.voidReturnType = true;
 		} else {
 			this.returnType = returnType;

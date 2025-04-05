@@ -8,6 +8,10 @@ import compiler.SemanticAnalysis.Visitor;
 
 public class Statement extends ASTNode {
 
+	public Statement(int line, int column) {
+		super(line, column);
+	}
+
 	@Override
 	public SemType accept(Visitor<SemType> v, SymbolTable table) throws SemanticException {
 		return v.visitStatement(this, table);

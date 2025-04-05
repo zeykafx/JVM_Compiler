@@ -16,7 +16,8 @@ public class VariableDeclaration extends Statement {
 	boolean isConstant;
 	boolean hasValue;
 
-	public VariableDeclaration(Symbol name, Type type, Expression value, boolean isConstant) {
+	public VariableDeclaration(Symbol name, Type type, Expression value, boolean isConstant, int line, int column) {
+		super(line, column);
 		this.name = name;
 		this.type = type;
 		this.value = value;
@@ -24,7 +25,9 @@ public class VariableDeclaration extends Statement {
 		this.hasValue = true;
 	}
 
-	public VariableDeclaration(Symbol name, Type type, Expression value) {
+	public VariableDeclaration(Symbol name, Type type, Expression value, int line, int column) {
+		super(line, column);
+
 		this.name = name;
 		this.type = type;
 		this.value = value;
@@ -32,7 +35,9 @@ public class VariableDeclaration extends Statement {
 		this.hasValue = true;
 	}
 
-	public VariableDeclaration(Symbol name, Type type) {
+	public VariableDeclaration(Symbol name, Type type, int line, int column) {
+		super(line, column);
+
 		this.name = name;
 		this.type = type;
 		this.value = null;

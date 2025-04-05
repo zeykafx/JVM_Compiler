@@ -16,7 +16,9 @@ public class ParamDefinition extends Statement {
 	private final Symbol identifier;
 	private final Type type;
 
-	public ParamDefinition(Symbol identifier, Type type) {
+	public ParamDefinition(Symbol identifier, Type type, int line, int column) {
+		super(line, column);
+
 		this.identifier = identifier;
 		this.type = type;
 	}

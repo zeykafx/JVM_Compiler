@@ -11,7 +11,9 @@ public class WhileLoop extends Statement {
 	private final Expression condition;
 	private final Block block;
 
-	public WhileLoop(Expression condition, Block block) {
+	public WhileLoop(Expression condition, Block block, int line, int column) {
+		super(line, column);
+
 		this.condition = condition;
 		this.block = block;
 	}

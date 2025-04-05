@@ -11,7 +11,9 @@ public class VariableAssignment extends Statement {
 	private final Expression expression;
 
 
-	public VariableAssignment(Access access, Expression expression) {
+	public VariableAssignment(Access access, Expression expression, int line, int column) {
+		super(line, column);
+
 		this.access = access;
 		this.expression = expression;
 	}

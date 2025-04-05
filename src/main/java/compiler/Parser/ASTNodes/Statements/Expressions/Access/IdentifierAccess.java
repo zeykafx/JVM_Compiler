@@ -9,7 +9,9 @@ import compiler.SemanticAnalysis.Visitor;
 public class IdentifierAccess extends Access {
 	private final Symbol identifier;
 
-	public IdentifierAccess(Symbol identifier) {
+	public IdentifierAccess(Symbol identifier, int line, int column) {
+		super(line, column);
+
 		this.identifier = identifier;
 	}
 

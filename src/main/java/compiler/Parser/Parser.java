@@ -76,7 +76,7 @@ public class Parser {
         // parse the function declarations
         ArrayList<FunctionDefinition> functions = parseFunctions();
 
-        return new Program(constants, records, globalVariables, functions);
+        return new Program(constants, records, globalVariables, functions, lookAheadSymbol.line, lookAheadSymbol.column);
     }
 
     public ArrayList<VariableDeclaration> parseConstants() throws Exception {
@@ -133,11 +133,13 @@ public class Parser {
                 identifier,
                 type,
                 expression,
-                isConstant
+                isConstant,
+                identifier.line,
+                identifier.column
             );
         } else if (lookAheadSymbol.type == TokenTypes.SEMICOLON) {
             match(TokenTypes.SEMICOLON);
-            return new VariableDeclaration(identifier, type);
+            return new VariableDeclaration(identifier, type, identifier.line, identifier.column);
         } else {
             throw new SyntaxErrorException(
                 "Syntax Error: Expected '=' or ';' after variable declaration but found " +
@@ -164,7 +166,7 @@ public class Parser {
                 default -> null;
             };
 
-        Type type = new Type(symbol, false);
+        Type type = new Type(symbol, false, lookAheadSymbol.line, lookAheadSymbol.column);
 
 		assert symbol != null;
 		if (symbol.type == TokenTypes.INT || symbol.type == TokenTypes.FLOAT) {
@@ -205,7 +207,7 @@ public class Parser {
         ) {
             // UnaryOperator -> "!" | "-"
             Symbol unaryOperator = match(lookAheadSymbol.type);
-            operator = new UnaryOperator(unaryOperator);
+            operator = new UnaryOperator(unaryOperator, lookAheadSymbol.line, lookAheadSymbol.column);
             isUnaryOperator = true;
         }
 
@@ -219,14 +221,14 @@ public class Parser {
             match(TokenTypes.RIGHT_SQUARE_BRACKET);
             match(TokenTypes.OF);
             Type type = parseType();
-            return new ArrayExpression(sizeExpression, type);
+            return new ArrayExpression(sizeExpression, type, sizeExpression.line, sizeExpression.column);
         }
 
         Term term = parseTerm();
 
         if (isUnaryOperator) {
             // If there was a unary operator, return a UnaryExpression
-            return new UnaryExpression(operator, term);
+            return new UnaryExpression(operator, term, term.line, term.column);
         }
 
         // Check for binary operators
@@ -245,9 +247,9 @@ public class Parser {
         ) {
             // BinaryOperator -> "+" | "-" | "*" | "/" | "%" | "&&" | "||" | "==" | "!=" | "<" | ">" | "<=" | ">="
             Symbol binaryOperator = match(lookAheadSymbol.type);
-            Operator binaryOp = new BinaryOperator(binaryOperator);
+            Operator binaryOp = new BinaryOperator(binaryOperator, term.line, term.column);
             Term rightTerm = parseTerm();
-            return new BinaryExpression(term, binaryOp, rightTerm);
+            return new BinaryExpression(term, binaryOp, rightTerm, term.line, term.column);
         }
 
         // If no binary operator, return the term
@@ -260,7 +262,7 @@ public class Parser {
             match(TokenTypes.LEFT_PAR);
             Expression expression = parseExpression();
             match(TokenTypes.RIGHT_PAR);
-            return new ParenthesesTerm(expression);
+            return new ParenthesesTerm(expression, expression.line, expression.column);
         } else if (lookAheadSymbol.type == TokenTypes.IDENTIFIER) {
             // IdentifierOrFunctionCall -> "identifier" IdentifierOrFunctionCallTail
             Symbol identifier = match(lookAheadSymbol.type);
@@ -280,7 +282,7 @@ public class Parser {
             match(TokenTypes.LEFT_PAR);
             ArrayList<ParamCall> params = parseParamsCall();
             match(TokenTypes.RIGHT_PAR);
-            return new NewRecord(identifier, params);
+            return new NewRecord(identifier, params, identifier.line, identifier.column);
         } else if (
             lookAheadSymbol.type == TokenTypes.INT_LITERAL ||
             lookAheadSymbol.type == TokenTypes.FLOAT_LITERAL ||
@@ -300,7 +302,7 @@ public class Parser {
                     default -> null;
                 };
 
-            return new ConstVal(constVal.value, constVal);
+            return new ConstVal(constVal.value, constVal, constVal.line, constVal.column);
         }
 
         // If none of the above, throw an error
@@ -333,7 +335,7 @@ public class Parser {
     public ParamCall parseParam() throws Exception {
         // ParamCall -> Expression
         Expression expression = parseExpression();
-        return new ParamCall(expression);
+        return new ParamCall(expression, expression.line, expression.column);
     }
 
     public ArrayList<RecordDefinition> parseRecords() throws Exception {
@@ -370,14 +372,14 @@ public class Parser {
             }
         }
         match(TokenTypes.RIGHT_BRACKET); // "}"
-        return new RecordDefinition(recordIdentifier, fields);
+        return new RecordDefinition(recordIdentifier, fields, recordIdentifier.line, recordIdentifier.column);
     }
 
     public RecordFieldDefinition parseRecordField() throws Exception {
         // RecordField -> "identifier" Type
         Symbol identifier = match(TokenTypes.IDENTIFIER);
         Type type = parseType();
-        return new RecordFieldDefinition(identifier, type);
+        return new RecordFieldDefinition(identifier, type, identifier.line, identifier.column);
     }
 
     public ArrayList<FunctionDefinition> parseFunctions() throws Exception {
@@ -408,7 +410,7 @@ public class Parser {
             returnType = parseType();
         }
         Block block = parseBlock();
-        return new FunctionDefinition(identifier, returnType, params, block);
+        return new FunctionDefinition(identifier, returnType, params, block, identifier.line, identifier.column);
     }
 
     public ArrayList<ParamDefinition> parseParamDefinitions() throws Exception {
@@ -431,7 +433,7 @@ public class Parser {
         // Param -> "identifier" Type
         Symbol identifier = match(TokenTypes.IDENTIFIER);
         Type type = parseType(); // Post typing
-        return new ParamDefinition(identifier, type);
+        return new ParamDefinition(identifier, type, identifier.line, identifier.column);
     }
 
     public Block parseBlock() throws Exception {
@@ -450,18 +452,18 @@ public class Parser {
                 match(TokenTypes.RETURN);
                 if (lookAheadSymbol.type == TokenTypes.SEMICOLON) {
                     match(TokenTypes.SEMICOLON);
-                    returnStatement = new ReturnStatement(null);
+                    returnStatement = new ReturnStatement(null, lookAheadSymbol.line, lookAheadSymbol.column);
                     break;
                 }
                 Expression returnExpression = parseExpression();
                 match(TokenTypes.SEMICOLON);
-                returnStatement = new ReturnStatement(returnExpression);
+                returnStatement = new ReturnStatement(returnExpression, lookAheadSymbol.line, lookAheadSymbol.column);
             } else {
                 statements.add(parseStatement());
             }
         }
         match(TokenTypes.RIGHT_BRACKET);
-        return new Block(statements, returnStatement);
+        return new Block(statements, returnStatement, lookAheadSymbol.line, lookAheadSymbol.column);
     }
 
     public Statement parseStatement() throws Exception {
@@ -492,7 +494,7 @@ public class Parser {
         match(TokenTypes.RIGHT_PAR);
         Block ifBlock = parseBlock();
         Block elseStatement = parseElseStatement();
-        return new IfStatement(condition, ifBlock, elseStatement);
+        return new IfStatement(condition, ifBlock, elseStatement, condition.line, condition.column);
     }
 
     public Block parseElseStatement() throws Exception {
@@ -540,7 +542,7 @@ public class Parser {
 
         match(TokenTypes.RIGHT_PAR);
         Block block = parseBlock();
-        return new ForLoop(identifier, startType, endType, stepType, block);
+        return new ForLoop(identifier, startType, endType, stepType, block, identifier.line, identifier.column);
     }
 
     public Symbol parseNumLiteralOrIdent() throws Exception {
@@ -560,7 +562,7 @@ public class Parser {
         Expression condition = parseExpression();
         match(TokenTypes.RIGHT_PAR);
         Block block = parseBlock();
-        return new WhileLoop(condition, block);
+        return new WhileLoop(condition, block, condition.line, condition.column);
     }
 
     public Statement parseBaseStatement() throws Exception {
@@ -605,7 +607,7 @@ public class Parser {
             match(TokenTypes.ASSIGN);
 
             Expression expression = parseExpression();
-            return new VariableAssignment(access, expression);
+            return new VariableAssignment(access, expression, access.line, access.column);
         } else if (lookAheadSymbol.type == TokenTypes.RECORD) {
             return parseRecord();
         } else if (lookAheadSymbol.type == TokenTypes.FREE) {
@@ -613,7 +615,7 @@ public class Parser {
             match(TokenTypes.FREE);
             Access access = parseAccess(false, null);
 
-            return new FreeStatement((IdentifierAccess) access);
+            return new FreeStatement((IdentifierAccess) access, access.line, access.column);
         }
 
         return null;
@@ -624,11 +626,11 @@ public class Parser {
         if (lookAheadSymbol.type == TokenTypes.RIGHT_PAR) {
             // empty params
             match(TokenTypes.RIGHT_PAR);
-            return new FunctionCall(identifier, new ArrayList<>());
+            return new FunctionCall(identifier, new ArrayList<>(), identifier.line, identifier.column);
         }
         ArrayList<ParamCall> params = parseParamsCall();
         match(TokenTypes.RIGHT_PAR);
-        return new FunctionCall(identifier, params);
+        return new FunctionCall(identifier, params, identifier.line, identifier.column);
     }
 
     public Access parseAccess(boolean skipIdent, Symbol identIfSkipped)
@@ -644,7 +646,7 @@ public class Parser {
         } else {
             identifier = match(TokenTypes.IDENTIFIER);
         }
-        Access access = new IdentifierAccess(identifier);
+        Access access = new IdentifierAccess(identifier, identifier.line, identifier.column);
 
         // Parse the access chain (array indices and field accesses)
         while (
@@ -656,12 +658,12 @@ public class Parser {
                 match(TokenTypes.LEFT_SQUARE_BRACKET);
                 Expression indexExpr = parseExpression();
                 match(TokenTypes.RIGHT_SQUARE_BRACKET);
-                access = new ArrayAccess(access, indexExpr);
+                access = new ArrayAccess(access, indexExpr, indexExpr.line, indexExpr.column);
             } else {
                 // Field access: .identifier
                 match(TokenTypes.DOT);
                 Symbol fieldName = match(TokenTypes.IDENTIFIER);
-                access = new RecordAccess(access, fieldName);
+                access = new RecordAccess(access, fieldName, fieldName.line, fieldName.column);
             }
         }
 

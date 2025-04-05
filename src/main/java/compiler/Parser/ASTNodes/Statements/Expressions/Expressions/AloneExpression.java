@@ -10,7 +10,8 @@ public class AloneExpression extends Expression {
     // ! This class is redundant with Identifier, can probably be removed
     private final Term term;
 
-    public AloneExpression(Term term) {
+    public AloneExpression(Term term, int line, int column) {
+        super(line, column);
         this.term = term;
     }
 

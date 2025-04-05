@@ -10,7 +10,9 @@ import compiler.SemanticAnalysis.Visitor;
 public class Identifier extends Term {
     private final Symbol symbol;
 
-    public Identifier(Symbol symbol) {
+    public Identifier(Symbol symbol, int line, int column) {
+        super(line, column);
+        
         this.symbol = symbol;
     }
 

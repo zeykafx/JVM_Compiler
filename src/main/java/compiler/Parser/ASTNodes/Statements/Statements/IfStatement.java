@@ -14,13 +14,17 @@ public class IfStatement extends Statement {
     private final boolean isElse;
     private Block elseBlock; // can be null if there is no else statement
 
-    public IfStatement(Expression condition, Block thenBlock) {
+    public IfStatement(Expression condition, Block thenBlock, int line, int column) {
+        super(line, column);
+
         this.condition = condition;
         this.thenSBlock = thenBlock;
         this.isElse = false;
     }
 
-    public IfStatement(Expression condition, Block thenBlock, Block elseBlock) {
+    public IfStatement(Expression condition, Block thenBlock, Block elseBlock, int line, int column) {
+        super(line, column);
+
         this.condition = condition;
         this.thenSBlock = thenBlock;
         this.elseBlock = elseBlock;

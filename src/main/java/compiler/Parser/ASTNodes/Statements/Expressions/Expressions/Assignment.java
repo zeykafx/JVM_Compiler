@@ -10,7 +10,8 @@ public class Assignment extends Expression {
 	private final Symbol symbol;
 	private final Expression rightExpression;
 
-	public Assignment(Symbol symbol, Expression rightExpression) {
+	public Assignment(Symbol symbol, Expression rightExpression, int line, int column) {
+		super(line, column);
 		this.symbol = symbol;
 		this.rightExpression = rightExpression;
 	}

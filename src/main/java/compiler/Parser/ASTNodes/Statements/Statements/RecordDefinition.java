@@ -15,9 +15,12 @@ public class RecordDefinition extends Statement {
 
     public RecordDefinition(
         Symbol identifier,
-        ArrayList<RecordFieldDefinition> fields
+        ArrayList<RecordFieldDefinition> fields,
+        int line,
+        int column
     ) {
-        this.identifier = identifier;
+		super(line, column);
+		this.identifier = identifier;
         this.fields = fields;
     }
 

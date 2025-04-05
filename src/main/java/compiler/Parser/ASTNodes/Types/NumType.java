@@ -10,12 +10,12 @@ public class NumType extends Type {
 	private final boolean isFloat;
 
 	public NumType(Symbol type, boolean isFloat) {
-		super(type, false);
+		super(type, false, type.line, type.column);
 		this.isFloat = isFloat;
 	}
 
 	public NumType(Symbol type) {
-		super(type, false);
+		super(type, false, type.line, type.column);
 		this.isFloat = false;
 	}
 

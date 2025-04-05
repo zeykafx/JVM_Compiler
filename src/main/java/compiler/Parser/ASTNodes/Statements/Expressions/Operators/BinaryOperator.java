@@ -14,7 +14,9 @@ public class BinaryOperator extends Operator {
 
     private final Symbol operator;
 
-    public BinaryOperator(Symbol operator) {
+    public BinaryOperator(Symbol operator, int line, int column) {
+        super(line, column);
+
         this.operator = operator;
     }
 

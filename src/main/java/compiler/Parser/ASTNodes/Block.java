@@ -13,7 +13,9 @@ public class Block extends ASTNode {
     ArrayList<Statement> statements;
     Statement returnStatement;
 
-    public Block(ArrayList<Statement> statements, Statement returnStatement) {
+    public Block(ArrayList<Statement> statements, Statement returnStatement, int line, int column) {
+        super(line, column);
+
         this.statements = statements;
         this.returnStatement = returnStatement;
     }

@@ -11,7 +11,9 @@ public class ConstVal extends Term {
     private final Object value;
     private final Symbol symbol;
 
-    public ConstVal(Object value, Symbol symbol) {
+    public ConstVal(Object value, Symbol symbol, int line, int column) {
+        super(line, column);
+
         this.value = value;
         this.symbol = symbol;
     }

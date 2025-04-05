@@ -13,7 +13,9 @@ public class NewRecord extends Term {
     private final Symbol identifier;
     private final ArrayList<ParamCall> terms;
 
-    public NewRecord(Symbol identifier, ArrayList<ParamCall> terms) {
+    public NewRecord(Symbol identifier, ArrayList<ParamCall> terms, int line, int column) {
+        super(line, column);
+
         this.identifier = identifier;
         this.terms = terms;
     }

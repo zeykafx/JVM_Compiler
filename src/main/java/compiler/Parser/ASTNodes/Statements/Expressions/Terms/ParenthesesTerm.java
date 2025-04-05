@@ -9,7 +9,9 @@ import compiler.SemanticAnalysis.Visitor;
 public class ParenthesesTerm extends Term {
     private final Expression expression;
 
-    public ParenthesesTerm(Expression expression) {
+    public ParenthesesTerm(Expression expression, int line, int column) {
+        super(line, column);
+
         this.expression = expression;
     }
 

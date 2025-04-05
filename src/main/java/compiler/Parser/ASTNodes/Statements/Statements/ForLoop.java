@@ -15,7 +15,9 @@ public class ForLoop extends Statement {
 	private final Symbol step;
 	private final Block block;
 
-	public ForLoop(Symbol variable, Symbol start, Symbol end, Symbol step, Block block) {
+	public ForLoop(Symbol variable, Symbol start, Symbol end, Symbol step, Block block, int line, int column) {
+		super(line, column);
+
 		this.variable = variable;
 		this.start = start;
 		this.end = end;

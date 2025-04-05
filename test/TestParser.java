@@ -911,7 +911,7 @@ public class TestParser {
         String input = """
                 fun main() int {
                     i int;
-                    for (i, 0, 10, 1) {
+                    for (i, 0.0, 10, 1) {
                         writeln(i);
                         return;
                     }
@@ -963,6 +963,8 @@ public class TestParser {
         assertNull(returnStmt.getExpression());
 
         System.out.println(forLoop.getStart());
+        System.out.println(forLoop.getStart().value);
+        System.out.println(forLoop.getStart().value.getClass());
 
     }
 }

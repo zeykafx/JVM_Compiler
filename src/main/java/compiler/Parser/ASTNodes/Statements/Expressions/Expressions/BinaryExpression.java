@@ -13,7 +13,9 @@ public class BinaryExpression extends Expression {
     private final Operator operator;
     private final Term rightTerm;
 
-    public BinaryExpression(Term leftTerm, Operator operator, Term rightTerm) {
+    public BinaryExpression(Term leftTerm, Operator operator, Term rightTerm, int line, int column) {
+        super(line, column);
+
         this.leftTerm = leftTerm;
         this.operator = operator;
         this.rightTerm = rightTerm;

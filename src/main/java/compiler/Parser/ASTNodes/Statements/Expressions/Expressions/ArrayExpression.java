@@ -17,7 +17,9 @@ public class ArrayExpression extends Expression {
 //    private final Symbol identifier;
 
 
-    public ArrayExpression(Expression sizeExpression, Type type) {
+    public ArrayExpression(Expression sizeExpression, Type type, int line, int column) {
+        super(line, column);
+
         this.sizeExpression = sizeExpression;
         this.type = type;
 //        this.identifier = identifier;

@@ -11,7 +11,8 @@ public class ArrayAccess extends Access {
     private final Access headAccess;
     private final Expression indexExpression;
 
-    public ArrayAccess(Access head, Expression index) {
+    public ArrayAccess(Access head, Expression index, int line, int column) {
+        super(line, column);
         this.headAccess = head;
         this.indexExpression = index;
     }

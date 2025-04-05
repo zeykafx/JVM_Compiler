@@ -10,7 +10,9 @@ public class ReturnStatement extends Statement {
 
     private final Expression expression;
 
-    public ReturnStatement(Expression expression) {
+    public ReturnStatement(Expression expression, int line, int column) {
+        super(line, column);
+
         this.expression = expression;
     }
 

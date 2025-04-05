@@ -9,7 +9,8 @@ import compiler.SemanticAnalysis.Visitor;
 public class FreeStatement extends Statement {
 	private final IdentifierAccess identifierAccess;
 
-	public FreeStatement(IdentifierAccess identifierAccess) {
+	public FreeStatement(IdentifierAccess identifierAccess, int line, int column) {
+		super(line, column);
 		this.identifierAccess = identifierAccess;
 	}
 

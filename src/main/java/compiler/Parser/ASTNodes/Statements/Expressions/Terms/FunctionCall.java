@@ -12,7 +12,9 @@ public class FunctionCall extends Term {
 	private final Symbol identifier;
 	private final ArrayList<ParamCall> parameters;
 
-	public FunctionCall(Symbol identifier, ArrayList<ParamCall> parameters) {
+	public FunctionCall(Symbol identifier, ArrayList<ParamCall> parameters, int line, int column) {
+		super(line, column);
+
 		this.identifier = identifier;
 		this.parameters = parameters;
 	}

@@ -11,7 +11,9 @@ public class RecordFieldDefinition extends Statement {
 	Symbol identifier;
 	Type type;
 
-	public RecordFieldDefinition(Symbol identifier, Type type) {
+	public RecordFieldDefinition(Symbol identifier, Type type, int line, int column) {
+		super(line, column);
+
 		this.identifier = identifier;
 		this.type = type;
 	}

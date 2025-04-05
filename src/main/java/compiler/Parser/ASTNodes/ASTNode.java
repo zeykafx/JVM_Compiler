@@ -6,6 +6,13 @@ import compiler.SemanticAnalysis.Types.SemType;
 import compiler.SemanticAnalysis.Visitor;
 
 public abstract class ASTNode {
+    public int line;
+    public int column;
+
+    public ASTNode(int line, int column) {
+        this.line = line;
+        this.column = column;
+    }
 
     public abstract SemType accept(Visitor<SemType> v, SymbolTable table) throws SemanticException;
 

@@ -221,7 +221,6 @@ public class SemanticAnalysis implements Visitor<SemType> {
 
  	}
 
-
 	@Override
 	public SemType visitArrayExpression(ArrayExpression arrayExpression, SymbolTable table) throws SemanticException {
 		// ArrayExpression -> "array" "[" "intval" "]" "of" Type ";" .
@@ -247,7 +246,19 @@ public class SemanticAnalysis implements Visitor<SemType> {
 			throw new TypeError("Types of elements in the binary expression at line "+binaryExpression.line+" do not match: " + leftType + " and " + rightType);
 		}
 
-		SemType termsType = leftType; // since both terms are equivalent in types, we can use the left term's type to do the checks
+		SemType termsType;
+		if (leftType.equals(numType)) {
+			// if the one of the types is a float, then we use that type as the termsType
+			// if both are ints, then we use int
+			if (leftType.equals(floatType) || rightType.equals(floatType)) {
+				termsType = floatType;
+			} else {
+				termsType = leftType;
+			}
+		} else {
+			// if the types are not numbers, then we use the type of the left term
+			termsType = leftType;
+		}
 
 		SemType operatorSemType = binaryExpression.getOperator().accept(this, table);
 		if (operatorSemType.equals(boolType)) {
@@ -345,7 +356,6 @@ public class SemanticAnalysis implements Visitor<SemType> {
 			case FLOAT_LITERAL -> "float";
 			case STRING_LITERAL -> "string";
 			case BOOL_TRUE, BOOL_FALSE -> "bool";
-			case REC -> "rec";
 			default -> null;
 		};
 
@@ -381,12 +391,13 @@ public class SemanticAnalysis implements Visitor<SemType> {
 			SemType argSemType = functionDefParamsSemTypes[paramCall.getParamIndex()];
 
 
-			if (!paramCallSemType.equals(argSemType)) {
+			// if the args don't match and the function is not defined with "any" as the type of its arguments
+			if (!paramCallSemType.equals(argSemType) && !argSemType.equals(anyType)) {
 				// the types didn't match, but if the expected type is a float and the given type is an int, we can convert it (here that means we keep going)
 
 				// if we can't convert the type, we throw an error: here if it's not the convertable case, we throw
 				if (!(argSemType.equals(floatType) && paramCallSemType.equals(intType))) { // TODO: maybe remove since we added equivalence in the .equals method
-					throw new TypeError("Type of the argument index " + paramCall.getParamIndex() + " in the function call " + functionCall.getIdentifier().lexeme + " does not match the type of the argument " + argSemType);
+					throw new TypeError("Type of the argument index " + paramCall.getParamIndex() + " in the function call " + functionCall.getIdentifier().lexeme + " at line "+ functionCall.line +" does not match the type of the argument " + argSemType);
 				}
 
 			}

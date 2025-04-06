@@ -503,7 +503,7 @@ public class SemanticAnalysis implements Visitor<SemType> {
 		SemType varType = table.lookup(varSymbol.lexeme);
 		if (varType == null) {
             // if the identifier is not found, throw an error
-            throw new ScopeError("Identifier " + varSymbol.lexeme + " in for loop at line "+ varSymbol.line +" was not found in symbol table");
+            throw new ScopeError("Identifier '" + varSymbol.lexeme + "' in for loop at line "+ varSymbol.line +" was not found in symbol table");
         }
 
 		boolean loopVarIsInt = false;
@@ -556,8 +556,8 @@ public class SemanticAnalysis implements Visitor<SemType> {
         	SemType fieldType = table.lookup(fieldSymbol.lexeme);
 
 			// if the loop var is an int and field var is a float, then we throw an error
-			if (loopVarIsInt && fieldType.equals(floatType)) {
-				throw new TypeError("The "+fieldName+" variable in the for loop at line" + fieldSymbol.line + ": '"+ fieldSymbol.lexeme +"' is not an integer but the loop variable is.");
+			if (loopVarIsInt && fieldType.type.equals("float")) {
+				throw new TypeError("The "+fieldName+" variable in the for loop at line " + fieldSymbol.line + ": '"+ fieldSymbol.lexeme +"' is not an integer but the loop variable is.");
 			}
 			// otherwise we're good (I think)
 		} else {
@@ -707,6 +707,12 @@ public class SemanticAnalysis implements Visitor<SemType> {
 		SemType existingRecord = table.lookup(recordDefinition.getIdentifier().lexeme);
 		if (existingRecord != null) { // IF IT'S NOT NULL, then throw an error
 			throw new RecordError("Record " + recordDefinition.getIdentifier().lexeme + " already exists in the symbol table");
+		}
+
+		switch (recordDefinition.getIdentifier().lexeme) {
+			case "int", "float", "string", "bool", "num", "any", "while", "for", "main" -> {
+				throw new RecordError("Record " + recordDefinition.getIdentifier().lexeme + " cannot be defined, it is a reserved keyword");
+			}
 		}
 
 		table.addSymbol(recordDefinition.getIdentifier().lexeme, recordSemType);

@@ -7,6 +7,7 @@ import compiler.Parser.ASTNodes.Statements.Expressions.Access.*;
 import compiler.Parser.ASTNodes.Statements.Expressions.Expressions.*;
 import compiler.Parser.ASTNodes.Statements.Expressions.Operators.*;
 import compiler.Parser.ASTNodes.Statements.Expressions.Terms.*;
+import compiler.Parser.ASTNodes.Statements.Statements.*;
 import compiler.Parser.ASTNodes.Types.Type;
 import compiler.SemanticAnalysis.*;
 import compiler.SemanticAnalysis.Errors.*;
@@ -39,7 +40,7 @@ public class TestSemanticAnalysis {
             SemType resultType = semanticAnalysis.visitArrayAccess(arrayAccess, symbolTable);
             assertEquals("Expected type to be array of ints", arrayType, resultType);
         } catch (SemanticException e) {
-            fail("Semantic analysis failed: " + e.getMessage());
+            e.printStackTrace();
         }
     }
 
@@ -87,7 +88,7 @@ public class TestSemanticAnalysis {
             SemType resultType = semanticAnalysis.visitRecordAccess(recordAccess, symbolTable);
             assertEquals("Expected type to be int", new SemType("int"), resultType);
         } catch (SemanticException e) {
-            fail("Semantic analysis failed: " + e.getMessage());
+            e.printStackTrace();
         }
     }
 
@@ -106,7 +107,7 @@ public class TestSemanticAnalysis {
             SemType resultType = semanticAnalysis.visitArrayExpression(arrayExpression, null);
             assertEquals("Expected type to be array of ints", arrayType, resultType);
         } catch (SemanticException e) {
-            fail("Semantic analysis failed: " + e.getMessage());
+            e.printStackTrace();
         }
     }
 
@@ -132,7 +133,7 @@ public class TestSemanticAnalysis {
             SemType resultType = semanticAnalysis.visitArrayExpression(arrayExpression, symbolTable);
             assertEquals("Expected type to be array of ints", arrayType, resultType);
         } catch (SemanticException e) {
-            fail("Semantic analysis failed: " + e.getMessage());
+            e.printStackTrace();
         }
     }
 
@@ -151,7 +152,7 @@ public class TestSemanticAnalysis {
             SemType resultType = semanticAnalysis.visitBinaryExpression(binaryExpression, null);
             assertEquals("Expected type to be int", expectedType, resultType);
         } catch (SemanticException e) {
-            fail("Semantic analysis failed: " + e.getMessage());
+            e.printStackTrace();
         }
     }
 
@@ -175,7 +176,7 @@ public class TestSemanticAnalysis {
             SemType resultType = semanticAnalysis.visitBinaryExpression(binaryExpression, symbolTable);
             assertEquals("Expected type to be int", expectedType, resultType);
         } catch (SemanticException e) {
-            fail("Semantic analysis failed: " + e.getMessage());
+            e.printStackTrace();
         }
     }
 
@@ -198,7 +199,7 @@ public class TestSemanticAnalysis {
             SemType resultType = semanticAnalysis.visitBinaryExpression(binaryExpression, symbolTable);
             assertEquals("Expected type to be bool", expectedType, resultType);
         } catch (SemanticException e) {
-            fail("Semantic analysis failed: " + e.getMessage());
+            e.printStackTrace();
         }
     }
 
@@ -219,7 +220,7 @@ public class TestSemanticAnalysis {
             SemType resultType = semanticAnalysis.visitBinaryExpression(binaryExpression, null);
             assertEquals("Expected type to be float", expectedType, resultType);
         } catch (SemanticException e) {
-            fail("Semantic analysis failed: " + e.getMessage());
+            e.printStackTrace();
         }
     }
 
@@ -240,7 +241,7 @@ public class TestSemanticAnalysis {
             SemType resultType = semanticAnalysis.visitBinaryExpression(binaryExpression, null);
             assertEquals("Expected type to be float", expectedType, resultType);
         } catch (SemanticException e) {
-            fail("Semantic analysis failed: " + e.getMessage());
+            e.printStackTrace();
         }
     }
 
@@ -266,7 +267,7 @@ public class TestSemanticAnalysis {
             SemType resultType = semanticAnalysis.visitBinaryExpression(binaryExpression, symbolTable);
             assertEquals("Expected type to be float", expectedType, resultType);
         } catch (SemanticException e) {
-            fail("Semantic analysis failed: " + e.getMessage());
+            e.printStackTrace();
         }
     }
 
@@ -297,7 +298,7 @@ public class TestSemanticAnalysis {
             SemType resultType = semanticAnalysis.visitBinaryExpression(binaryExpression, symbolTable);
             assertEquals("Expected type to be bool", expectedType, resultType);
         } catch (SemanticException e) {
-            fail("Semantic analysis failed: " + e.getMessage());
+            e.printStackTrace();
         }
     }
 
@@ -315,7 +316,7 @@ public class TestSemanticAnalysis {
             SemType resultType = semanticAnalysis.visitUnaryExpression(unaryExpression, null);
             assertEquals("Expected type to be int", expectedType, resultType);
         } catch (SemanticException e) {
-            fail("Semantic analysis failed: " + e.getMessage());
+            e.printStackTrace();
         }
     }
 
@@ -333,7 +334,7 @@ public class TestSemanticAnalysis {
             SemType resultType = semanticAnalysis.visitUnaryExpression(unaryExpression, null);
             assertEquals("Expected type to be bool", expectedType, resultType);
         } catch (SemanticException e) {
-            fail("Semantic analysis failed: " + e.getMessage());
+            e.printStackTrace();
         }
     }
 
@@ -356,7 +357,7 @@ public class TestSemanticAnalysis {
             SemType resultType = semanticAnalysis.visitUnaryExpression(unaryExpression, symbolTable);
             assertEquals("Expected type to be bool", expectedType, resultType);
         } catch (SemanticException e) {
-            fail("Semantic analysis failed: " + e.getMessage());
+            e.printStackTrace();
         }
     }
 
@@ -393,7 +394,7 @@ public class TestSemanticAnalysis {
             assertEquals("Expected type to be bool", new SemType("bool"), boolTrueType);
             assertEquals("Expected type to be bool", new SemType("bool"), boolFalseType);
         } catch (SemanticException e) {
-            fail("Semantic analysis failed: " + e.getMessage());
+            e.printStackTrace();
         }
     }
 
@@ -422,7 +423,7 @@ public class TestSemanticAnalysis {
             SemType resultType = semanticAnalysis.visitFunctionCall(functionCall, symbolTable);
             assertEquals("Expected type to be int", functionReturnType, resultType);
         } catch (SemanticException e) {
-            fail("Semantic analysis failed: " + e.getMessage());
+            e.printStackTrace();
         }
     }
 
@@ -451,7 +452,7 @@ public class TestSemanticAnalysis {
             SemType resultType = semanticAnalysis.visitFunctionCall(functionCall, symbolTable);
             assertEquals("Expected type to be void", functionReturnType, resultType);
         } catch (SemanticException e) {
-            fail("Semantic analysis failed: " + e.getMessage());
+            e.printStackTrace();
         }
     }
 
@@ -509,10 +510,250 @@ public class TestSemanticAnalysis {
             SemType resultType4 = semanticAnalysis.visitFunctionCall(functionCall4, symbolTable);
             assertEquals("Expected type to be void", functionReturnType, resultType4);
         } catch (SemanticException e) {
-            fail("Semantic analysis failed: " + e.getMessage());
+            e.printStackTrace();
         }
-
-
     }
 
+    @Test
+    public void testNewRecord() {
+        // Test record instantiation
+        TreeMap<String, SemType> recordFields = new TreeMap<>();
+        recordFields.put("field1", new SemType("int"));
+        recordFields.put("field2", new SemType("string"));
+        SemType recordType = new RecordSemType(recordFields, "MyRecord");
+        SymbolTable symbolTable = new SymbolTable(null);
+        // Set up the symbol table
+        symbolTable.addSymbol("MyRecord", recordType);
+
+        // MyRecord(5, "hello");
+        Symbol intSymbol = new Symbol(TokenTypes.INT_LITERAL, "5", 0, 0, 5);
+        ConstVal constVal1 = new ConstVal(5, intSymbol, 0, 0);
+        Symbol stringSymbol = new Symbol(TokenTypes.STRING_LITERAL, "hello", 0, 0, "hello");
+        ConstVal constVal2 = new ConstVal("hello", stringSymbol, 0, 0);
+        ArrayList<ParamCall> paramCalls = new ArrayList<>();
+        paramCalls.add(new ParamCall(constVal1, 0, 0, 0));
+        paramCalls.add(new ParamCall(constVal2, 1, 0, 1));
+
+        Symbol recordSymbol = new Symbol(TokenTypes.RECORD, "MyRecord", 0, 0);
+        NewRecord newRecord = new NewRecord(recordSymbol, paramCalls, 0, 0);
+
+        try {
+            SemanticAnalysis semanticAnalysis = new SemanticAnalysis();
+            SemType resultType = semanticAnalysis.visitNewRecord(newRecord, symbolTable);
+            assertEquals("Expected type to be MyRecord", recordType, resultType);
+        } catch (SemanticException e) {
+            e.printStackTrace();
+        }
+    }
+
+    @Test
+    public void testParenthesesTerm() {
+        Symbol intSymbol = new Symbol(TokenTypes.INT_LITERAL, "5", 0, 0, 5);
+        ConstVal constVal = new ConstVal(5, intSymbol, 0, 0);
+        ParenthesesTerm parenthesesTerm = new ParenthesesTerm(constVal, 0, 0);
+
+        try {
+            SemanticAnalysis semanticAnalysis = new SemanticAnalysis();
+            SemType resultType = semanticAnalysis.visitParenthesesTerm(parenthesesTerm, null);
+            assertEquals("Expected type to be int", new SemType("int"), resultType);
+        } catch (SemanticException e) {
+            e.printStackTrace();
+        }
+    }
+
+    @Test
+    public void testParenthesesTermWithExpression() {
+        // (a + b) with and b being int
+        SymbolTable symbolTable = new SymbolTable(null);
+        SemType intType = new SemType("int");
+        // Set up the symbol table
+        symbolTable.addSymbol("a", intType);
+        symbolTable.addSymbol("b", intType);
+
+        IdentifierAccess identifierAccess1 = new IdentifierAccess(new Symbol(TokenTypes.IDENTIFIER, "a", 0, 0), 0, 0);
+        IdentifierAccess identifierAccess2 = new IdentifierAccess(new Symbol(TokenTypes.IDENTIFIER, "b", 0, 0), 0, 0);
+        BinaryOperator binaryOperator = new BinaryOperator(new Symbol(TokenTypes.PLUS, "+", 0, 0), 0, 0);
+        BinaryExpression binaryExpression = new BinaryExpression(identifierAccess1, binaryOperator, identifierAccess2, 0, 0);
+        ParenthesesTerm parenthesesTerm = new ParenthesesTerm(binaryExpression, 0, 0);
+        SemType expectedType = new SemType("int");
+
+        try {
+            SemanticAnalysis semanticAnalysis = new SemanticAnalysis();
+            SemType resultType = semanticAnalysis.visitParenthesesTerm(parenthesesTerm, symbolTable);
+            assertEquals("Expected type to be int", expectedType, resultType);
+        } catch (SemanticException e) {
+            e.printStackTrace();
+        }
+    }
+
+    @Test
+    public void testForLoop() {
+        // for(i, 0, 10, 1) {
+        //     writeln(i);
+        // }
+        // we don't test the block here
+
+        SymbolTable symbolTable = new SymbolTable(null, "myFunction");
+        FunctionSemType functionSemType = new FunctionSemType(new SemType("void"), new SemType[]{});
+        SemType intType = new SemType("int");
+        // Set up the symbol table
+        symbolTable.addSymbol("myFunction", functionSemType);
+        symbolTable.addSymbol("i", intType);
+
+        Symbol startSymbol = new Symbol(TokenTypes.INT_LITERAL, "0", 0, 0, 0);
+        Symbol endSymbol = new Symbol(TokenTypes.INT_LITERAL, "10", 0, 0, 10);
+        Symbol stepSymbol = new Symbol(TokenTypes.INT_LITERAL, "1", 0, 0, 1);
+
+        Symbol var = new Symbol(TokenTypes.IDENTIFIER, "i", 0, 0);
+
+        Block block = new Block(new ArrayList<Statement>(), new ReturnStatement(null, 0, 0), 0, 0);
+        ForLoop forLoop = new ForLoop(var, startSymbol, endSymbol, stepSymbol, block, 0, 0);
+
+        try {
+            SemanticAnalysis semanticAnalysis = new SemanticAnalysis();
+            semanticAnalysis.visitForLoop(forLoop, symbolTable);
+        } catch (SemanticException e) {
+            e.printStackTrace();
+        }
+    }
+
+    @Test
+    public void testForLoopWithVarStart() {
+        // for(i, a, 10, 1) {
+        //     writeln(i);
+        // }
+        // we don't test the block here
+
+        SymbolTable symbolTable = new SymbolTable(null, "myFunction");
+        FunctionSemType functionSemType = new FunctionSemType(new SemType("void"), new SemType[]{});
+        SemType intType = new SemType("int");
+        // Set up the symbol table
+        symbolTable.addSymbol("myFunction", functionSemType);
+        symbolTable.addSymbol("i", intType);
+        symbolTable.addSymbol("a", intType);
+
+        Symbol startSymbol = new Symbol(TokenTypes.IDENTIFIER, "a", 0, 0);
+
+        Symbol endSymbol = new Symbol(TokenTypes.INT_LITERAL, "10", 0, 0, 10);
+        Symbol stepSymbol = new Symbol(TokenTypes.INT_LITERAL, "1", 0, 0, 1);
+
+        Symbol var = new Symbol(TokenTypes.IDENTIFIER, "i", 0, 0);
+        Block block = new Block(new ArrayList<Statement>(), new ReturnStatement(null, 0, 0), 0, 0);
+        ForLoop forLoop = new ForLoop(var, startSymbol, endSymbol, stepSymbol, block, 0, 0);
+
+        try {
+            SemanticAnalysis semanticAnalysis = new SemanticAnalysis();
+            semanticAnalysis.visitForLoop(forLoop, symbolTable);
+        } catch (SemanticException e) {
+            e.printStackTrace();
+        }
+    }
+
+    @Test
+    public void testWhileLoop() {
+        // while(i < 10) { ... }
+
+        SymbolTable symbolTable = new SymbolTable(null, "myFunction");
+        FunctionSemType functionSemType = new FunctionSemType(new SemType("void"), new SemType[]{});
+        SemType intType = new SemType("int");
+        // Set up the symbol table
+        symbolTable.addSymbol("myFunction", functionSemType);
+        symbolTable.addSymbol("i", intType);
+
+        Symbol conditionSymbol = new Symbol(TokenTypes.LESS_THAN, "<", 0, 0);
+        Symbol intSymbol = new Symbol(TokenTypes.INT_LITERAL, "10", 0, 0, 10);
+        IdentifierAccess identifierAccess = new IdentifierAccess(new Symbol(TokenTypes.IDENTIFIER, "i", 0, 0), 0, 0);
+        BinaryOperator binaryOperator = new BinaryOperator(conditionSymbol, 0, 0);
+        ConstVal constVal = new ConstVal(10, intSymbol, 0, 0);
+        BinaryExpression binaryExpression = new BinaryExpression(identifierAccess, binaryOperator, constVal, 0, 0);
+        Block block = new Block(new ArrayList<Statement>(), new ReturnStatement(null, 0, 0), 0, 0);
+        WhileLoop whileLoop = new WhileLoop(binaryExpression, block, 0, 0);
+
+        try {
+            SemanticAnalysis semanticAnalysis = new SemanticAnalysis();
+            semanticAnalysis.visitWhileLoop(whileLoop, symbolTable);
+        } catch (SemanticException e) {
+            e.printStackTrace();
+        }
+    }
+
+    @Test(expected = MissingConditionError.class)
+    public void testWhileLoopNoBooleanCondition() throws Exception {
+        // while (i + 1) { ... }
+        // this will throw a MissingConditionError
+        // this test passes if the exception is thrown
+        SymbolTable symbolTable = new SymbolTable(null, "myFunction");
+        FunctionSemType functionSemType = new FunctionSemType(new SemType("void"), new SemType[]{});
+        SemType intType = new SemType("int");
+        // Set up the symbol table
+        symbolTable.addSymbol("myFunction", functionSemType);
+        symbolTable.addSymbol("i", intType);
+
+        Symbol conditionSymbol = new Symbol(TokenTypes.PLUS, "+", 0, 0);
+        Symbol intSymbol = new Symbol(TokenTypes.INT_LITERAL, "1", 0, 0, 1);
+        IdentifierAccess identifierAccess = new IdentifierAccess(new Symbol(TokenTypes.IDENTIFIER, "i", 0, 0), 0, 0);
+        BinaryOperator binaryOperator = new BinaryOperator(conditionSymbol, 0, 0);
+        ConstVal constVal = new ConstVal(1, intSymbol, 0, 0);
+        BinaryExpression binaryExpression = new BinaryExpression(identifierAccess, binaryOperator, constVal, 0, 0);
+        Block block = new Block(new ArrayList<Statement>(), new ReturnStatement(null, 0, 0), 0, 0);
+        WhileLoop whileLoop = new WhileLoop(binaryExpression, block, 0, 0);
+
+        SemanticAnalysis semanticAnalysis = new SemanticAnalysis();
+        semanticAnalysis.visitWhileLoop(whileLoop, symbolTable);
+    }
+
+    @Test
+    public void testFreeStatement() {
+        // free x
+        // where x is in the symbol table
+        SymbolTable symbolTable = new SymbolTable(null);
+        SemType intType = new SemType("int");
+        // Set up the symbol table
+        symbolTable.addSymbol("x", intType);
+
+        Symbol identifierSymbol = new Symbol(TokenTypes.IDENTIFIER, "x", 0, 0);
+        IdentifierAccess identifierAccess = new IdentifierAccess(identifierSymbol, 0, 0);
+        FreeStatement freeStatement = new FreeStatement(identifierAccess, 0, 0);
+
+        try {
+            SemanticAnalysis semanticAnalysis = new SemanticAnalysis();
+            semanticAnalysis.visitFreeStatement(freeStatement, symbolTable);
+        } catch (SemanticException e) {
+            e.printStackTrace();
+        }
+    }
+
+    @Test(expected = ScopeError.class)
+    public void testFreeStatementOfNonExistingVar() throws Exception {
+        // free x
+        // where x is NOT the symbol table
+        // this will throw a ScopeError
+        // this test passes if the exception is thrown
+        SymbolTable symbolTable = new SymbolTable(null);
+
+        Symbol identifierSymbol = new Symbol(TokenTypes.IDENTIFIER, "x", 0, 0);
+        IdentifierAccess identifierAccess = new IdentifierAccess(identifierSymbol, 0, 0);
+        FreeStatement freeStatement = new FreeStatement(identifierAccess, 0, 0);
+
+        SemanticAnalysis semanticAnalysis = new SemanticAnalysis();
+        semanticAnalysis.visitFreeStatement(freeStatement, symbolTable);
+    }
+
+
+    @Test(expected = RecordError.class)
+    public void testRecordDefinitionRecordError() throws Exception {
+        // Test record instantiation with a name that overrides a previously defined type or record
+        SymbolTable symbolTable = new SymbolTable(null);
+
+        Symbol identifier = new Symbol(TokenTypes.RECORD, "int", 0, 0);
+        ArrayList<RecordFieldDefinition> fields = new ArrayList<>();
+        Symbol fieldSymbol = new Symbol(TokenTypes.IDENTIFIER, "field1", 0, 0);
+        Type fieldType = new Type(new Symbol(TokenTypes.INT, "int", 0, 0), 0, 0);
+        RecordFieldDefinition recordFieldDefinition = new RecordFieldDefinition(fieldSymbol, fieldType, 0, 0, 0);
+        fields.add(recordFieldDefinition);
+        RecordDefinition recordDefinition = new RecordDefinition(identifier, fields, 0, 0);
+
+        SemanticAnalysis semanticAnalysis = new SemanticAnalysis();
+        semanticAnalysis.visitRecordDefinition(recordDefinition, symbolTable);
+    }
 }

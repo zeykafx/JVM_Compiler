@@ -621,7 +621,6 @@ public class SemanticAnalysis implements Visitor<SemType> {
 		// check types of block
 		functionDefinition.getBlock().accept(this, localTable);
 
-		// check type of return expression (done in block)
 		return retSemType;
 	}
 

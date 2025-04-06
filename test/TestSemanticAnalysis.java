@@ -804,7 +804,6 @@ public class TestSemanticAnalysis {
         try {
             SemanticAnalysis semanticAnalysis = new SemanticAnalysis();
             SemType resSemType = semanticAnalysis.visitFunctionDefinition(functionDefinition, symbolTable);
-            System.out.println(resSemType);
             assertEquals("Expected type to be Point", recordSemType, resSemType);
         } catch (SemanticException e) {
             e.printStackTrace();
@@ -812,6 +811,129 @@ public class TestSemanticAnalysis {
         }
     }
 
+    // visitBlock returns nothing, so there is nothing to test
+
+    @Test
+    public void testIfStatement() {
+        // if (i < 10) { ... }
+        SymbolTable symbolTable = new SymbolTable(null, "myFunction");
+        FunctionSemType functionSemType = new FunctionSemType(new SemType("void"), new SemType[]{});
+        SemType intType = new SemType("int");
+
+        // Set up the symbol table
+        symbolTable.addSymbol("myFunction", functionSemType);
+        symbolTable.addSymbol("i", intType);
+
+        Symbol conditionSymbol = new Symbol(TokenTypes.LESS_THAN, "<", 0, 0);
+        IdentifierAccess identifierAccess = new IdentifierAccess(new Symbol(TokenTypes.IDENTIFIER, "i", 0, 0), 0, 0);
+        Symbol intSymbol = new Symbol(TokenTypes.INT_LITERAL, "10", 0, 0, 10);
+        ConstVal constVal = new ConstVal(10, intSymbol, 0, 0);
+        BinaryOperator binaryOperator = new BinaryOperator(conditionSymbol, 0, 0);
+        BinaryExpression binaryExpression = new BinaryExpression(identifierAccess, binaryOperator, constVal, 0, 0);
+
+        Block block = new Block(new ArrayList<Statement>(), new ReturnStatement(null, 0, 0), 0, 0);
+        IfStatement ifStatement = new IfStatement(binaryExpression, block, 0, 0);
+
+        try {
+            SemanticAnalysis semanticAnalysis = new SemanticAnalysis();
+            semanticAnalysis.visitIfStatement(ifStatement, symbolTable);
+        } catch (SemanticException e) {
+            e.printStackTrace();
+            fail("Semantic analysis failed: " + e.getMessage());
+        }
+    }
+
+    @Test
+    public void testIfStatementWithElse() {
+        // if (i < 10) { ... }
+        SymbolTable symbolTable = new SymbolTable(null, "myFunction");
+        FunctionSemType functionSemType = new FunctionSemType(new SemType("void"), new SemType[]{});
+        SemType intType = new SemType("int");
+
+        // Set up the symbol table
+        symbolTable.addSymbol("myFunction", functionSemType);
+        symbolTable.addSymbol("i", intType);
+
+        Symbol conditionSymbol = new Symbol(TokenTypes.LESS_THAN, "<", 0, 0);
+        IdentifierAccess identifierAccess = new IdentifierAccess(new Symbol(TokenTypes.IDENTIFIER, "i", 0, 0), 0, 0);
+        Symbol intSymbol = new Symbol(TokenTypes.INT_LITERAL, "10", 0, 0, 10);
+        ConstVal constVal = new ConstVal(10, intSymbol, 0, 0);
+        BinaryOperator binaryOperator = new BinaryOperator(conditionSymbol, 0, 0);
+        BinaryExpression binaryExpression = new BinaryExpression(identifierAccess, binaryOperator, constVal, 0, 0);
+
+        Block block = new Block(new ArrayList<Statement>(), new ReturnStatement(null, 0, 0), 0, 0);
+        IfStatement ifStatement = new IfStatement(binaryExpression, block, block, 0, 0);
+
+        try {
+            SemanticAnalysis semanticAnalysis = new SemanticAnalysis();
+            semanticAnalysis.visitIfStatement(ifStatement, symbolTable);
+        } catch (SemanticException e) {
+            e.printStackTrace();
+            fail("Semantic analysis failed: " + e.getMessage());
+        }
+    }
+
+    @Test(expected = MissingConditionError.class)
+    public void testIfConditionWithNoCondition() throws Exception {
+        // if (5) { ... }
+        // this will throw a MissingConditionError
+        // this test passes if the exception is thrown
+
+        SymbolTable symbolTable = new SymbolTable(null, "myFunction");
+        FunctionSemType functionSemType = new FunctionSemType(new SemType("void"), new SemType[]{});
+        SemType intType = new SemType("int");
+        // Set up the symbol table
+        symbolTable.addSymbol("myFunction", functionSemType);
+
+        Symbol conditionSymbol = new Symbol(TokenTypes.INT_LITERAL, "5", 0, 0, 5);
+        ConstVal constVal = new ConstVal(5, conditionSymbol, 0, 0);
+
+        Block block = new Block(new ArrayList<Statement>(), new ReturnStatement(null, 0, 0), 0, 0);
+        IfStatement ifStatement = new IfStatement(constVal, block, 0, 0);
+
+        SemanticAnalysis semanticAnalysis = new SemanticAnalysis();
+        semanticAnalysis.visitIfStatement(ifStatement, symbolTable);
+    }
+
+    @Test
+    public void testRecordDefinition() {
+        // Point rec {
+        //    x int;
+        //    y int;
+        // }
+
+        SymbolTable symbolTable = new SymbolTable(null);
+        SemType intType = new SemType("int");
+
+        Symbol identifier = new Symbol(TokenTypes.RECORD, "Point", 0, 0);
+
+        ArrayList<RecordFieldDefinition> fields = new ArrayList<>();
+        Symbol field1Symbol = new Symbol(TokenTypes.IDENTIFIER, "x", 0, 0);
+        Type field1Type = new Type(new Symbol(TokenTypes.INT, "int", 0, 0), 0, 0);
+        RecordFieldDefinition recordFieldDefinition = new RecordFieldDefinition(field1Symbol, field1Type, 0, 0, 0);
+        fields.add(recordFieldDefinition);
+
+        Symbol field2Symbol = new Symbol(TokenTypes.IDENTIFIER, "y", 0, 0);
+        Type field2Type = new Type(new Symbol(TokenTypes.INT, "int", 0, 0), 0, 0);
+        RecordFieldDefinition recordFieldDefinition2 = new RecordFieldDefinition(field2Symbol, field2Type, 0, 0, 0);
+        fields.add(recordFieldDefinition2);
+        RecordDefinition recordDefinition = new RecordDefinition(identifier, fields, 0, 0);
+
+        // Expected RecordSemType
+        TreeMap<String, SemType> fieldsMap = new TreeMap<>();
+        fieldsMap.put("x", intType);
+        fieldsMap.put("y", intType);
+        RecordSemType recordSemType = new RecordSemType(fieldsMap, "Point");
+
+        try {
+            SemanticAnalysis semanticAnalysis = new SemanticAnalysis();
+            SemType resultSemType = semanticAnalysis.visitRecordDefinition(recordDefinition, symbolTable);
+            assertEquals("Expected type to be Point", recordSemType, resultSemType);
+        } catch (SemanticException e) {
+            e.printStackTrace();
+            fail("Semantic analysis failed: " + e.getMessage());
+        }
+    }
 
     @Test(expected = RecordError.class)
     public void testRecordDefinitionRecordError() throws Exception {
@@ -828,5 +950,134 @@ public class TestSemanticAnalysis {
 
         SemanticAnalysis semanticAnalysis = new SemanticAnalysis();
         semanticAnalysis.visitRecordDefinition(recordDefinition, symbolTable);
+    }
+
+    @Test
+    public void testReturnStatement() {
+        // return 5;
+        SemType intType = new SemType("int");
+        SymbolTable symbolTable = new SymbolTable(null, "functionName");
+        FunctionSemType functionSemType = new FunctionSemType(intType, new SemType[]{});
+        symbolTable.addSymbol("functionName", functionSemType);
+
+        Symbol intSymbol = new Symbol(TokenTypes.INT_LITERAL, "5", 0, 0, 5);
+        ConstVal constVal = new ConstVal(5, intSymbol, 0, 0);
+        ReturnStatement returnStatement = new ReturnStatement(constVal, 0, 0);
+
+        try {
+            SemanticAnalysis semanticAnalysis = new SemanticAnalysis();
+            SemType resultType = semanticAnalysis.visitReturnStatement(returnStatement, symbolTable);
+            assertEquals("Expected type to be int", intType, resultType);
+        } catch (SemanticException e) {
+            e.printStackTrace();
+            fail("Semantic analysis failed: " + e.getMessage());
+        }
+    }
+
+    @Test(expected = TypeError.class)
+    public void testReturnFromVoidFunction() throws Exception {
+        // return 5;
+        // this will throw a ScopeError
+        // this test passes if the exception is thrown
+        SemType voidType = new SemType("void");
+        SymbolTable symbolTable = new SymbolTable(null, "functionName");
+        FunctionSemType functionSemType = new FunctionSemType(voidType, new SemType[]{});
+        symbolTable.addSymbol("functionName", functionSemType);
+
+        Symbol intSymbol = new Symbol(TokenTypes.INT_LITERAL, "5", 0, 0, 5);
+        ConstVal constVal = new ConstVal(5, intSymbol, 0, 0);
+        ReturnStatement returnStatement = new ReturnStatement(constVal, 0, 0);
+
+        SemanticAnalysis semanticAnalysis = new SemanticAnalysis();
+        semanticAnalysis.visitReturnStatement(returnStatement, symbolTable);
+    }
+
+    @Test
+    public void testVariableAssignment() {
+        // x = 5;
+        SemType intType = new SemType("int");
+        SymbolTable symbolTable = new SymbolTable(null);
+        symbolTable.addSymbol("x", intType);
+
+        Symbol intSymbol = new Symbol(TokenTypes.INT_LITERAL, "5", 0, 0, 5);
+        ConstVal constVal = new ConstVal(5, intSymbol, 0, 0);
+        IdentifierAccess identifierAccess = new IdentifierAccess(new Symbol(TokenTypes.IDENTIFIER, "x", 0, 0), 0, 0);
+        VariableAssignment assignment = new VariableAssignment(identifierAccess, constVal, 0, 0);
+
+        try {
+            SemanticAnalysis semanticAnalysis = new SemanticAnalysis();
+            semanticAnalysis.visitVariableAssignment(assignment, symbolTable);
+        } catch (SemanticException e) {
+            e.printStackTrace();
+            fail("Semantic analysis failed: " + e.getMessage());
+        }
+    }
+
+    @Test(expected = TypeError.class)
+    public void testAssigningToConst() throws Exception {
+        // x = 5
+        // but x is a constant
+        SemType constIntType = new SemType("int", true);
+        SymbolTable symbolTable = new SymbolTable(null);
+        symbolTable.addSymbol("x", constIntType);
+
+        Symbol intSymbol = new Symbol(TokenTypes.INT_LITERAL, "5", 0, 0, 5);
+        ConstVal constVal = new ConstVal(5, intSymbol, 0, 0);
+        IdentifierAccess identifierAccess = new IdentifierAccess(new Symbol(TokenTypes.IDENTIFIER, "x", 0, 0), 0, 0);
+        VariableAssignment assignment = new VariableAssignment(identifierAccess, constVal, 0, 0);
+        // This should throw a TypeError
+        SemanticAnalysis semanticAnalysis = new SemanticAnalysis();
+        semanticAnalysis.visitVariableAssignment(assignment, symbolTable);
+    }
+
+    @Test(expected = TypeError.class)
+    public void testAssigningIncompatibleTypes() throws Exception {
+        // x = "Hello"
+        // with x being an int
+        SemType intType = new SemType("int");
+        SymbolTable symbolTable = new SymbolTable(null);
+        symbolTable.addSymbol("x", intType);
+
+        Symbol stringSymbol = new Symbol(TokenTypes.STRING_LITERAL, "Hello", 0, 0, "Hello");
+        ConstVal constVal = new ConstVal("Hello", stringSymbol, 0, 0);
+        IdentifierAccess identifierAccess = new IdentifierAccess(new Symbol(TokenTypes.IDENTIFIER, "x", 0, 0), 0, 0);
+        VariableAssignment assignment = new VariableAssignment(identifierAccess, constVal, 0, 0);
+        // This should throw a TypeError
+        SemanticAnalysis semanticAnalysis = new SemanticAnalysis();
+        semanticAnalysis.visitVariableAssignment(assignment, symbolTable);
+    }
+
+    @Test(expected = ScopeError.class)
+    public void testAssigningNonExistingVar() throws Exception {
+        // x = "Hello"
+        // with x not declared in table
+        SymbolTable symbolTable = new SymbolTable(null);
+
+        Symbol stringSymbol = new Symbol(TokenTypes.STRING_LITERAL, "Hello", 0, 0, "Hello");
+        ConstVal constVal = new ConstVal("Hello", stringSymbol, 0, 0);
+        IdentifierAccess identifierAccess = new IdentifierAccess(new Symbol(TokenTypes.IDENTIFIER, "x", 0, 0), 0, 0);
+        VariableAssignment assignment = new VariableAssignment(identifierAccess, constVal, 0, 0);
+
+        // This should throw a ScopeError
+        SemanticAnalysis semanticAnalysis = new SemanticAnalysis();
+        semanticAnalysis.visitVariableAssignment(assignment, symbolTable);
+    }
+
+    @Test(expected = TypeError.class)
+    public void testAssigningIncompatibleTypesFloatToInt() throws Exception {
+        // x = 123.45
+        // with x being an int
+        SemType intType = new SemType("int");
+        SymbolTable symbolTable = new SymbolTable(null);
+        symbolTable.addSymbol("x", intType);
+
+        Symbol stringSymbol = new Symbol(TokenTypes.FLOAT_LITERAL, "123.45", 0, 0, 123.45f);
+        ConstVal constVal = new ConstVal(123.45f, stringSymbol, 0, 0);
+        IdentifierAccess identifierAccess = new IdentifierAccess(new Symbol(TokenTypes.IDENTIFIER, "x", 0, 0), 0, 0);
+        VariableAssignment assignment = new VariableAssignment(identifierAccess, constVal, 0, 0);
+
+        // This should throw a TypeError
+        SemanticAnalysis semanticAnalysis = new SemanticAnalysis();
+        semanticAnalysis.visitVariableAssignment(assignment, symbolTable);
     }
 }

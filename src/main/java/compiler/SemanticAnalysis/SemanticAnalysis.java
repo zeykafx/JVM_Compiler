@@ -159,7 +159,7 @@ public class SemanticAnalysis implements Visitor<SemType> {
 		// check if the head is an array
 		SemType headType = arrayAccess.getHeadAccess().accept(this, table);
 
-		if (!(headType instanceof ArraySemType)) {
+		if (!(headType instanceof ArraySemType arraySemType)) {
 			throw new TypeError("The head of the array access at line " + arrayAccess.line + " is not an array");
 		}
 
@@ -169,7 +169,8 @@ public class SemanticAnalysis implements Visitor<SemType> {
 			throw new TypeError("The index of the array access at line " + arrayAccess.line + " is not an int");
 		}
 
-		return (ArraySemType) headType;
+		// return the type of the array element that we are accessing
+		return arraySemType.getElementSemType();
 	}
 
 	@Override
@@ -618,11 +619,10 @@ public class SemanticAnalysis implements Visitor<SemType> {
 		table.addSymbol(name.lexeme, semType);
 
 		// check types of block
-		Block block = functionDefinition.getBlock();
-		block.accept(this, localTable);
+		functionDefinition.getBlock().accept(this, localTable);
 
 		// check type of return expression (done in block)
-		return null;
+		return retSemType;
 	}
 
 	private SemType getSemTypeFromASTNodeType(SymbolTable table, Type returnType) {
@@ -750,11 +750,11 @@ public class SemanticAnalysis implements Visitor<SemType> {
 			returnSemType = returnStatement.getExpression().accept(this, table);
 		}
 
-		if (!functionSemType.getRetType().equals(returnSemType)) {
+		if (!(functionSemType.getRetType().equals(returnSemType))) {
 			throw new TypeError("Return at line "+returnStatement.line+" type does not match function return type. Expected: " + functionSemType.getRetType() + ", found: " + returnSemType);
 		}
 
-		return null;
+		return returnSemType;
 		/*  AS A BONUS : CHECK IF FUNCTION ALWAYS RETURNS A VALUE
 		notre idée : ajouter un attribut "retNumber" à la localSymbolTable,
 		TODO trouver l'algorithme qui permet de vérifier que la fonction retourne toujours une valeur

@@ -1,5 +1,7 @@
 package compiler.SemanticAnalysis.Types;
 
+import java.util.Arrays;
+
 public class FunctionSemType extends SemType {
 	SemType[] paramSemTypes;
 	SemType retType;
@@ -17,5 +19,15 @@ public class FunctionSemType extends SemType {
 
 	public SemType getRetType() {
 		return retType;
+	}
+
+	@Override
+	public String toString() {
+		return "FunctionSemType{" +
+				"isConstant=" + isConstant +
+				", type='" + type + '\'' +
+				", paramSemTypes=" + Arrays.toString(paramSemTypes) +
+				", retType=" + retType +
+				'}';
 	}
 }

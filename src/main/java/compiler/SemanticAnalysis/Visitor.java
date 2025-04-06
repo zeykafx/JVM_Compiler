@@ -8,7 +8,6 @@ import compiler.Parser.ASTNodes.Types.*;
 import compiler.Parser.ASTNodes.Statements.Expressions.Terms.*;
 import compiler.Parser.ASTNodes.Statements.Expressions.Expressions.*;
 import compiler.Parser.ASTNodes.Statements.Expressions.Operators.*;
-import compiler.SemanticAnalysis.Errors.ReturnError;
 import compiler.SemanticAnalysis.Errors.SemanticException;
 
 

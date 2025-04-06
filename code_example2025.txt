@@ -293,7 +293,7 @@ fun main() {
 
         while (value!=3) { 
 
-            if (i > 10){ 
+            if (i > 10){
 
                 $ .... 
 

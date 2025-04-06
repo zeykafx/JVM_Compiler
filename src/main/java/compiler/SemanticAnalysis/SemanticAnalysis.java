@@ -23,7 +23,6 @@ import compiler.SemanticAnalysis.Types.RecordSemType;
 import compiler.SemanticAnalysis.Types.SemType;
 
 import java.util.ArrayList;
-import java.util.Objects;
 import java.util.TreeMap;
 
 import static compiler.Lexer.TokenTypes.*;
@@ -394,7 +393,7 @@ public class SemanticAnalysis implements Visitor<SemType> {
 		}
 
 		// return the SemType of the return value (e.g., intType if the function returns an integer)
-		return new SemType(functionSemType.type);
+		return functionSemType.getRetType();
 	}
 
 	@Override
@@ -674,7 +673,6 @@ public class SemanticAnalysis implements Visitor<SemType> {
 		// add param to local symbol table
 		Symbol name = paramDefinition.getIdentifier();
 		Type type = paramDefinition.getType();
-		System.out.println(type);
 
 		SemType semType = getSemTypeFromASTNodeType(table, type);
 

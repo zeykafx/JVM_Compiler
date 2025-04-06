@@ -18,4 +18,14 @@ public class ArraySemType extends SemType {
 	public SemType getElementSemType() {
 		return elementSemType;
 	}
+
+	@Override
+	public String toString() {
+		return "ArraySemType{" +
+				"elementSemType=" + elementSemType +
+				", size=" + size +
+				", type='" + type + '\'' +
+				", isConstant=" + isConstant +
+				'}';
+	}
 }

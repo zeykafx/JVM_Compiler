@@ -1,6 +1,5 @@
 package compiler.SemanticAnalysis.Types;
 
-import compiler.Lexer.Symbol;
 
 import java.util.Objects;
 

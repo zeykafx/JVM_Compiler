@@ -790,10 +790,11 @@ public class SemanticAnalysis implements Visitor<SemType> {
 			// the types didn't match, but if the expected type is a float and the given type is an int, we can convert it (here that means we keep going)
 
 			// if we can't convert the type, we throw an error: here if it's not the convertable case, we throw
-			if (!(varType.equals(floatType) && expressionType.equals(intType))) {
-				throw new TypeError("Type of the variable " + variableAssignment.getAccess().toString() + " at line " + variableAssignment.line + " does not match the type of the expression " + variableAssignment.getExpression().toString());
+			if (varType.equals(floatType) && expressionType.equals(intType)) {
+				return null;
 			}
 
+			throw new TypeError("Type of the variable " + variableAssignment.getAccess().toString() + " at line " + variableAssignment.line + " does not match the type of the expression " + variableAssignment.getExpression().toString());
 		}
 
 		// then check that the variable is not a constant

@@ -1182,4 +1182,90 @@ public class TestSemanticAnalysis {
         SemanticAnalysis semanticAnalysis = new SemanticAnalysis();
         semanticAnalysis.visitVariableAssignment(assignment, symbolTable);
     }
+
+    @Test
+    public void testVariableDeclaration() {
+        // final x int = 2132
+        SemType intType = new SemType("int");
+        SymbolTable symbolTable = new SymbolTable(null);
+
+        Symbol intSymbol = new Symbol(TokenTypes.INT_LITERAL, "2132", 0, 0, 2132);
+        ConstVal constVal = new ConstVal(2132, intSymbol, 0, 0);
+        Symbol identifierSymbol = new Symbol(TokenTypes.IDENTIFIER, "x", 0, 0);
+        Type varType = new Type(new Symbol(TokenTypes.INT, "int", 0, 0), 0, 0);
+        VariableDeclaration variableDeclaration = new VariableDeclaration(identifierSymbol, varType, constVal, true, 0, 0);
+
+        try {
+            SemanticAnalysis semanticAnalysis = new SemanticAnalysis();
+            SemType resType = semanticAnalysis.visitVariableDeclaration(variableDeclaration, symbolTable);
+            assertEquals("Expected type to be int", intType, resType);
+            assertNotNull("Expected symbol to be added to symbol table", symbolTable.lookup("x"));
+            assertTrue("Expected symbol to be constant", resType.isConstant);
+        } catch (SemanticException e) {
+            e.printStackTrace();
+            fail("Semantic analysis failed: " + e.getMessage());
+        }
+    }
+
+    @Test
+    public void testVarDeclNotConst() {
+        // x int = 2132
+        SemType intType = new SemType("int");
+        SymbolTable symbolTable = new SymbolTable(null);
+
+        Symbol intSymbol = new Symbol(TokenTypes.INT_LITERAL, "2132", 0, 0, 2132);
+        ConstVal constVal = new ConstVal(2132, intSymbol, 0, 0);
+        Symbol identifierSymbol = new Symbol(TokenTypes.IDENTIFIER, "x", 0, 0);
+        Type varType = new Type(new Symbol(TokenTypes.INT, "int", 0, 0), 0, 0);
+        VariableDeclaration variableDeclaration = new VariableDeclaration(identifierSymbol, varType, constVal, false, 0, 0);
+
+        try {
+            SemanticAnalysis semanticAnalysis = new SemanticAnalysis();
+            SemType resType = semanticAnalysis.visitVariableDeclaration(variableDeclaration, symbolTable);
+            assertEquals("Expected type to be int", intType, resType);
+            assertNotNull("Expected symbol to be added to symbol table", symbolTable.lookup("x"));
+            assertFalse("Expected symbol to not be constant", resType.isConstant);
+        } catch (SemanticException e) {
+            e.printStackTrace();
+            fail("Semantic analysis failed: " + e.getMessage());
+        }
+    }
+
+    @Test
+    public void testVarDeclNoValue() {
+        // x string
+        SemType stringType = new SemType("string");
+        SymbolTable symbolTable = new SymbolTable(null);
+        Symbol identifierSymbol = new Symbol(TokenTypes.IDENTIFIER, "x", 0, 0);
+        Type varType = new Type(new Symbol(TokenTypes.STRING, "string", 0, 0), 0, 0);
+        VariableDeclaration variableDeclaration = new VariableDeclaration(identifierSymbol, varType, null, false, 0, 0);
+        try {
+            SemanticAnalysis semanticAnalysis = new SemanticAnalysis();
+            SemType resType = semanticAnalysis.visitVariableDeclaration(variableDeclaration, symbolTable);
+            assertEquals("Expected type to be string", stringType, resType);
+            assertNotNull("Expected symbol to be added to symbol table", symbolTable.lookup("x"));
+            assertFalse("Expected symbol to not be constant", resType.isConstant);
+        } catch (SemanticException e) {
+            e.printStackTrace();
+            fail("Semantic analysis failed: " + e.getMessage());
+        }
+    }
+
+    @Test(expected = ScopeError.class)
+    public void testVarDeclOfAlreadyDeclIdentifier() throws Exception {
+        // x int = 2132
+        // but x is already in the symbol table
+        SemType intType = new SemType("int");
+        SymbolTable symbolTable = new SymbolTable(null);
+        symbolTable.addSymbol("x", intType);
+
+        Symbol intSymbol = new Symbol(TokenTypes.INT_LITERAL, "2132", 0, 0, 2132);
+        ConstVal constVal = new ConstVal(2132, intSymbol, 0, 0);
+        Symbol identifierSymbol = new Symbol(TokenTypes.IDENTIFIER, "x", 0, 0);
+        Type varType = new Type(new Symbol(TokenTypes.INT, "int", 0, 0), 0, 0);
+        VariableDeclaration variableDeclaration = new VariableDeclaration(identifierSymbol, varType, constVal, false, 0, 0);
+        // This should throw a ScopeError
+        SemanticAnalysis semanticAnalysis = new SemanticAnalysis();
+        semanticAnalysis.visitVariableDeclaration(variableDeclaration, symbolTable);
+    }
 }

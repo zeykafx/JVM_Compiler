@@ -825,7 +825,12 @@ public class SemanticAnalysis implements Visitor<SemType> {
 		Type type = variableDeclaration.getType();
 		SemType semType = new SemType(type.symbol.lexeme, variableDeclaration.isConstant());
 
+		if (table.lookup(name.lexeme) != null) {
+			throw new ScopeError("Variable " + name.lexeme + " already exists in the symbol table");
+		}
+
 		table.addSymbol(name.lexeme, semType);
+
 
 		return semType;
 	}

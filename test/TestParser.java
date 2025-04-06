@@ -955,10 +955,5 @@ public class TestParser {
         assertTrue(forBlock.getReturnStatement() instanceof ReturnStatement);
         ReturnStatement returnStmt = (ReturnStatement) forBlock.getReturnStatement();
         assertNull(returnStmt.getExpression());
-
-        System.out.println(forLoop.getStart());
-        System.out.println(forLoop.getStart().value);
-        System.out.println(forLoop.getStart().value.getClass());
-
     }
 }

@@ -36,12 +36,13 @@ public class Parser {
             return parseProgram();
         } catch (SyntaxErrorException e) {
             System.err.println("Syntax Error: " + e.getMessage());
-            return null;
+            System.exit(1);
         }
         catch (Exception e) {
             System.err.println("Unexpected error parsing the program: " + e.getMessage());
-            return null;
+            System.exit(1);
         }
+        return null;
     }
 
     public Symbol match(TokenTypes token) throws Exception {
@@ -200,7 +201,7 @@ public class Parser {
         //ConstVal -> "intval" | "floatval" | "stringval" | "true" | "false" .
 
         boolean isUnaryOperator = false;
-        Operator operator = null;
+        UnaryOperator operator = null;
         if (
             lookAheadSymbol.type == TokenTypes.NOT ||
             lookAheadSymbol.type == TokenTypes.MINUS
@@ -247,7 +248,7 @@ public class Parser {
         ) {
             // BinaryOperator -> "+" | "-" | "*" | "/" | "%" | "&&" | "||" | "==" | "!=" | "<" | ">" | "<=" | ">="
             Symbol binaryOperator = match(lookAheadSymbol.type);
-            Operator binaryOp = new BinaryOperator(binaryOperator, term.line, term.column);
+            BinaryOperator binaryOp = new BinaryOperator(binaryOperator, term.line, term.column);
             Term rightTerm = parseTerm();
             return new BinaryExpression(term, binaryOp, rightTerm, term.line, term.column);
         }
@@ -460,15 +461,15 @@ public class Parser {
 
         while (lookAheadSymbol.type != TokenTypes.RIGHT_BRACKET) {
             if (lookAheadSymbol.type == TokenTypes.RETURN) {
-                match(TokenTypes.RETURN);
+                Symbol retSymbol = match(TokenTypes.RETURN);
                 if (lookAheadSymbol.type == TokenTypes.SEMICOLON) {
                     match(TokenTypes.SEMICOLON);
-                    returnStatement = new ReturnStatement(null, lookAheadSymbol.line, lookAheadSymbol.column);
+                    returnStatement = new ReturnStatement(null, retSymbol.line, retSymbol.column);
                     break;
                 }
                 Expression returnExpression = parseExpression();
                 match(TokenTypes.SEMICOLON);
-                returnStatement = new ReturnStatement(returnExpression, lookAheadSymbol.line, lookAheadSymbol.column);
+                returnStatement = new ReturnStatement(returnExpression, retSymbol.line, retSymbol.column);
             } else {
                 statements.add(parseStatement());
             }

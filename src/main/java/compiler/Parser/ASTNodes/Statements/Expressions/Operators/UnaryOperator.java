@@ -18,7 +18,7 @@ public class UnaryOperator extends Operator {
         this.operator = operator;
     }
 
-    public Symbol getOperator() {
+    public Symbol getSymbol() {
         return operator;
     }
 
@@ -30,6 +30,14 @@ public class UnaryOperator extends Operator {
     @Override
     public String prettyPrint(int indent) {
         return "  ".repeat(indent) + "UnaryOperator, " + operator.lexeme;
+    }
+
+    public boolean isBinaryOperator() {
+        return operator.lexeme.equals("!");
+    }
+
+    public boolean isNumberOperator() {
+        return operator.lexeme.equals("-");
     }
 
     @Override

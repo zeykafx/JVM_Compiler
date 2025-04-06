@@ -7,6 +7,7 @@ import compiler.Lexer.Lexer;
 import compiler.Lexer.Symbol;
 import compiler.Parser.ASTNodes.ASTNode;
 import compiler.Parser.Parser;
+import compiler.SemanticAnalysis.SemanticAnalysis;
 
 import java.io.FileReader;
 
@@ -38,6 +39,9 @@ public class Compiler {
 			case PARSER:
 			    runParser(filepath);
                 break;
+			case SEMANTIC:
+				runSemanticAnalysis(filepath);
+				break;
 			
 			// OTHER MODULES HERE -----
 			default:
@@ -63,12 +67,24 @@ public class Compiler {
 		ASTNode root = parser.getAST();
 		System.out.println("AST: " + root.prettyPrint(0));
     }
+
+	private static void runSemanticAnalysis(String filepath) throws Exception {
+		FileReader reader = new FileReader(filepath);
+		Lexer lexer = new Lexer(reader);
+		Parser parser = new Parser(lexer);
+		ASTNode root = parser.getAST();
+		System.out.println("AST: " + root.prettyPrint(0));
+
+		SemanticAnalysis analyzer = new SemanticAnalysis();
+		analyzer.analyze(root);
+	}
 }
 
 
 enum Module {
 	LEXER("-lexer"),
-	PARSER("-parser");
+	PARSER("-parser"),
+	SEMANTIC("-semantic");
 
 	private final String flag;
 

@@ -1,5 +1,6 @@
 package compiler.Parser.ASTNodes.Statements.Expressions.Expressions;
 
+import compiler.Parser.ASTNodes.Statements.Expressions.Operators.BinaryOperator;
 import compiler.Parser.ASTNodes.Statements.Expressions.Operators.Operator;
 import compiler.Parser.ASTNodes.Statements.Expressions.Terms.Term;
 import compiler.SemanticAnalysis.Errors.SemanticException;
@@ -10,10 +11,10 @@ import compiler.SemanticAnalysis.Visitor;
 
 public class BinaryExpression extends Expression {
     private final Term leftTerm;
-    private final Operator operator;
+    private final BinaryOperator operator;
     private final Term rightTerm;
 
-    public BinaryExpression(Term leftTerm, Operator operator, Term rightTerm, int line, int column) {
+    public BinaryExpression(Term leftTerm, BinaryOperator operator, Term rightTerm, int line, int column) {
         super(line, column);
 
         this.leftTerm = leftTerm;
@@ -25,7 +26,7 @@ public class BinaryExpression extends Expression {
         return leftTerm;
     }
 
-    public Operator getOperator() {
+    public BinaryOperator getOperator() {
         return operator;
     }
 

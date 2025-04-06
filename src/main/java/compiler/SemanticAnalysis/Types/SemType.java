@@ -36,7 +36,18 @@ public class SemType {
 	public boolean equals(Object o) {
 		if (o == null || getClass() != o.getClass()) return false;
 		SemType semType = (SemType) o;
-		return Objects.equals(type, semType.type) && Objects.equals(isConstant, semType.isConstant);
+
+		// ints can be made equivalent to floats, but not the opposite
+		if (type.equals("int") && semType.type.equals("float")) {
+			return true;
+		}
+
+		// ints and floats are equivalent to the num type
+		if ((type.equals("int") || type.equals("float") || type.equals("num")) && semType.type.equals("num")) {
+			return true;
+		}
+
+		return Objects.equals(type, semType.type);
 	}
 
 	@Override

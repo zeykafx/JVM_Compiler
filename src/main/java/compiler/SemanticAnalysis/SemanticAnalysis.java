@@ -1,6 +1,5 @@
 package compiler.SemanticAnalysis;
 
-import com.sun.source.tree.Tree;
 import compiler.Lexer.Symbol;
 import compiler.Lexer.TokenTypes;
 import compiler.Parser.ASTNodes.ASTNode;
@@ -24,7 +23,6 @@ import compiler.SemanticAnalysis.Types.RecordSemType;
 import compiler.SemanticAnalysis.Types.SemType;
 
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.Objects;
 import java.util.TreeMap;
 
@@ -37,8 +35,10 @@ public class SemanticAnalysis implements Visitor<SemType> {
 
 
 	SemType intType = new SemType("int");
-	SemType stringType = new SemType("string");
 	SemType floatType = new SemType("float");
+	SemType numType = new SemType("num");
+	SemType numOrBoolType = new SemType("numOrBool");
+	SemType stringType = new SemType("string");
 	SemType boolType = new SemType("bool");
 	SemType voidType = new SemType("void");
 	SemType anyType = new SemType("any");
@@ -53,65 +53,75 @@ public class SemanticAnalysis implements Visitor<SemType> {
 
 		addPredefinedFunctions();
 
-		rootNode.accept(this, globalSymbolTable);
+		try {
+			rootNode.accept(this, globalSymbolTable);
+		} catch (SemanticException e) {
+			System.err.println("Syntax Error: " + e.getMessage());
+			System.exit(2); // 2 for semantic analysis
+		}
+		catch (Exception e) {
+			System.err.println("Unexpected error during semantic analysis of the program: " + e.getMessage());
+			System.exit(2);
+
+		}
 	}
 
 	/// add predefined functions to the symbol table
 	private void addPredefinedFunctions() {
 		// add predefined functions to the symbol table
 		SemType[] paramTypesChr = {stringType};
-		FunctionSemType chr = new FunctionSemType("int", paramTypesChr);
+		FunctionSemType chr = new FunctionSemType(intType, paramTypesChr);
 		globalSymbolTable.addSymbol("chr", chr);
 
 		// len function definition for strings
 		SemType[] paramTypesLenString = {stringType};
-		FunctionSemType len = new FunctionSemType("len", paramTypesLenString);
+		FunctionSemType len = new FunctionSemType(intType, paramTypesLenString);
 		globalSymbolTable.addSymbol("len", len);
 
 		// len function definition for arrays (of any SemType)
 		ArraySemType arrayType = new ArraySemType(anyType);
 		SemType[] paramTypesLenArray = {arrayType};
-		FunctionSemType lenArray = new FunctionSemType("len", paramTypesLenArray);
+		FunctionSemType lenArray = new FunctionSemType(intType, paramTypesLenArray);
 		globalSymbolTable.addSymbol("len", lenArray);
 
 		// floor(float) -> int
 		SemType[] paramTypesFloor = {floatType};
-		FunctionSemType floor = new FunctionSemType("int", paramTypesFloor);
+		FunctionSemType floor = new FunctionSemType(intType, paramTypesFloor);
 		globalSymbolTable.addSymbol("floor", floor);
 
 		// readInt() -> int
 		SemType[] paramTypesReadInt = {};
-		FunctionSemType readInt = new FunctionSemType("int", paramTypesReadInt);
+		FunctionSemType readInt = new FunctionSemType(intType, paramTypesReadInt);
 		globalSymbolTable.addSymbol("readInt", readInt);
 
 		// readFloat() -> float
 		SemType[] paramTypesReadFloat = {};
-		FunctionSemType readFloat = new FunctionSemType("float", paramTypesReadFloat);
+		FunctionSemType readFloat = new FunctionSemType(floatType, paramTypesReadFloat);
 		globalSymbolTable.addSymbol("readFloat", readFloat);
 
 		// readString() -> string
 		SemType[] paramTypesReadString = {};
-		FunctionSemType readString = new FunctionSemType("string", paramTypesReadString);
+		FunctionSemType readString = new FunctionSemType(stringType, paramTypesReadString);
 		globalSymbolTable.addSymbol("readString", readString);
 
 		// writeInt(int) -> void
 		SemType[] paramTypesWriteInt = {intType};
-		FunctionSemType writeInt = new FunctionSemType("void", paramTypesWriteInt);
+		FunctionSemType writeInt = new FunctionSemType(voidType, paramTypesWriteInt);
 		globalSymbolTable.addSymbol("writeInt", writeInt);
 
 		// writeFloat(float) -> void
 		SemType[] paramTypesWriteFloat = {floatType};
-		FunctionSemType writeFloat = new FunctionSemType("void", paramTypesWriteFloat);
+		FunctionSemType writeFloat = new FunctionSemType(voidType, paramTypesWriteFloat);
 		globalSymbolTable.addSymbol("writeFloat", writeFloat);
 
 		// write(any) -> void
 		SemType[] paramTypesWrite = {anyType};
-		FunctionSemType write = new FunctionSemType("void", paramTypesWrite);
+		FunctionSemType write = new FunctionSemType(voidType, paramTypesWrite);
 		globalSymbolTable.addSymbol("write", write);
 
 		// writeln(any) -> void
 		SemType[] paramTypesWriteln = {anyType};
-		FunctionSemType writeln = new FunctionSemType("void", paramTypesWriteln);
+		FunctionSemType writeln = new FunctionSemType(voidType, paramTypesWriteln);
 		globalSymbolTable.addSymbol("writeln", writeln);
 	}
 
@@ -139,7 +149,6 @@ public class SemanticAnalysis implements Visitor<SemType> {
 
 			function.accept(this, table);
 		}
-
 
 		return null;
 	}
@@ -189,45 +198,144 @@ public class SemanticAnalysis implements Visitor<SemType> {
 		// check if the identifier is defined in the symbol table
 		Access headAccess = recordAccess.getHeadAccess();
 		SemType headType = headAccess.accept(this, table);
-		if (!(headType instanceof RecordSemType recordSemType)) {
+
+		if (headType instanceof RecordSemType || headType instanceof ArraySemType) {
+			RecordSemType recordSemType;
+			if (headType instanceof ArraySemType arraySemType) {
+				recordSemType = (RecordSemType) arraySemType.getElementSemType();
+			} else {
+				recordSemType = (RecordSemType) headType;
+			}
+
+			// check if the field is defined in the record
+			Symbol field = recordAccess.getIdentifier();
+			SemType fieldType = recordSemType.fields.get(field.lexeme);
+			if (fieldType == null) {
+				throw new SemanticException("Field "+ field.lexeme + " is not defined on record type " + recordAccess.getHeadAccess().toString());
+			}
+
+			// return type of accessed field
+			return fieldType;
+		} else {
 			throw new TypeError("The head of the record access at line " + recordAccess.line + " is not a record");
 		}
 
-		// check if the field is defined in the record
-		Symbol field = recordAccess.getIdentifier();
-		SemType fieldType = recordSemType.fields.get(field.lexeme);
-		if (fieldType == null) {
-			throw new SemanticException("Field "+ field.lexeme + " is not defined on record type " + recordAccess.getHeadAccess().toString());
-		}
-
-		// return type of accessed field
-		return fieldType;
  	}
 
 
 	@Override
 	public SemType visitArrayExpression(ArrayExpression arrayExpression, SymbolTable table) throws SemanticException {
+		// ArrayExpression -> "array" "[" "intval" "]" "of" Type ";" .
 
-	}
+		SemType sizeExpressionSemType = arrayExpression.getSizeExpression().accept(this, table);
+		// the size expression can be an int or a float
+		if (!(sizeExpressionSemType.equals(intType) || sizeExpressionSemType.equals(floatType))) {
+			throw new TypeError("Size expression of array creation at line " + arrayExpression.line + " is not an int or a float (variable or literal)");
+		}
+
+		SemType elemSemType = new SemType(arrayExpression.getType().symbol.lexeme);
+		return new ArraySemType(elemSemType);
+ 	}
 
 	@Override
 	public SemType visitBinaryExpression(BinaryExpression binaryExpression, SymbolTable table) throws SemanticException {
 		// check if the left and right expressions are of the same SemType
-	}
 
-	@Override
-	public SemType visitUnaryExpression(UnaryExpression unaryExpression, SymbolTable table) throws SemanticException {
+		SemType leftType = binaryExpression.getLeftTerm().accept(this, table);
+		SemType rightType = binaryExpression.getRightTerm().accept(this, table);
+		if (!leftType.equals(rightType)) {
+			// Note: we don't do the implicit conversion of ints to floats here because the .equals method on SemType should do it (TODO: check that this is true)
+			throw new TypeError("Types of elements in the binary expression at line "+binaryExpression.line+" do not match: " + leftType + " and " + rightType);
+		}
 
+		SemType termsType = leftType; // since both terms are equivalent in types, we can use the left term's type to do the checks
+
+		SemType operatorSemType = binaryExpression.getOperator().accept(this, table);
+		if (operatorSemType.equals(boolType)) {
+			// this operator only accepts booleans -> "&&", "||"
+			if (!termsType.equals(boolType)) {
+				throw new TypeError(String.format("Type %s cannot be used in a boolean expression, line %d", termsType, binaryExpression.line));
+			}
+
+			return boolType;
+		} else if (operatorSemType.equals(numOrBoolType)) {
+
+			// here we have an operator that can accept both booleans and numbers -> "==", "!="
+			// so if the type of the terms is not boolean or number, throw an error
+			if (!(termsType.equals(boolType) || termsType.equals(numType))) {
+				throw new TypeError(String.format("Type %s cannot be used in a with the %s operator", termsType, binaryExpression.getOperator().getSymbol().lexeme));
+			}
+//
+//			if (termsType.equals(boolType)){
+//				return boolType;
+//			}
+
+			return boolType;
+
+ 		} else if (operatorSemType.equals(numType)) {
+			if (!termsType.equals(numType)) {
+				throw new TypeError(String.format("Type %s cannot be used in a with the %s operator, expected int or float", termsType, binaryExpression.getOperator().getSymbol().lexeme));
+			}
+			if (binaryExpression.getOperator().numberOperatorReturnsBoolean()) {
+				return boolType;
+			}
+			return termsType;
+		}
+
+		// shouldn't be here
+		throw new SemanticException(String.format("Unexpected error in expression at line %s", binaryExpression.line));
 	}
 
 	@Override
 	public SemType visitBinaryOperator(BinaryOperator binaryOperator, SymbolTable table) throws SemanticException {
+		// return the type that the operator implies on the expression,
+		// e.g., if the operator is + and the expression is int + int, then return int
+		// if the operator is && then return a boolean
+		// some boolean operators expect bools (&&, ||)
+		// some other operators don't care (==, !=,...)
+		if (binaryOperator.isBooleanOperator()) {
+			return boolType;
+		} else if (binaryOperator.isBooleanOrNumberOperator()) {
+			return numOrBoolType;
+		} else if (binaryOperator.isNumberOperator()) {
+			return numType; // numtype means that whatever number type is fine
+		}
+		return null;
+	}
 
+	@Override
+	public SemType visitUnaryExpression(UnaryExpression unaryExpression, SymbolTable table) throws SemanticException {
+		// return the type of the expression with the unary operator applied
+
+		SemType expressionSemType = unaryExpression.getTerm().accept(this, table);
+
+		SemType operatorSemType = unaryExpression.getOperator().accept(this, table);
+		if (operatorSemType.equals(boolType)) {
+			if (!expressionSemType.equals(boolType)) {
+				throw new SemanticException(String.format("Expected boolean with operator %s", unaryExpression.getOperator().getSymbol().lexeme));
+			}
+
+			return boolType;
+		} else if (operatorSemType.equals(numType)) {
+			if (!expressionSemType.equals(numType)) {
+				throw new SemanticException(String.format("Expected int or float with operator %s", unaryExpression.getOperator().getSymbol().lexeme));
+			}
+			return numType;
+		}
+
+		// shouldn't be here
+		throw new SemanticException(String.format("Unexpected error in expression at line %s", unaryExpression.line));
 	}
 
 	@Override
 	public SemType visitUnaryOperator(UnaryOperator unaryOperator, SymbolTable table) throws SemanticException {
+		if (unaryOperator.isBinaryOperator()) {
+			return boolType;
+		} else if (unaryOperator.isNumberOperator()) {
+			return numType;
+		}
 
+		throw new SemanticException(String.format("Unexpected unary operator %s", unaryOperator.getSymbol().lexeme));
 	}
 
 	@Override
@@ -238,6 +346,7 @@ public class SemanticAnalysis implements Visitor<SemType> {
 			case FLOAT_LITERAL -> "float";
 			case STRING_LITERAL -> "string";
 			case BOOL_TRUE, BOOL_FALSE -> "bool";
+			case REC -> "rec";
 			default -> null;
 		};
 
@@ -257,7 +366,14 @@ public class SemanticAnalysis implements Visitor<SemType> {
 			// get the SemType of the parameter
 			SemType paramCallSemType = paramCall.accept(this, table);
 
+
 			SemType[] functionDefParamsSemTypes = functionSemType.getParamSemTypes();
+			// special case for functions with "any" for the type of their arguments
+			if (functionDefParamsSemTypes.length == 1 && functionDefParamsSemTypes[0] == anyType) {
+				break; // exit from the loop, we don't have anything to typecheck
+			}
+
+
 			if (paramCall.getParamIndex() > functionDefParamsSemTypes.length) {
 				throw new TypeError("Too many arguments " + paramCall.getParamIndex() + " for function " + functionCall.getIdentifier().lexeme + " with " + functionDefParamsSemTypes.length + " arguments");
 			}
@@ -265,13 +381,13 @@ public class SemanticAnalysis implements Visitor<SemType> {
 			// get the argumentSemType
 			SemType argSemType = functionDefParamsSemTypes[paramCall.getParamIndex()];
 
+
 			if (!paramCallSemType.equals(argSemType)) {
 				// the types didn't match, but if the expected type is a float and the given type is an int, we can convert it (here that means we keep going)
 
 				// if we can't convert the type, we throw an error: here if it's not the convertable case, we throw
-				if (!(argSemType.equals(floatType) && paramCallSemType.equals(intType))) {
+				if (!(argSemType.equals(floatType) && paramCallSemType.equals(intType))) { // TODO: maybe remove since we added equivalence in the .equals method
 					throw new TypeError("Type of the argument index " + paramCall.getParamIndex() + " in the function call " + functionCall.getIdentifier().lexeme + " does not match the type of the argument " + argSemType);
-
 				}
 
 			}
@@ -478,14 +594,17 @@ public class SemanticAnalysis implements Visitor<SemType> {
 		// add parameters to the local symbol table
 		ArrayList<SemType> paramTypes = new ArrayList<>();
 		for (ParamDefinition param : functionDefinition.getParamDefinitions()){
-			param.accept(this, localTable);
-			SemType paramType = new SemType(param.getIdentifier().lexeme);
-			paramTypes.add(paramType);
+			SemType paramSemType = param.accept(this, localTable);
+
+			paramTypes.add(paramSemType);
 		}
 
 		// add function to the symbol table
 		Type returnType = functionDefinition.getReturnType();
-		FunctionSemType semType = new FunctionSemType(returnType.symbol.lexeme, paramTypes.toArray(new SemType[0]));
+
+		SemType retSemType = getSemTypeFromASTNodeType(table, returnType);
+
+		FunctionSemType semType = new FunctionSemType(retSemType, paramTypes.toArray(new SemType[0]));
 		table.addSymbol(name.lexeme, semType);
 
 		// check types of block
@@ -494,6 +613,25 @@ public class SemanticAnalysis implements Visitor<SemType> {
 
 		// check type of return expression (done in block)
 		return null;
+	}
+
+	private SemType getSemTypeFromASTNodeType(SymbolTable table, Type returnType) {
+		SemType retSemType;
+		if (returnType.isList) {
+			SemType elemSemType;
+			if (returnType.symbol.type == RECORD) {
+				elemSemType = table.lookup(returnType.symbol.lexeme);
+			} else {
+				elemSemType = new SemType(returnType.symbol.lexeme);
+			}
+
+			retSemType = new ArraySemType(elemSemType);
+		} else if (returnType.symbol.type == RECORD) {
+			retSemType = table.lookup(returnType.symbol.lexeme);
+		} else {
+			retSemType = new SemType(returnType.symbol.lexeme);
+		}
+		return retSemType;
 	}
 
 	@Override
@@ -532,11 +670,14 @@ public class SemanticAnalysis implements Visitor<SemType> {
 
 	@Override
 	public SemType visitParamDefinition(ParamDefinition paramDefinition, SymbolTable table) throws SemanticException {
+
 		// add param to local symbol table
 		Symbol name = paramDefinition.getIdentifier();
 		Type type = paramDefinition.getType();
+		System.out.println(type);
 
-		SemType semType = new SemType(type.symbol.lexeme);
+		SemType semType = getSemTypeFromASTNodeType(table, type);
+
 		table.addSymbol(name.lexeme, semType);
 		return semType;
 	}
@@ -551,7 +692,7 @@ public class SemanticAnalysis implements Visitor<SemType> {
 			fields.put(field.getIdentifier().lexeme, semType);
 		}
 
-		RecordSemType recordSemType = new RecordSemType(fields);
+		RecordSemType recordSemType = new RecordSemType(fields, recordDefinition.getIdentifier().lexeme);
 
 		// check that the new record identifier does not shadow any other identifier in the table (this includes other record, but also predefined functions)
 		SemType existingRecord = table.lookup(recordDefinition.getIdentifier().lexeme);
@@ -580,6 +721,7 @@ public class SemanticAnalysis implements Visitor<SemType> {
 	public SemType visitReturnStatement(ReturnStatement returnStatement, SymbolTable table) throws SemanticException{
 		String localFunctionName = table.getLocalFunctionName();
 		FunctionSemType functionSemType = (FunctionSemType) table.lookup(localFunctionName);
+
 		if (functionSemType == null) {
 			// if localFunctionName is null => throw Error
 			// couldn't find function
@@ -593,8 +735,8 @@ public class SemanticAnalysis implements Visitor<SemType> {
 			returnSemType = returnStatement.getExpression().accept(this, table);
 		}
 
-		if (!Objects.equals(returnSemType.type, functionSemType.type)) {
-			throw new TypeError("Return type does not match function return type. Expected: " + functionSemType + ", found: " + returnSemType);
+		if (!functionSemType.getRetType().equals(returnSemType)) {
+			throw new TypeError("Return at line "+returnStatement.line+" type does not match function return type. Expected: " + functionSemType.getRetType() + ", found: " + returnSemType);
 		}
 
 		return null;

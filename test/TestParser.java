@@ -102,9 +102,9 @@ public class TestParser {
         IdentifierAccess rightAccess = (IdentifierAccess) binaryExpr.getRightTerm();
         assertEquals("a", leftAccess.getIdentifier().lexeme);
         assertEquals("b", rightAccess.getIdentifier().lexeme);
-        assertTrue(binaryExpr.getOperator() instanceof BinaryOperator);
+		assertNotNull(binaryExpr.getOperator());
         BinaryOperator plusOp = (BinaryOperator) binaryExpr.getOperator();
-        assertEquals(TokenTypes.PLUS, plusOp.getOperator().type);
+        assertEquals(TokenTypes.PLUS, plusOp.getSymbol().type);
     }
     
     @Test
@@ -270,7 +270,7 @@ public class TestParser {
         Block block = (Block) function.getBlock();
         assertEquals(2, block.getStatements().size());
 
-        Statement statement1 = block.getStatements().get(0);
+        Statement statement1 = block.getStatements().getFirst();
         assertTrue(statement1 instanceof VariableDeclaration);
         VariableDeclaration varDecl1 = (VariableDeclaration) statement1;
         assertFalse(varDecl1.isConstant());
@@ -389,7 +389,7 @@ public class TestParser {
         Block block = (Block) function.getBlock();
         assertEquals(1, block.getStatements().size());
 
-        Statement statement = block.getStatements().get(0);
+        Statement statement = block.getStatements().getFirst();
         assertTrue(statement instanceof IfStatement);
         IfStatement ifStmt = (IfStatement) statement;
         assertTrue(ifStmt.getCondition() instanceof BinaryExpression);
@@ -400,9 +400,9 @@ public class TestParser {
         IdentifierAccess rightAccess = (IdentifierAccess) condition.getRightTerm();
         assertEquals("a", leftAccess.getIdentifier().lexeme);
         assertEquals("b", rightAccess.getIdentifier().lexeme);
-        assertTrue(condition.getOperator() instanceof BinaryOperator);
+		assertNotNull(condition.getOperator());
         BinaryOperator greaterOp = (BinaryOperator) condition.getOperator();
-        assertEquals(TokenTypes.GREATER_THAN, greaterOp.getOperator().type);
+        assertEquals(TokenTypes.GREATER_THAN, greaterOp.getSymbol().type);
 
         assertNotNull(ifStmt.getThenBlock());
         Block thenBlock = ifStmt.getThenBlock();
@@ -504,9 +504,9 @@ public class TestParser {
         IdentifierAccess rightAccess = (IdentifierAccess) condition.getRightTerm();
         assertEquals("a", leftAccess.getIdentifier().lexeme);
         assertEquals("b", rightAccess.getIdentifier().lexeme);
-        assertTrue(condition.getOperator() instanceof BinaryOperator);
+		assertNotNull(condition.getOperator());
         BinaryOperator lessOp = (BinaryOperator) condition.getOperator();
-        assertEquals(TokenTypes.LESS_THAN, lessOp.getOperator().type);
+        assertEquals(TokenTypes.LESS_THAN, lessOp.getSymbol().type);
 
         assertNotNull(whileLoop.getBlock());
         Block whileBlock = whileLoop.getBlock();
@@ -527,9 +527,9 @@ public class TestParser {
         ConstVal constVal = (ConstVal) binaryExpr.getRightTerm();
         assertEquals(1, constVal.getValue());
         assertEquals(TokenTypes.INT_LITERAL, constVal.getSymbol().type);
-        assertTrue(binaryExpr.getOperator() instanceof BinaryOperator);
+		assertNotNull(binaryExpr.getOperator());
         BinaryOperator plusOp = (BinaryOperator) binaryExpr.getOperator();
-        assertEquals(TokenTypes.PLUS, plusOp.getOperator().type);
+        assertEquals(TokenTypes.PLUS, plusOp.getSymbol().type);
     }
 
 
@@ -727,9 +727,9 @@ public class TestParser {
         assertTrue(unaryExpr.getTerm() instanceof IdentifierAccess);
         IdentifierAccess idAccess = (IdentifierAccess) unaryExpr.getTerm();
         assertEquals("i", idAccess.getIdentifier().lexeme);
-        assertTrue(unaryExpr.getOperator() instanceof UnaryOperator);
+		assertNotNull(unaryExpr.getOperator());
         UnaryOperator unaryOp = (UnaryOperator) unaryExpr.getOperator();
-        assertEquals(TokenTypes.MINUS, unaryOp.getOperator().type);
+        assertEquals(TokenTypes.MINUS, unaryOp.getSymbol().type);
     }
 
 
@@ -778,16 +778,16 @@ public class TestParser {
         assertTrue(innerBinaryExpr.getRightTerm() instanceof IdentifierAccess);
         IdentifierAccess rightAccess = (IdentifierAccess) innerBinaryExpr.getRightTerm();
         assertEquals("b", rightAccess.getIdentifier().lexeme);
-        assertTrue(innerBinaryExpr.getOperator() instanceof BinaryOperator);
+		assertNotNull(innerBinaryExpr.getOperator());
         BinaryOperator plusOp = (BinaryOperator) innerBinaryExpr.getOperator();
-        assertEquals(TokenTypes.PLUS, plusOp.getOperator().type);
+        assertEquals(TokenTypes.PLUS, plusOp.getSymbol().type);
 
         assertTrue(binaryExpr.getRightTerm() instanceof IdentifierAccess);
         IdentifierAccess rightTermAccess = (IdentifierAccess) binaryExpr.getRightTerm();
         assertEquals("c", rightTermAccess.getIdentifier().lexeme);
-        assertTrue(binaryExpr.getOperator() instanceof BinaryOperator);
+		assertNotNull(binaryExpr.getOperator());
         BinaryOperator mulOp = (BinaryOperator) binaryExpr.getOperator();
-        assertEquals(TokenTypes.MULTIPLY, mulOp.getOperator().type);
+        assertEquals(TokenTypes.MULTIPLY, mulOp.getSymbol().type);
     }
 
     @Test
@@ -886,24 +886,18 @@ public class TestParser {
     }
 
 
-    @Test
+    @Test(expected = SyntaxErrorException.class)
     public void testError() throws Exception {
-        try {
-            String input = """
-                fun main() {
-                    a = Point(;
-                }
-                """;
+        String input = """
+            fun main() {
+                a = Point(;
+            }
+            """;
 
-            StringReader reader = new StringReader(input);
-            Lexer lexer = new Lexer(reader);
-            Parser parser = new Parser(lexer);
-
-            ASTNode node = parser.getAST();
-        } catch (SyntaxErrorException e) {
-            assertTrue(e.getMessage().contains("Error: Expected ')'"));
-        }
-
+        StringReader reader = new StringReader(input);
+        Lexer lexer = new Lexer(reader);
+        Parser parser = new Parser(lexer);
+        parser.parseProgram();
     }
 
     @Test

@@ -40,14 +40,14 @@ public class SemType {
 //		if (type.equals("int") && semType.type.equals("float")) {
 //			return true;
 //		}
-
-		// ints can be made equivalent to floats, but not the opposite
-		if (type.equals("float") && semType.type.equals("int")) {
-			return true;
-		}
+//
+//		// ints can be made equivalent to floats, but not the opposite
+//		if (type.equals("float") && semType.type.equals("int")) {
+//			return true;
+//		}
 
 		// ints and floats are equivalent to the num type
-		if ((type.equals("int")  || type.equals("num")) && semType.type.equals("num")) {
+		if ((type.equals("int")  || type.equals("float") || type.equals("num")) && semType.type.equals("num")) {
 			return true;
 		}
 

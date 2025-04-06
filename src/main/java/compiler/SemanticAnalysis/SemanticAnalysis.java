@@ -243,8 +243,17 @@ public class SemanticAnalysis implements Visitor<SemType> {
 		SemType leftType = binaryExpression.getLeftTerm().accept(this, table);
 		SemType rightType = binaryExpression.getRightTerm().accept(this, table);
 		if (!leftType.equals(rightType)) {
-			// Note: we don't do the implicit conversion of ints to floats here because the .equals method on SemType should do it (TODO: check that this is true)
-			throw new TypeError("Types of elements in the binary expression at line "+binaryExpression.line+" do not match: " + leftType + " and " + rightType);
+			// check if the types are convertible
+			// if either of the types is a float, then we can convert the other type to a float
+			if (leftType.equals(floatType) && rightType.equals(intType)) {
+				rightType = floatType;
+			} else if (rightType.equals(floatType) && leftType.equals(intType)) {
+				leftType = floatType;
+			} else {
+				// if the types are not convertible, throw an error
+				throw new TypeError("Types of elements in the binary expression at line "+binaryExpression.line+" do not match: " + leftType + " and " + rightType);
+			}
+//			throw new TypeError("Types of elements in the binary expression at line "+binaryExpression.line+" do not match: " + leftType + " and " + rightType);
 		}
 
 		SemType termsType;
@@ -265,7 +274,7 @@ public class SemanticAnalysis implements Visitor<SemType> {
 		if (operatorSemType.equals(boolType)) {
 			// this operator only accepts booleans -> "&&", "||"
 			if (!termsType.equals(boolType)) {
-				throw new TypeError(String.format("Type %s cannot be used in a boolean expression, line %d", termsType, binaryExpression.line));
+				throw new OperatorError(String.format("Type %s cannot be used in a boolean expression, line %d", termsType, binaryExpression.line));
 			}
 
 			return boolType;
@@ -274,9 +283,9 @@ public class SemanticAnalysis implements Visitor<SemType> {
 			// here we have an operator that can accept both booleans and numbers -> "==", "!="
 			// so if the type of the terms is not boolean or number, throw an error
 			if (!(termsType.equals(boolType) || termsType.equals(numType))) {
-				throw new TypeError(String.format("Type %s cannot be used in a with the %s operator", termsType, binaryExpression.getOperator().getSymbol().lexeme));
+				throw new OperatorError(String.format("Type %s cannot be used in a with the %s operator", termsType, binaryExpression.getOperator().getSymbol().lexeme));
 			}
-//
+
 //			if (termsType.equals(boolType)){
 //				return boolType;
 //			}
@@ -285,7 +294,7 @@ public class SemanticAnalysis implements Visitor<SemType> {
 
  		} else if (operatorSemType.equals(numType)) {
 			if (!termsType.equals(numType)) {
-				throw new TypeError(String.format("Type %s cannot be used in a with the %s operator, expected int or float", termsType, binaryExpression.getOperator().getSymbol().lexeme));
+				throw new OperatorError(String.format("Type %s cannot be used in a with the %s operator, expected int or float", termsType, binaryExpression.getOperator().getSymbol().lexeme));
 			}
 			if (binaryExpression.getOperator().numberOperatorReturnsBoolean()) {
 				return boolType;
@@ -323,13 +332,13 @@ public class SemanticAnalysis implements Visitor<SemType> {
 		SemType operatorSemType = unaryExpression.getOperator().accept(this, table);
 		if (operatorSemType.equals(boolType)) {
 			if (!expressionSemType.equals(boolType)) {
-				throw new SemanticException(String.format("Expected boolean with operator %s", unaryExpression.getOperator().getSymbol().lexeme));
+				throw new OperatorError(String.format("Expected boolean with operator %s", unaryExpression.getOperator().getSymbol().lexeme));
 			}
 
 			return boolType;
 		} else if (operatorSemType.equals(numType)) {
 			if (!expressionSemType.equals(numType)) {
-				throw new SemanticException(String.format("Expected int or float with operator %s", unaryExpression.getOperator().getSymbol().lexeme));
+				throw new OperatorError(String.format("Expected int or float with operator %s", unaryExpression.getOperator().getSymbol().lexeme));
 			}
 			return numType;
 		}
@@ -392,16 +401,22 @@ public class SemanticAnalysis implements Visitor<SemType> {
 			SemType argSemType = functionDefParamsSemTypes[paramCall.getParamIndex()];
 
 
-			// if the args don't match and the function is not defined with "any" as the type of its arguments
-			if (!paramCallSemType.equals(argSemType) && !argSemType.equals(anyType)) {
+			// if the args don't match  and the function is not defined with "any" as the type of its arguments
+			if (!argSemType.equals(paramCallSemType) && !argSemType.equals(anyType)) {
 				// the types didn't match, but if the expected type is a float and the given type is an int, we can convert it (here that means we keep going)
 
 				// if we can't convert the type, we throw an error: here if it's not the convertable case, we throw
-				if (!(argSemType.equals(floatType) && paramCallSemType.equals(intType))) { // TODO: maybe remove since we added equivalence in the .equals method
-					throw new TypeError("Type of the argument index " + paramCall.getParamIndex() + " in the function call " + functionCall.getIdentifier().lexeme + " at line "+ functionCall.line +" does not match the type of the argument " + argSemType);
+				if (argSemType.equals(floatType) && paramCallSemType.equals(intType)) {
+					return functionSemType.getRetType();
 				}
 
+				throw new ArgumentError("Type of the argument index " + paramCall.getParamIndex() + " in the function call " + functionCall.getIdentifier().lexeme + " at line "+ functionCall.line +" does not match the type of the argument " + argSemType);
 			}
+		}
+
+		// check that the number of arguments is correct
+		if (functionSemType.getParamSemTypes().length != functionCall.getParameters().size()) {
+			throw new ArgumentError("Number of parameters in the function call " + functionCall.getIdentifier().lexeme + " at line "+functionCall.line+" does not match the number of arguments in the function definition: " + functionSemType.getParamSemTypes().length);
 		}
 
 		// return the SemType of the return value (e.g., intType if the function returns an integer)
@@ -427,10 +442,9 @@ public class SemanticAnalysis implements Visitor<SemType> {
 			SemType paramCallSemType = paramCall.accept(this, table);
 
 			// get the fieldSemType
-			// TODO: CHECK THIS BECAUSE IM NOT SURE AT ALL!!
 			SemType fieldSemType = recordSemType.fields.values().toArray(new SemType[0])[paramCall.getParamIndex()];
 			if (fieldSemType == null) {
-				throw new TypeError("Field " + paramCall.getParamIndex() + " does not exist in record type " + newRecord.getIdentifier().lexeme);
+				throw new SemanticException("Field " + paramCall.getParamIndex() + " does not exist in record type " + newRecord.getIdentifier().lexeme);
 			}
 
 			// check that the types match
@@ -439,14 +453,14 @@ public class SemanticAnalysis implements Visitor<SemType> {
 
 				// otherwise: throw
 				if (!(fieldSemType.equals(floatType) && paramCallSemType.equals(intType))) {
-					throw new TypeError("Type of the parameter index " + paramCall.getParamIndex() + " in the record " + newRecord.getIdentifier().lexeme + " does not match the type of the field " + fieldSemType);
+					throw new ArgumentError("Type of the parameter index " + paramCall.getParamIndex() + " in the record " + newRecord.getIdentifier().lexeme + " does not match the type of the field " + fieldSemType);
 				}
 			}
 		}
 
 		// check that the number of parameters is correct
 		if (newRecord.getTerms().size() != recordSemType.fields.size()) {
-			throw new TypeError("Number of parameters in the record " + newRecord.getIdentifier().lexeme + " does not match the number of fields " + recordSemType.fields.size());
+			throw new ArgumentError("Number of parameters in the record " + newRecord.getIdentifier().lexeme + " does not match the number of fields " + recordSemType.fields.size());
 		}
 
 		return recordSemType;

@@ -1,7 +1,6 @@
 import static org.junit.Assert.*;
 
 import compiler.Lexer.*;
-import compiler.Parser.*;
 import compiler.Parser.ASTNodes.*;
 import compiler.Parser.ASTNodes.Statements.Expressions.Access.*;
 import compiler.Parser.ASTNodes.Statements.Expressions.Expressions.*;
@@ -533,6 +532,58 @@ public class TestSemanticAnalysis {
         }
     }
 
+    @Test(expected = ArgumentError.class)
+    public void testFunctionCallWithIncorrectArgs() throws Exception {
+        SymbolTable symbolTable = new SymbolTable(null);
+        SemType functionReturnType = new SemType("int");
+        SemType paramType = new SemType("int");
+        SemType[] paramTypes = {paramType};
+        FunctionSemType functionSemType = new FunctionSemType(functionReturnType, paramTypes);
+
+        // Set up the symbol table
+        symbolTable.addSymbol("myFunction", functionSemType);
+
+        // myFunction(5.5)
+        //            ^^^-> supposed to be int, conversion is not possible from float to int -> must throw an argument error
+        Symbol floatSymbol = new Symbol(TokenTypes.FLOAT_LITERAL, "5.5", 0, 0, 5.5f);
+        ConstVal constVal = new ConstVal(5.5f, floatSymbol, 0, 0);
+
+        ArrayList<ParamCall> paramCalls = new ArrayList<>();
+        paramCalls.add(new ParamCall(constVal, 0, 0, 0));
+        Symbol functionSymbol = new Symbol(TokenTypes.IDENTIFIER, "myFunction", 0, 0);
+        FunctionCall functionCall = new FunctionCall(functionSymbol, paramCalls, 0, 0);
+
+
+        SemanticAnalysis semanticAnalysis = new SemanticAnalysis();
+        semanticAnalysis.visitFunctionCall(functionCall, symbolTable);
+    }
+
+    @Test(expected = ArgumentError.class)
+    public void testFunctionCallWithNotEnoughArgs() throws Exception {
+        SymbolTable symbolTable = new SymbolTable(null);
+        SemType functionReturnType = new SemType("int");
+        SemType paramType = new SemType("int");
+        SemType[] paramTypes = {paramType, paramType};
+        FunctionSemType functionSemType = new FunctionSemType(functionReturnType, paramTypes);
+
+        // Set up the symbol table
+        symbolTable.addSymbol("myFunction", functionSemType);
+
+        // myFunction(5, 5)
+        Symbol intSymbol = new Symbol(TokenTypes.INT_LITERAL, "5", 0, 0, 5);
+        ConstVal constVal = new ConstVal(5, intSymbol, 0, 0);
+
+        ArrayList<ParamCall> paramCalls = new ArrayList<>();
+        paramCalls.add(new ParamCall(constVal, 0, 0, 0));
+
+        Symbol functionSymbol = new Symbol(TokenTypes.IDENTIFIER, "myFunction", 0, 0);
+        FunctionCall functionCall = new FunctionCall(functionSymbol, paramCalls, 0, 0);
+
+
+        SemanticAnalysis semanticAnalysis = new SemanticAnalysis();
+        semanticAnalysis.visitFunctionCall(functionCall, symbolTable);
+    }
+
     @Test
     public void testNewRecord() {
         // Test record instantiation
@@ -564,6 +615,57 @@ public class TestSemanticAnalysis {
             e.printStackTrace();
             fail("Semantic analysis failed: " + e.getMessage());
         }
+    }
+
+    @Test(expected = ArgumentError.class)
+    public void testNewRecordWithWrongArgTypes() throws Exception {
+        // Test record instantiation with wrong argument types
+        TreeMap<String, SemType> recordFields = new TreeMap<>();
+        recordFields.put("field1", new SemType("int"));
+        recordFields.put("field2", new SemType("string"));
+        SemType recordType = new RecordSemType(recordFields, "MyRecord");
+        SymbolTable symbolTable = new SymbolTable(null);
+        // Set up the symbol table
+        symbolTable.addSymbol("MyRecord", recordType);
+
+        // MyRecord(true, "hello");
+        Symbol boolSymbol = new Symbol(TokenTypes.BOOL_TRUE, "true", 0, 0, true);
+        ConstVal constVal1 = new ConstVal(true, boolSymbol, 0, 0);
+        Symbol stringSymbol = new Symbol(TokenTypes.STRING_LITERAL, "hello", 0, 0, "hello");
+        ConstVal constVal2 = new ConstVal("hello", stringSymbol, 0, 0);
+        ArrayList<ParamCall> paramCalls = new ArrayList<>();
+        paramCalls.add(new ParamCall(constVal1, 0, 0, 0));
+        paramCalls.add(new ParamCall(constVal2, 1, 0, 1));
+
+        Symbol recordSymbol = new Symbol(TokenTypes.RECORD, "MyRecord", 0, 0);
+        NewRecord newRecord = new NewRecord(recordSymbol, paramCalls, 0, 0);
+
+        SemanticAnalysis semanticAnalysis = new SemanticAnalysis();
+        semanticAnalysis.visitNewRecord(newRecord, symbolTable);
+    }
+
+    @Test(expected = ArgumentError.class)
+    public void testNewRecordTooFewArguments() throws Exception {
+        // Test record instantiation with wrong argument types
+        TreeMap<String, SemType> recordFields = new TreeMap<>();
+        recordFields.put("field1", new SemType("int"));
+        recordFields.put("field2", new SemType("string"));
+        SemType recordType = new RecordSemType(recordFields, "MyRecord");
+        SymbolTable symbolTable = new SymbolTable(null);
+        // Set up the symbol table
+        symbolTable.addSymbol("MyRecord", recordType);
+
+        // MyRecord(true, "hello");
+        Symbol boolSymbol = new Symbol(TokenTypes.BOOL_TRUE, "true", 0, 0, true);
+        ConstVal constVal1 = new ConstVal(true, boolSymbol, 0, 0);
+        ArrayList<ParamCall> paramCalls = new ArrayList<>();
+        paramCalls.add(new ParamCall(constVal1, 0, 0, 0));
+
+        Symbol recordSymbol = new Symbol(TokenTypes.RECORD, "MyRecord", 0, 0);
+        NewRecord newRecord = new NewRecord(recordSymbol, paramCalls, 0, 0);
+
+        SemanticAnalysis semanticAnalysis = new SemanticAnalysis();
+        semanticAnalysis.visitNewRecord(newRecord, symbolTable);
     }
 
     @Test

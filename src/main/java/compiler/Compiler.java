@@ -76,7 +76,7 @@ public class Compiler {
 		System.out.println("AST: " + root.prettyPrint(0));
 
 		SemanticAnalysis analyzer = new SemanticAnalysis();
-		analyzer.analyze(root);
+		analyzer.analyze(root, false);
 	}
 }
 

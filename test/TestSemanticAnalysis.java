@@ -8,11 +8,14 @@ import compiler.Parser.ASTNodes.Statements.Expressions.Operators.*;
 import compiler.Parser.ASTNodes.Statements.Expressions.Terms.*;
 import compiler.Parser.ASTNodes.Statements.Statements.*;
 import compiler.Parser.ASTNodes.Types.Type;
+import compiler.Parser.Parser;
+import compiler.Parser.SyntaxErrorException;
 import compiler.SemanticAnalysis.*;
 import compiler.SemanticAnalysis.Errors.*;
 import compiler.SemanticAnalysis.Types.*;
 import org.junit.Test;
 
+import java.io.StringReader;
 import java.util.ArrayList;
 import java.util.TreeMap;
 
@@ -1267,5 +1270,36 @@ public class TestSemanticAnalysis {
         // This should throw a ScopeError
         SemanticAnalysis semanticAnalysis = new SemanticAnalysis();
         semanticAnalysis.visitVariableDeclaration(variableDeclaration, symbolTable);
+    }
+
+    @Test
+    public void testNoReturnsInCertainPaths() throws Exception {
+        // testing the cases where the function does not return a value in every path
+        String input = """
+                fun main() int {
+                    i int = 20;
+                    if (i < 10) {
+                        return 0;
+                    } else {
+                        writeln(i);
+                        $ return 1;
+                    }
+                }
+                """;
+
+        StringReader reader = new StringReader(input);
+        Lexer lexer = new Lexer(reader);
+        try {
+            Parser parser = new Parser(lexer);
+
+            ASTNode node = parser.getAST();
+            SemanticAnalysis semanticAnalysis = new SemanticAnalysis();
+
+            semanticAnalysis.analyze(node, true);
+            fail("Expected a ReturnError to be thrown");
+        } catch (ReturnError e) {
+            // expected
+        }
+
     }
 }

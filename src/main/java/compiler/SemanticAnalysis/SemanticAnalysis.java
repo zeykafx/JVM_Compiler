@@ -23,6 +23,7 @@ import compiler.SemanticAnalysis.Types.RecordSemType;
 import compiler.SemanticAnalysis.Types.SemType;
 
 import java.util.ArrayList;
+import java.util.Optional;
 import java.util.TreeMap;
 
 import static compiler.Lexer.TokenTypes.*;
@@ -46,7 +47,7 @@ public class SemanticAnalysis implements Visitor<SemType> {
 	public SemanticAnalysis() {
 	}
 
-	public void analyze(ASTNode rootNode) {
+	public void analyze(ASTNode rootNode, boolean inTest) throws SemanticException {
 		this.rootNode = rootNode;
 		globalSymbolTable = new SymbolTable(null);
 
@@ -55,7 +56,11 @@ public class SemanticAnalysis implements Visitor<SemType> {
 		try {
 			rootNode.accept(this, globalSymbolTable);
 		} catch (SemanticException e) {
-			System.err.println("Syntax Error: " + e.getMessage());
+			if (inTest) {
+				// if we are in test mode, we don't want to exit the program
+				throw e;
+			}
+			System.err.println("Semantic Analysis Error: " + e.getMessage());
 			System.exit(2); // 2 for semantic analysis
 		}
 		catch (Exception e) {
@@ -635,9 +640,17 @@ public class SemanticAnalysis implements Visitor<SemType> {
 		// check types of block
 		functionDefinition.getBlock().accept(this, localTable);
 
+		
+        // check that all paths in the function return a value (if the function isn't void)
+        if (!retSemType.equals(voidType)) {
+            if (!hasReturnInAllPaths(functionDefinition.getBlock())) {
+                throw new ReturnError("Function '" + name.lexeme + "' has paths that don't return a value");
+            }
+        }
+		
 		return retSemType;
 	}
-
+	
 	private SemType getSemTypeFromASTNodeType(SymbolTable table, Type returnType) {
 		SemType retSemType;
 		if (returnType.isList) {
@@ -657,6 +670,42 @@ public class SemanticAnalysis implements Visitor<SemType> {
 		return retSemType;
 	}
 
+	private boolean hasReturnInAllPaths(Block block) {
+        // return at end of (main) block 
+        if (block.getReturnStatement() != null) {
+            return true;
+        }
+        
+        // check all statements for returns
+        return checkStatementsForReturn(block.getStatements());
+    }
+    
+    private boolean checkStatementsForReturn(ArrayList<Statement> statements) {
+        for (Statement stmt : statements) {
+            // direct return
+            if (stmt instanceof ReturnStatement) {
+                return true;
+            }
+
+            if (stmt instanceof IfStatement ifStmt) {
+                // check that both branches return
+                boolean thenReturns = hasReturnInAllPaths(ifStmt.getThenBlock());
+                
+                // check the else block if there is one
+                if (ifStmt.isElse()) {
+                    boolean elseReturns = hasReturnInAllPaths(ifStmt.getElseBlock());
+                    // it only counts as a return if both branches return
+                    if (thenReturns && elseReturns) {
+                        return true;
+                    }
+                }
+            }
+        }
+        
+        // no return found in this path
+        return false;
+    }    
+	
 	@Override
 	public SemType visitBlock(Block block, SymbolTable table) throws SemanticException {
 		for (Statement stmt : block.getStatements()) {
@@ -768,21 +817,6 @@ public class SemanticAnalysis implements Visitor<SemType> {
 		}
 
 		return returnSemType;
-		/*  AS A BONUS : CHECK IF FUNCTION ALWAYS RETURNS A VALUE
-		notre idée : ajouter un attribut "retNumber" à la localSymbolTable,
-		TODO trouver l'algorithme qui permet de vérifier que la fonction retourne toujours une valeur
-
-			fun f (a int) int { // <-- f(int) -> int, retNumber = 1
-				if (qsdf) {
-				   someExpres;
-				   if {
-					 return 1;
-				   }
-				}
-				return 2;
-			}
-
-		 */
 	}
 
 	@Override
@@ -830,7 +864,6 @@ public class SemanticAnalysis implements Visitor<SemType> {
 		}
 
 		table.addSymbol(name.lexeme, semType);
-
 
 		return semType;
 	}

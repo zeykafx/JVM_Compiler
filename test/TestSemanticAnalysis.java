@@ -17,6 +17,7 @@ import org.junit.Test;
 
 import java.io.StringReader;
 import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.TreeMap;
 
 public class TestSemanticAnalysis {
@@ -73,7 +74,7 @@ public class TestSemanticAnalysis {
     @Test
     public void testRecordAccess() {
         SymbolTable symbolTable = new SymbolTable(null);
-        TreeMap<String, SemType> recordFields = new TreeMap<>();
+        LinkedHashMap<String, SemType> recordFields = new LinkedHashMap<>();
         recordFields.put("field1", new SemType("int"));
         recordFields.put("field2", new SemType("string"));
         SemType recordType = new RecordSemType(recordFields, "MyRecord");
@@ -284,11 +285,13 @@ public class TestSemanticAnalysis {
         }
     }
 
+//    @Test
+
     @Test
     public void testBinaryExpressionRecordAccessLessThan() {
         // myRecord.field1 < 10
         SymbolTable symbolTable = new SymbolTable(null);
-        TreeMap<String, SemType> recordFields = new TreeMap<>();
+        LinkedHashMap<String, SemType> recordFields = new LinkedHashMap<>();
         recordFields.put("field1", new SemType("int"));
         SemType recordType = new RecordSemType(recordFields, "MyRecord");
 
@@ -334,6 +337,31 @@ public class TestSemanticAnalysis {
             fail("Semantic analysis failed: " + e.getMessage());
         }
     }
+
+    @Test(expected = OperatorError.class)
+    public void testUnaryExpressionWithWrongTypes() throws Exception {
+        // -"hello"
+        Symbol stringSymbol = new Symbol(TokenTypes.STRING_LITERAL, "hello", 0, 0, 10);
+        ConstVal constVal = new ConstVal("hello", stringSymbol, 0, 0);
+        UnaryOperator unaryOperator = new UnaryOperator(new Symbol(TokenTypes.MINUS, "-", 0, 0), 0, 0);
+        UnaryExpression unaryExpression = new UnaryExpression(unaryOperator, constVal, 0, 0);
+
+        SemanticAnalysis semanticAnalysis = new SemanticAnalysis();
+        semanticAnalysis.visitUnaryExpression(unaryExpression, null);
+    }
+
+    @Test(expected = OperatorError.class)
+    public void testUnaryExpressionWithWrongTypes2() throws Exception {
+        // !"hello"
+        Symbol stringSymbol = new Symbol(TokenTypes.STRING_LITERAL, "hello", 0, 0, 10);
+        ConstVal constVal = new ConstVal("hello", stringSymbol, 0, 0);
+        UnaryOperator unaryOperator = new UnaryOperator(new Symbol(TokenTypes.NOT, "!", 0, 0), 0, 0);
+        UnaryExpression unaryExpression = new UnaryExpression(unaryOperator, constVal, 0, 0);
+
+        SemanticAnalysis semanticAnalysis = new SemanticAnalysis();
+        semanticAnalysis.visitUnaryExpression(unaryExpression, null);
+    }
+
 
     @Test
     public void testUnaryExpressionNegationBoolean() {
@@ -590,7 +618,7 @@ public class TestSemanticAnalysis {
     @Test
     public void testNewRecord() {
         // Test record instantiation
-        TreeMap<String, SemType> recordFields = new TreeMap<>();
+        LinkedHashMap<String, SemType> recordFields = new LinkedHashMap<>();
         recordFields.put("field1", new SemType("int"));
         recordFields.put("field2", new SemType("string"));
         SemType recordType = new RecordSemType(recordFields, "MyRecord");
@@ -623,7 +651,7 @@ public class TestSemanticAnalysis {
     @Test(expected = ArgumentError.class)
     public void testNewRecordWithWrongArgTypes() throws Exception {
         // Test record instantiation with wrong argument types
-        TreeMap<String, SemType> recordFields = new TreeMap<>();
+        LinkedHashMap<String, SemType> recordFields = new LinkedHashMap<>();
         recordFields.put("field1", new SemType("int"));
         recordFields.put("field2", new SemType("string"));
         SemType recordType = new RecordSemType(recordFields, "MyRecord");
@@ -647,10 +675,68 @@ public class TestSemanticAnalysis {
         semanticAnalysis.visitNewRecord(newRecord, symbolTable);
     }
 
+    @Test()
+    public void testRecordDefWithRecordField() {
+        // Point rec {
+        //    x int;
+        //    y int;
+        //}
+        //
+        //Person rec{
+        //    name string;
+        //    location Point;
+        //    history int[];
+        //}
+        SymbolTable symbolTable = new SymbolTable(null);
+
+        LinkedHashMap<String, SemType> recordFields = new LinkedHashMap<>();
+        recordFields.put("x", new SemType("int"));
+        recordFields.put("y", new SemType("int"));
+        SemType recordType = new RecordSemType(recordFields, "Point");
+        symbolTable.addSymbol("Point", recordType);
+
+        LinkedHashMap<String, SemType> recordFields2 = new LinkedHashMap<>();
+        recordFields2.put("name", new SemType("string"));
+
+        recordFields2.put("location", recordType);
+        recordFields2.put("history", new ArraySemType(new SemType("int"), 0));
+        SemType expectedSemType = new RecordSemType(recordFields2, "Person");
+
+        // Create the record definition
+        ArrayList<RecordFieldDefinition> recordFieldDefinitions = new ArrayList<>();
+        Symbol fieldSymbol1 = new Symbol(TokenTypes.IDENTIFIER, "name", 0, 0);
+        Type fieldType1 = new Type(new Symbol(TokenTypes.STRING, "string", 0, 0), 0, 0);
+        RecordFieldDefinition recordFieldDefinition = new RecordFieldDefinition(fieldSymbol1, fieldType1, 0, 0, 0);
+        recordFieldDefinitions.add(recordFieldDefinition);
+
+        Symbol fieldSymbol2 = new Symbol(TokenTypes.IDENTIFIER, "location", 0, 0);
+        Type fieldType2 = new Type(new Symbol(TokenTypes.RECORD, "Point", 0, 0), 0, 0);
+        RecordFieldDefinition recordFieldDefinition2 = new RecordFieldDefinition(fieldSymbol2, fieldType2, 1, 0, 0);
+        recordFieldDefinitions.add(recordFieldDefinition2);
+
+        Symbol fieldSymbol3 = new Symbol(TokenTypes.IDENTIFIER, "history", 0, 0);
+        Type fieldType3 = new Type(new Symbol(TokenTypes.INT, "int", 0, 0), true, 0, 0);
+        RecordFieldDefinition recordFieldDefinition3 = new RecordFieldDefinition(fieldSymbol3, fieldType3, 2, 0, 0);
+        recordFieldDefinitions.add(recordFieldDefinition3);
+
+        Symbol recordSymbol = new Symbol(TokenTypes.RECORD, "Person", 0, 0);
+        RecordDefinition recordDef = new RecordDefinition(recordSymbol, recordFieldDefinitions, 0, 0);
+
+        // Visit the record definition
+        SemanticAnalysis semanticAnalysis = new SemanticAnalysis();
+        try {
+            SemType recSemType = semanticAnalysis.visitRecordDefinition(recordDef, symbolTable);
+            assertEquals("Expected type to be Person", expectedSemType, recSemType);
+        } catch (SemanticException e) {
+            e.printStackTrace();
+            fail("Semantic analysis failed: " + e.getMessage());
+        }
+    }
+
     @Test(expected = ArgumentError.class)
     public void testNewRecordTooFewArguments() throws Exception {
         // Test record instantiation with wrong argument types
-        TreeMap<String, SemType> recordFields = new TreeMap<>();
+        LinkedHashMap<String, SemType> recordFields = new LinkedHashMap<>();
         recordFields.put("field1", new SemType("int"));
         recordFields.put("field2", new SemType("string"));
         SemType recordType = new RecordSemType(recordFields, "MyRecord");
@@ -663,6 +749,36 @@ public class TestSemanticAnalysis {
         ConstVal constVal1 = new ConstVal(true, boolSymbol, 0, 0);
         ArrayList<ParamCall> paramCalls = new ArrayList<>();
         paramCalls.add(new ParamCall(constVal1, 0, 0, 0));
+
+        Symbol recordSymbol = new Symbol(TokenTypes.RECORD, "MyRecord", 0, 0);
+        NewRecord newRecord = new NewRecord(recordSymbol, paramCalls, 0, 0);
+
+        SemanticAnalysis semanticAnalysis = new SemanticAnalysis();
+        semanticAnalysis.visitNewRecord(newRecord, symbolTable);
+    }
+
+    @Test(expected = ArgumentError.class)
+    public void testNewRecordTooManyArguments() throws Exception {
+        // Test record instantiation with wrong argument types
+        LinkedHashMap<String, SemType> recordFields = new LinkedHashMap<>();
+        recordFields.put("field1", new SemType("int"));
+        recordFields.put("field2", new SemType("string"));
+        SemType recordType = new RecordSemType(recordFields, "MyRecord");
+        SymbolTable symbolTable = new SymbolTable(null);
+        // Set up the symbol table
+        symbolTable.addSymbol("MyRecord", recordType);
+
+        // MyRecord(true, "hello", "not a field");
+        Symbol intSymbol = new Symbol(TokenTypes.INT_LITERAL, "0", 0, 0, 0);
+        ConstVal constVal1 = new ConstVal(0, intSymbol, 0, 0);
+        Symbol stringSymbol = new Symbol(TokenTypes.STRING_LITERAL, "hello", 0, 0, "hello");
+        ConstVal constVal2 = new ConstVal("hello", stringSymbol, 0, 0);
+        Symbol stringSymbol2 = new Symbol(TokenTypes.STRING_LITERAL, "not a field", 0, 0, "not a field");
+        ConstVal constVal3 = new ConstVal("not a field", stringSymbol2, 0, 0);
+        ArrayList<ParamCall> paramCalls = new ArrayList<>();
+        paramCalls.add(new ParamCall(constVal1, 0, 0, 0));
+        paramCalls.add(new ParamCall(constVal2, 1, 0, 1));
+        paramCalls.add(new ParamCall(constVal3, 2, 0, 2));
 
         Symbol recordSymbol = new Symbol(TokenTypes.RECORD, "MyRecord", 0, 0);
         NewRecord newRecord = new NewRecord(recordSymbol, paramCalls, 0, 0);
@@ -879,7 +995,7 @@ public class TestSemanticAnalysis {
         SymbolTable symbolTable = new SymbolTable(null);
         SemType intType = new SemType("int");
 
-        TreeMap<String, SemType> recordFields = new TreeMap<>();
+        LinkedHashMap<String, SemType> recordFields = new LinkedHashMap<>();
         recordFields.put("x", intType);
         recordFields.put("y", intType);
         RecordSemType recordSemType = new RecordSemType(recordFields, "Point");
@@ -1025,7 +1141,7 @@ public class TestSemanticAnalysis {
         RecordDefinition recordDefinition = new RecordDefinition(identifier, fields, 0, 0);
 
         // Expected RecordSemType
-        TreeMap<String, SemType> fieldsMap = new TreeMap<>();
+        LinkedHashMap<String, SemType> fieldsMap = new LinkedHashMap<>();
         fieldsMap.put("x", intType);
         fieldsMap.put("y", intType);
         RecordSemType recordSemType = new RecordSemType(fieldsMap, "Point");
@@ -1079,10 +1195,10 @@ public class TestSemanticAnalysis {
         }
     }
 
-    @Test(expected = TypeError.class)
+    @Test(expected = ReturnError.class)
     public void testReturnFromVoidFunction() throws Exception {
         // return 5;
-        // this will throw a ScopeError
+        // this will throw a ReturnError
         // this test passes if the exception is thrown
         SemType voidType = new SemType("void");
         SymbolTable symbolTable = new SymbolTable(null, "functionName");
@@ -1254,6 +1370,22 @@ public class TestSemanticAnalysis {
         }
     }
 
+//    @Test(expected = ScopeError.class)
+//    public void testUseUndeclaredVariable() {
+//        /*
+//        {
+//          int a = 3;
+//        }
+//        a += 6;
+//         */
+//        // int a = x + 3 where x is not defined in the symbol table
+//        SemType intType = new SemType("int");
+//        SymbolTable symbolTable = new SymbolTable(null);
+//        symbolTable.addSymbol("a", intType);
+//
+//        Symbol identifierSymbol = new Symbol(TokenTypes.IDENTIFIER, "x", 0, 0);
+//    }
+
     @Test(expected = ScopeError.class)
     public void testVarDeclOfAlreadyDeclIdentifier() throws Exception {
         // x int = 2132
@@ -1270,6 +1402,31 @@ public class TestSemanticAnalysis {
         // This should throw a ScopeError
         SemanticAnalysis semanticAnalysis = new SemanticAnalysis();
         semanticAnalysis.visitVariableDeclaration(variableDeclaration, symbolTable);
+    }
+
+    @Test
+    public void testVarDeclShadowingGlobalVar() {
+        // final i int is defined in the global scope
+        // we'll define a var i int in a local scope
+        SymbolTable globalTable = new SymbolTable(null);
+        globalTable.addSymbol("i", new SemType("int", true));
+        SymbolTable localTable = new SymbolTable(globalTable);
+        SemType intType = new SemType("int");
+
+        Symbol intSymbol = new Symbol(TokenTypes.INT_LITERAL, "2132", 0, 0, 2132);
+        ConstVal constVal = new ConstVal(2132, intSymbol, 0, 0);
+        Symbol identifierSymbol = new Symbol(TokenTypes.IDENTIFIER, "i", 0, 0);
+        Type varType = new Type(new Symbol(TokenTypes.INT, "int", 0, 0), 0, 0);
+        VariableDeclaration variableDeclaration = new VariableDeclaration(identifierSymbol, varType, constVal, false, 0, 0);
+
+        try {
+            SemanticAnalysis semanticAnalysis = new SemanticAnalysis();
+            SemType resType = semanticAnalysis.visitVariableDeclaration(variableDeclaration, localTable);
+            assertEquals("Expected type to be int", intType, resType);
+        } catch (SemanticException e) {
+            e.printStackTrace();
+            fail("Semantic analysis failed: " + e.getMessage());
+        }
     }
 
     @Test

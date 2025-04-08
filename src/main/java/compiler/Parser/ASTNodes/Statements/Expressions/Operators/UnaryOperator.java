@@ -32,7 +32,7 @@ public class UnaryOperator extends Operator {
         return "  ".repeat(indent) + "UnaryOperator, " + operator.lexeme;
     }
 
-    public boolean isBinaryOperator() {
+    public boolean isBooleanOperator() {
         return operator.lexeme.equals("!");
     }
 

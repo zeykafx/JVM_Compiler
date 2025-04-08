@@ -1,4 +1,6 @@
 import static org.junit.Assert.*;
+
+import compiler.Parser.Parser;
 import org.junit.Test;
 import java.io.StringReader;
 import compiler.Lexer.*;
@@ -510,5 +512,60 @@ public class TestLexer {
 
         symbol = lexer.getNextSymbol();
         assertEquals(TokenTypes.SEMICOLON, symbol.type);
+    }
+
+    @Test
+    public void testEmptyString() throws Exception {
+        String input = """
+                fun main() {
+                    writeln("");
+                }
+                """;
+        StringReader reader = new StringReader(input);
+        Lexer lexer = new Lexer(reader);
+
+        Symbol symbol = lexer.getNextSymbol();
+        assertEquals(TokenTypes.FUN, symbol.type);
+        assertEquals("fun", symbol.lexeme);
+
+        symbol = lexer.getNextSymbol();
+        assertEquals(TokenTypes.IDENTIFIER, symbol.type);
+        assertEquals("main", symbol.lexeme);
+
+        symbol = lexer.getNextSymbol();
+        assertEquals(TokenTypes.LEFT_PAR, symbol.type);
+        assertEquals("(", symbol.lexeme);
+
+        symbol = lexer.getNextSymbol();
+        assertEquals(TokenTypes.RIGHT_PAR, symbol.type);
+        assertEquals(")", symbol.lexeme);
+
+        symbol = lexer.getNextSymbol();
+        assertEquals(TokenTypes.LEFT_BRACKET, symbol.type);
+        assertEquals("{", symbol.lexeme);
+
+        symbol = lexer.getNextSymbol();
+        assertEquals(TokenTypes.IDENTIFIER, symbol.type);
+        assertEquals("writeln", symbol.lexeme);
+
+        symbol = lexer.getNextSymbol();
+        assertEquals(TokenTypes.LEFT_PAR, symbol.type);
+        assertEquals("(", symbol.lexeme);
+
+        symbol = lexer.getNextSymbol();
+        assertEquals(TokenTypes.STRING_LITERAL, symbol.type);
+        assertEquals("", symbol.lexeme);
+        assertEquals("", symbol.value);
+
+        symbol = lexer.getNextSymbol();
+        assertEquals(TokenTypes.RIGHT_PAR, symbol.type);
+        assertEquals(")", symbol.lexeme);
+
+        symbol = lexer.getNextSymbol();
+        assertEquals(TokenTypes.SEMICOLON, symbol.type);
+
+        symbol = lexer.getNextSymbol();
+        assertEquals(TokenTypes.RIGHT_BRACKET, symbol.type);
+        assertEquals("}", symbol.lexeme);
     }
 }

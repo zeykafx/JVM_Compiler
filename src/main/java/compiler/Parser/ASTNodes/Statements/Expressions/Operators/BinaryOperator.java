@@ -8,7 +8,7 @@ import compiler.SemanticAnalysis.Visitor;
 
 
 /**
- * >= <= == != + - * / % && ||
+ * >= < <= > == != + - * / % && ||
  */
 public class BinaryOperator extends Operator {
 
@@ -43,8 +43,8 @@ public class BinaryOperator extends Operator {
         };
     }
 
-    /// Returns true if the operator can be applied on booleans and numbers, false otherwise
-    public boolean isBooleanOrNumberOperator() {
+    /// Returns true if the operator can be applied on booleans, numbers, strings, false otherwise
+    public boolean isAnyTypeOperator() {
         return switch (operator.lexeme) {
             case "==", "!=" -> true;
             default -> false;

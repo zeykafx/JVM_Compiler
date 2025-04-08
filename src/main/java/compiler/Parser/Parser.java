@@ -35,7 +35,8 @@ public class Parser {
         try {
             return parseProgram();
         } catch (SyntaxErrorException e) {
-            System.err.println("Syntax Error: " + e.getMessage());
+//            System.err.println("Syntax Error: " + e.getMessage());
+            e.printStackTrace();
             System.exit(1);
         }
         catch (Exception e) {

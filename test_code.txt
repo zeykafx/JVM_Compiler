@@ -18,7 +18,7 @@ fun main() {
     value int = readInt();
     p Point = Point(a, a+value);
     writeInt(square(value));
-    writeln();
+    writeln("");
     i int;
     for (i, 1, a, 1) {
         while (value!=0) {

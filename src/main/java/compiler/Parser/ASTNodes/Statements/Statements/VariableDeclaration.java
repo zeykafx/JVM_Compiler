@@ -22,7 +22,7 @@ public class VariableDeclaration extends Statement {
 		this.type = type;
 		this.value = value;
 		this.isConstant = isConstant;
-		this.hasValue = true;
+		this.hasValue = value != null;
 	}
 
 	public VariableDeclaration(Symbol name, Type type, Expression value, int line, int column) {
@@ -32,7 +32,7 @@ public class VariableDeclaration extends Statement {
 		this.type = type;
 		this.value = value;
 		this.isConstant = false;
-		this.hasValue = true;
+		this.hasValue = value != null;
 	}
 
 	public VariableDeclaration(Symbol name, Type type, int line, int column) {
@@ -55,6 +55,10 @@ public class VariableDeclaration extends Statement {
 
 	public Expression getValue() {
 		return value;
+	}
+
+	public boolean hasValue() {
+		return hasValue;
 	}
 
 	public boolean isConstant() {

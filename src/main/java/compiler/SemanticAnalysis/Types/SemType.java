@@ -31,6 +31,10 @@ public class SemType {
 		return isConstant;
 	}
 
+	public void setIsConstant(Boolean isConstant) {
+		this.isConstant = isConstant;
+	}
+
 	@Override
 	public boolean equals(Object o) {
 		if (o == null || getClass() != o.getClass()) return false;

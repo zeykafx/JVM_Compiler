@@ -5,7 +5,6 @@ import compiler.Lexer.TokenTypes;
 import compiler.Parser.ASTNodes.ASTNode;
 import compiler.Parser.ASTNodes.Block;
 import compiler.Parser.ASTNodes.Program;
-import compiler.Parser.ASTNodes.Statements.Expressions.Access.Access;
 import compiler.Parser.ASTNodes.Statements.Expressions.Access.ArrayAccess;
 import compiler.Parser.ASTNodes.Statements.Expressions.Access.IdentifierAccess;
 import compiler.Parser.ASTNodes.Statements.Expressions.Access.RecordAccess;
@@ -23,8 +22,7 @@ import compiler.SemanticAnalysis.Types.RecordSemType;
 import compiler.SemanticAnalysis.Types.SemType;
 
 import java.util.ArrayList;
-import java.util.Optional;
-import java.util.TreeMap;
+import java.util.LinkedHashMap;
 
 import static compiler.Lexer.TokenTypes.*;
 
@@ -60,7 +58,9 @@ public class SemanticAnalysis implements Visitor<SemType> {
 				// if we are in test mode, we don't want to exit the program
 				throw e;
 			}
-			System.err.println("Semantic Analysis Error: " + e.getMessage());
+//			System.err.println("Semantic Analysis Error: " + e.getMessage());
+			e.printStackTrace();
+
 			System.exit(2); // 2 for semantic analysis
 		}
 		catch (Exception e) {
@@ -186,9 +186,10 @@ public class SemanticAnalysis implements Visitor<SemType> {
 		// check if the identifier is defined in the symbol table
 		Symbol name = identifierAccess.getIdentifier();
 		SemType semType = table.lookup(name.lexeme);
+
 		if (semType == null) {
 			// if the identifier is not found throw an error
-			throw new ScopeError("Identifier " + name.lexeme + " not found in symbol table");
+			throw new ScopeError("Identifier " + name.lexeme + " referenced at line " + name.line + " not found in symbol table");
 		}
 
 		return semType;
@@ -201,8 +202,7 @@ public class SemanticAnalysis implements Visitor<SemType> {
 		// Access -> "[" Expression "]" | "." "identifier" .
 
 		// check if the identifier is defined in the symbol table
-		Access headAccess = recordAccess.getHeadAccess();
-		SemType headType = headAccess.accept(this, table);
+		SemType headType = recordAccess.getHeadAccess().accept(this, table);
 
 		if (headType instanceof RecordSemType || headType instanceof ArraySemType) {
 			RecordSemType recordSemType;
@@ -256,7 +256,7 @@ public class SemanticAnalysis implements Visitor<SemType> {
 				leftType = floatType;
 			} else {
 				// if the types are not convertible, throw an error
-				throw new TypeError("Types of elements in the binary expression at line "+binaryExpression.line+" do not match: " + leftType + " and " + rightType);
+				throw new OperatorError("Types of elements in the binary expression at line "+binaryExpression.line+" do not match: " + leftType + " and " + rightType);
 			}
 //			throw new TypeError("Types of elements in the binary expression at line "+binaryExpression.line+" do not match: " + leftType + " and " + rightType);
 		}
@@ -268,7 +268,7 @@ public class SemanticAnalysis implements Visitor<SemType> {
 			if (leftType.equals(floatType) || rightType.equals(floatType)) {
 				termsType = floatType;
 			} else {
-				termsType = leftType;
+				termsType = intType; // -> leftType = intType
 			}
 		} else {
 			// if the types are not numbers, then we use the type of the left term
@@ -283,27 +283,21 @@ public class SemanticAnalysis implements Visitor<SemType> {
 			}
 
 			return boolType;
-		} else if (operatorSemType.equals(numOrBoolType)) {
+		} else if (operatorSemType.equals(anyType)) {
 
-			// here we have an operator that can accept both booleans and numbers -> "==", "!="
-			// so if the type of the terms is not boolean or number, throw an error
-			if (!(termsType.equals(boolType) || termsType.equals(numType))) {
-				throw new OperatorError(String.format("Type %s cannot be used in a with the %s operator", termsType, binaryExpression.getOperator().getSymbol().lexeme));
-			}
-
-//			if (termsType.equals(boolType)){
-//				return boolType;
-//			}
-
+			// here we have an operator that can accept both booleans, numbers, strings, records -> "==", "!="
+			// so return a boolType
 			return boolType;
 
  		} else if (operatorSemType.equals(numType)) {
 			if (!termsType.equals(numType)) {
 				throw new OperatorError(String.format("Type %s cannot be used in a with the %s operator, expected int or float", termsType, binaryExpression.getOperator().getSymbol().lexeme));
 			}
+
 			if (binaryExpression.getOperator().numberOperatorReturnsBoolean()) {
 				return boolType;
 			}
+
 			return termsType;
 		}
 
@@ -320,8 +314,8 @@ public class SemanticAnalysis implements Visitor<SemType> {
 		// some other operators don't care (==, !=,...)
 		if (binaryOperator.isBooleanOperator()) {
 			return boolType;
-		} else if (binaryOperator.isBooleanOrNumberOperator()) {
-			return numOrBoolType;
+		} else if (binaryOperator.isAnyTypeOperator()) {
+			return anyType;
 		} else if (binaryOperator.isNumberOperator()) {
 			return numType; // numtype means that whatever number type is fine
 		}
@@ -336,15 +330,20 @@ public class SemanticAnalysis implements Visitor<SemType> {
 
 		SemType operatorSemType = unaryExpression.getOperator().accept(this, table);
 		if (operatorSemType.equals(boolType)) {
+
 			if (!expressionSemType.equals(boolType)) {
 				throw new OperatorError(String.format("Expected boolean with operator %s", unaryExpression.getOperator().getSymbol().lexeme));
 			}
 
 			return boolType;
+
 		} else if (operatorSemType.equals(numType)) {
+
 			if (!expressionSemType.equals(numType)) {
 				throw new OperatorError(String.format("Expected int or float with operator %s", unaryExpression.getOperator().getSymbol().lexeme));
 			}
+
+
 			return numType;
 		}
 
@@ -354,7 +353,7 @@ public class SemanticAnalysis implements Visitor<SemType> {
 
 	@Override
 	public SemType visitUnaryOperator(UnaryOperator unaryOperator, SymbolTable table) throws SemanticException {
-		if (unaryOperator.isBinaryOperator()) {
+		if (unaryOperator.isBooleanOperator()) {
 			return boolType;
 		} else if (unaryOperator.isNumberOperator()) {
 			return numType;
@@ -392,6 +391,7 @@ public class SemanticAnalysis implements Visitor<SemType> {
 
 
 			SemType[] functionDefParamsSemTypes = functionSemType.getParamSemTypes();
+
 			// special case for functions with "any" for the type of their arguments
 			if (functionDefParamsSemTypes.length == 1 && functionDefParamsSemTypes[0] == anyType) {
 				break; // exit from the loop, we don't have anything to typecheck
@@ -421,6 +421,11 @@ public class SemanticAnalysis implements Visitor<SemType> {
 
 		// check that the number of arguments is correct
 		if (functionSemType.getParamSemTypes().length != functionCall.getParameters().size()) {
+			// if we have a function with anyType as the argument type, we don't care about the number of arguments
+			if (functionSemType.getParamSemTypes()[0].equals(anyType)) {
+				return functionSemType.getRetType();
+			}
+
 			throw new ArgumentError("Number of parameters in the function call " + functionCall.getIdentifier().lexeme + " at line "+functionCall.line+" does not match the number of arguments in the function definition: " + functionSemType.getParamSemTypes().length);
 		}
 
@@ -440,9 +445,13 @@ public class SemanticAnalysis implements Visitor<SemType> {
 			throw new ScopeError("Record type "+newRecord.getIdentifier().lexeme+" doesn't exist");
 		}
 
-		// check that the types of the record fields are correct and correspond to the definition
+		if (newRecord.getTerms().size() != recordSemType.fields.size()) {
+			throw new ArgumentError("Number of parameters in the record " + newRecord.getIdentifier().lexeme + " does not match the number of fields " + recordSemType.fields.size());
+		}
 
+		// check that the types of the record fields are correct and correspond to the definition
 		for (ParamCall paramCall : newRecord.getTerms()) {
+
 			// get the SemType
 			SemType paramCallSemType = paramCall.accept(this, table);
 
@@ -458,15 +467,11 @@ public class SemanticAnalysis implements Visitor<SemType> {
 
 				// otherwise: throw
 				if (!(fieldSemType.equals(floatType) && paramCallSemType.equals(intType))) {
-					throw new ArgumentError("Type of the parameter index " + paramCall.getParamIndex() + " in the record " + newRecord.getIdentifier().lexeme + " does not match the type of the field " + fieldSemType);
+					throw new ArgumentError("Type of the parameter index " + paramCall.getParamIndex() + " in the record " + newRecord.getIdentifier().lexeme + " at line "+newRecord.line+" does not match the type of the field " + fieldSemType);
 				}
 			}
 		}
 
-		// check that the number of parameters is correct
-		if (newRecord.getTerms().size() != recordSemType.fields.size()) {
-			throw new ArgumentError("Number of parameters in the record " + newRecord.getIdentifier().lexeme + " does not match the number of fields " + recordSemType.fields.size());
-		}
 
 		return recordSemType;
 	}
@@ -611,6 +616,10 @@ public class SemanticAnalysis implements Visitor<SemType> {
 			// if the identifier is not found, throw an error
 			throw new ScopeError("Identifier " + name.lexeme + " not found in symbol table");
 		}
+
+		// remove from table
+		table.removeSymbol(name.lexeme);
+
 		return null;
 	}
 
@@ -651,21 +660,21 @@ public class SemanticAnalysis implements Visitor<SemType> {
 		return retSemType;
 	}
 	
-	private SemType getSemTypeFromASTNodeType(SymbolTable table, Type returnType) {
+	private SemType getSemTypeFromASTNodeType(SymbolTable table, Type type) {
 		SemType retSemType;
-		if (returnType.isList) {
+		if (type.isList) {
 			SemType elemSemType;
-			if (returnType.symbol.type == RECORD) {
-				elemSemType = table.lookup(returnType.symbol.lexeme);
+			if (type.symbol.type == RECORD) {
+				elemSemType = table.lookup(type.symbol.lexeme);
 			} else {
-				elemSemType = new SemType(returnType.symbol.lexeme);
+				elemSemType = new SemType(type.symbol.lexeme);
 			}
 
 			retSemType = new ArraySemType(elemSemType);
-		} else if (returnType.symbol.type == RECORD) {
-			retSemType = table.lookup(returnType.symbol.lexeme);
+		} else if (type.symbol.type == RECORD) {
+			retSemType = table.lookup(type.symbol.lexeme);
 		} else {
-			retSemType = new SemType(returnType.symbol.lexeme);
+			retSemType = new SemType(type.symbol.lexeme);
 		}
 		return retSemType;
 	}
@@ -755,11 +764,10 @@ public class SemanticAnalysis implements Visitor<SemType> {
 
 	@Override
 	public SemType visitRecordDefinition(RecordDefinition recordDefinition, SymbolTable table) throws SemanticException {
-		TreeMap<String, SemType> fields = new TreeMap<>();
+		LinkedHashMap<String, SemType> fields = new LinkedHashMap<>();
 
 		for (RecordFieldDefinition field : recordDefinition.getFields()) {
 			SemType semType = field.accept(this, table);
-
 			fields.put(field.getIdentifier().lexeme, semType);
 		}
 
@@ -784,14 +792,9 @@ public class SemanticAnalysis implements Visitor<SemType> {
 
 	@Override
 	public SemType visitRecordFieldDefinition(RecordFieldDefinition recordFieldDefinition, SymbolTable table) throws SemanticException {
-		SemType semType;
-		if (recordFieldDefinition.getType().isList) {
-			SemType elementSemType = new SemType(recordFieldDefinition.getType().symbol.lexeme);
-			semType = new ArraySemType(elementSemType);
-		} else {
-			semType = new SemType(recordFieldDefinition.getType().symbol.lexeme);
-		}
-		return semType;
+		Type type = recordFieldDefinition.getType();
+
+		return getSemTypeFromASTNodeType(table, type);
 	}
 
 	@Override
@@ -813,7 +816,7 @@ public class SemanticAnalysis implements Visitor<SemType> {
 		}
 
 		if (!(functionSemType.getRetType().equals(returnSemType))) {
-			throw new TypeError("Return at line "+returnStatement.line+" type does not match function return type. Expected: " + functionSemType.getRetType() + ", found: " + returnSemType);
+			throw new ReturnError("Return at line "+returnStatement.line+" type does not match function return type. Expected: " + functionSemType.getRetType() + ", found: " + returnSemType);
 		}
 
 		return returnSemType;
@@ -857,14 +860,27 @@ public class SemanticAnalysis implements Visitor<SemType> {
 	public SemType visitVariableDeclaration(VariableDeclaration variableDeclaration, SymbolTable table) throws SemanticException {
 		Symbol name = variableDeclaration.getName();
 		Type type = variableDeclaration.getType();
-		SemType semType = new SemType(type.symbol.lexeme, variableDeclaration.isConstant());
 
-		if (table.lookup(name.lexeme) != null) {
-			throw new ScopeError("Variable " + name.lexeme + " already exists in the symbol table");
+		if (table.lookupSameScope(name.lexeme) != null) {
+			throw new ScopeError("Variable " + name.lexeme + " already exists in the same scope");
+		}
+
+		SemType semType;
+		if (!variableDeclaration.hasValue()) {
+			// if the variable is declared as a prototype
+			semType = new SemType(type.symbol.lexeme, variableDeclaration.isConstant());
+		} else {
+			semType = variableDeclaration.getValue().accept(this, table);
+			semType.setIsConstant(variableDeclaration.isConstant());
+
+			if (!getSemTypeFromASTNodeType(table, type).equals(semType)) {
+				throw new TypeError("Type of the variable " + name.lexeme + " at line " + variableDeclaration.line + " does not match the type of the expression " + variableDeclaration.getValue().toString());
+			}
 		}
 
 		table.addSymbol(name.lexeme, semType);
 
 		return semType;
 	}
+
 }

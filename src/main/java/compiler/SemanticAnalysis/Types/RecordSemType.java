@@ -1,13 +1,14 @@
 package compiler.SemanticAnalysis.Types;
 
+import java.util.LinkedHashMap;
 import java.util.Objects;
 import java.util.TreeMap;
 
 public class RecordSemType extends SemType {
-	public TreeMap<String, SemType> fields;
+	public LinkedHashMap<String, SemType> fields;
 	public String identifier;
 
-	public RecordSemType(TreeMap<String, SemType> fields, String identifier) {
+	public RecordSemType(LinkedHashMap<String, SemType> fields, String identifier) {
 		super("rec");
 		this.fields = fields;
 		this.identifier = identifier;

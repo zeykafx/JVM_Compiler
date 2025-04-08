@@ -138,7 +138,7 @@ Person rec{
 
 $ Global variables are initialised in the order in which they appear. 
 
-$ Accessing a variable that is not initialised (for example, by calling a function in the initialiser expression) 
+$ Accessing a variable that is not initialised (for example, by calling a function in the initialiser expression)
 
 $ a function in the initialiser expression that accesses a global variable before it has been initialised results in undefined behaviour. 
 

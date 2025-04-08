@@ -14,11 +14,18 @@ import java.io.FileReader;
 public class Compiler {
 	public static void main(String[] args) {
 		try {
-			validateArgs(args);
-			Module module = Module.fromFlag(args[0]);
-			String filepath = args[1];
+			if (args.length >= 2) {
+				validateArgs(args);
+				Module module = Module.fromFlag(args[0]);
+				String filepath = args[1];
 
-			processModule(module, filepath);
+				processModule(module, filepath);
+			} else {
+				String filepath = args[0];
+				runEverything(filepath);
+
+			}
+
 		} catch (Exception e) {
 			System.err.println(e.getMessage());
 			System.exit(1);
@@ -39,9 +46,6 @@ public class Compiler {
 			case PARSER:
 			    runParser(filepath);
                 break;
-			case SEMANTIC:
-				runSemanticAnalysis(filepath);
-				break;
 			
 			// OTHER MODULES HERE -----
 			default:
@@ -68,7 +72,7 @@ public class Compiler {
 		System.out.println("AST: " + root.prettyPrint(0));
     }
 
-	private static void runSemanticAnalysis(String filepath) throws Exception {
+	private static void runEverything(String filepath) throws Exception {
 		FileReader reader = new FileReader(filepath);
 		Lexer lexer = new Lexer(reader);
 		Parser parser = new Parser(lexer);
@@ -83,8 +87,7 @@ public class Compiler {
 
 enum Module {
 	LEXER("-lexer"),
-	PARSER("-parser"),
-	SEMANTIC("-semantic");
+	PARSER("-parser");
 
 	private final String flag;
 

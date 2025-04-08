@@ -39,6 +39,14 @@ public class SymbolTable {
         return node;
     }
 
+    public SemType lookupSameScope(String name){
+        return symbols.get(name);
+    }
+
+    public void removeSymbol(String name) {
+        symbols.remove(name);
+    }
+
     public Integer getScope() {
         return scope;
     }

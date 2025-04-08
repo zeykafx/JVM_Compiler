@@ -316,6 +316,12 @@ public class Lexer {
 		// consume the opening quote "
 		moveCurrentChar();
 
+		if (currentChar == '"') {
+			// empty string
+			moveCurrentChar();
+			return new Symbol(TokenTypes.STRING_LITERAL, lexeme.toString(), startLine, startColumn, lexeme.toString());
+		}
+
 		do {
 			if (currentChar == -1 || currentChar == '\n') {
 				throw new RuntimeException("Unterminated string at line " + startLine);

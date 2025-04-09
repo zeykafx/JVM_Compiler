@@ -1370,22 +1370,6 @@ public class TestSemanticAnalysis {
         }
     }
 
-//    @Test(expected = ScopeError.class)
-//    public void testUseUndeclaredVariable() {
-//        /*
-//        {
-//          int a = 3;
-//        }
-//        a += 6;
-//         */
-//        // int a = x + 3 where x is not defined in the symbol table
-//        SemType intType = new SemType("int");
-//        SymbolTable symbolTable = new SymbolTable(null);
-//        symbolTable.addSymbol("a", intType);
-//
-//        Symbol identifierSymbol = new Symbol(TokenTypes.IDENTIFIER, "x", 0, 0);
-//    }
-
     @Test(expected = ScopeError.class)
     public void testVarDeclOfAlreadyDeclIdentifier() throws Exception {
         // x int = 2132

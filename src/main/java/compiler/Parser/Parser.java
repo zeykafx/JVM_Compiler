@@ -12,7 +12,6 @@ import compiler.Parser.ASTNodes.Statements.Expressions.Access.IdentifierAccess;
 import compiler.Parser.ASTNodes.Statements.Expressions.Access.RecordAccess;
 import compiler.Parser.ASTNodes.Statements.Expressions.Expressions.*;
 import compiler.Parser.ASTNodes.Statements.Expressions.Operators.BinaryOperator;
-import compiler.Parser.ASTNodes.Statements.Expressions.Operators.Operator;
 import compiler.Parser.ASTNodes.Statements.Expressions.Operators.UnaryOperator;
 import compiler.Parser.ASTNodes.Statements.Expressions.Terms.*;
 import compiler.Parser.ASTNodes.Statements.Statements.*;
@@ -40,7 +39,7 @@ public class Parser {
             System.exit(1);
         }
         catch (Exception e) {
-            System.err.println("Unexpected error parsing the program: " + e.getMessage());
+            e.printStackTrace();
             System.exit(1);
         }
         return null;
@@ -83,7 +82,7 @@ public class Parser {
 
     public ArrayList<VariableDeclaration> parseConstants() throws Exception {
         ArrayList<VariableDeclaration> constants = new ArrayList<>();
-        while (lookAheadSymbol.type == TokenTypes.FINAL) {
+        do  {
             match(TokenTypes.FINAL);
             VariableDeclaration constant = parseVariableDeclaration(
                 true,
@@ -91,14 +90,14 @@ public class Parser {
                 null
             );
             constants.add(constant);
-        }
+        } while (lookAheadSymbol.type == TokenTypes.FINAL);
         return constants;
     }
 
     public ArrayList<VariableDeclaration> parseGlobalDeclarations()
         throws Exception {
         ArrayList<VariableDeclaration> globalVariables = new ArrayList<>();
-        while (lookAheadSymbol.type == TokenTypes.IDENTIFIER) {
+        do  {
             // VariableDeclaration -> "identifier" Type "=" Expression ";"
             VariableDeclaration variable = parseVariableDeclaration(
                 false,
@@ -106,7 +105,7 @@ public class Parser {
                 null
             );
             globalVariables.add(variable);
-        }
+        } while (lookAheadSymbol.type == TokenTypes.IDENTIFIER);
         return globalVariables;
     }
 
@@ -167,6 +166,19 @@ public class Parser {
                 case RECORD -> match(TokenTypes.RECORD);
                 default -> null;
             };
+
+        if (symbol == null) {
+            throw new SyntaxErrorException(
+                "Syntax Error: Expected a type but found " +
+                lookAheadSymbol.lexeme +
+                " of type " +
+                lookAheadSymbol.type +
+                " at line " +
+                lookAheadSymbol.line +
+                ", column " +
+                lookAheadSymbol.column
+            );
+        }
 
         Type type = new Type(symbol, false, lookAheadSymbol.line, lookAheadSymbol.column);
 
@@ -354,11 +366,11 @@ public class Parser {
 
         ArrayList<RecordDefinition> records = new ArrayList<>();
 
-        while (lookAheadSymbol.type == TokenTypes.RECORD) {
+        do {
             // RecordDefinition -> "recordNameIdentifier" "rec" "{" RecordFields "}" .
             RecordDefinition record = parseRecord();
             records.add(record);
-        }
+        } while (lookAheadSymbol.type == TokenTypes.RECORD);
 
         return records;
     }

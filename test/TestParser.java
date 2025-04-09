@@ -956,4 +956,142 @@ public class TestParser {
         ReturnStatement returnStmt = (ReturnStatement) forBlock.getReturnStatement();
         assertNull(returnStmt.getExpression());
     }
+
+    @Test(expected = SyntaxErrorException.class)
+    public void testIncorrectConstantDecl() throws Exception {
+        String input = """
+                final string = "myString";
+                fun main() {
+                    writeln(string);
+                }
+                """;
+
+        StringReader reader = new StringReader(input);
+        Lexer lexer = new Lexer(reader);
+        Parser parser = new Parser(lexer);
+        parser.parseProgram();
+    }
+
+    @Test(expected = SyntaxErrorException.class)
+    public void testIncorrectConstantDeclNotMarkedFinal() throws Exception {
+        String input = """
+                string = "myString";
+                fun main() {
+                    writeln(string);
+                }
+                """;
+
+        StringReader reader = new StringReader(input);
+        Lexer lexer = new Lexer(reader);
+        Parser parser = new Parser(lexer);
+        parser.parseProgram();
+    }
+
+    @Test(expected = SyntaxErrorException.class)
+    public void testIncorrectRecDefAlone() throws Exception {
+        String input = """
+                recordName rec {
+                    fieldName1 int;
+                    fieldName2 string;
+                }
+                """;
+
+        StringReader reader = new StringReader(input);
+        Lexer lexer = new Lexer(reader);
+        Parser parser = new Parser(lexer);
+        parser.parseProgram();
+    }
+
+    @Test(expected = SyntaxErrorException.class)
+    public void testIncorrectRecDef() throws Exception {
+        String input = """
+                final myString string = "myString";
+                recordName rec {
+                    fieldName1 int;
+                    fieldName2 string;
+                }
+                
+                fun main() {
+                    writeln(myString);
+                }
+                """;
+
+        StringReader reader = new StringReader(input);
+        Lexer lexer = new Lexer(reader);
+        Parser parser = new Parser(lexer);
+        parser.parseProgram();
+    }
+
+
+    @Test(expected = SyntaxErrorException.class)
+    public void testIncorrectGlobalDefAlone() throws Exception {
+        String input = """
+                int = 30;
+                """;
+
+        StringReader reader = new StringReader(input);
+        Lexer lexer = new Lexer(reader);
+        Parser parser = new Parser(lexer);
+        parser.parseProgram();
+    }
+
+    @Test(expected = SyntaxErrorException.class)
+    public void testIncorrectGlobalDef() throws Exception {
+        String input = """
+                final myString string = "myString";
+                RecordName rec {
+                    fieldName1 int;
+                    fieldName2 string;
+                }
+                int = 30;
+                
+                fun main() {
+                    writeln(myString);
+                }
+                """;
+
+        StringReader reader = new StringReader(input);
+        Lexer lexer = new Lexer(reader);
+        Parser parser = new Parser(lexer);
+        parser.parseProgram();
+    }
+
+    @Test(expected = SyntaxErrorException.class)
+    public void testIncorrectDefinitionsOrder() throws Exception {
+        String input = """
+                myString string = "myString";
+                fun main() {
+                    writeln(myString);
+                }
+                RecordName rec {
+                    fieldName1 int;
+                    fieldName2 string;
+                }
+                """;
+
+        StringReader reader = new StringReader(input);
+        Lexer lexer = new Lexer(reader);
+        Parser parser = new Parser(lexer);
+        parser.parseProgram();
+    }
+
+    @Test(expected = SyntaxErrorException.class)
+    public void testIncorrectDefinitionsOrder2() throws Exception {
+        String input = """
+                fun main() {
+                    writeln(myString);
+                }
+                RecordName rec {
+                    fieldName1 int;
+                    fieldName2 string;
+                }
+                final test int = 4;
+                myString string = "myString";
+                """;
+
+        StringReader reader = new StringReader(input);
+        Lexer lexer = new Lexer(reader);
+        Parser parser = new Parser(lexer);
+        parser.parseProgram();
+    }
 }

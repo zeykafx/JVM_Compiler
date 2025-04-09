@@ -82,7 +82,10 @@ public class Parser {
 
     public ArrayList<VariableDeclaration> parseConstants() throws Exception {
         ArrayList<VariableDeclaration> constants = new ArrayList<>();
-        do  {
+
+        checkExpectedSymbolsConstantDef();
+
+        while (lookAheadSymbol.type == TokenTypes.FINAL) {
             match(TokenTypes.FINAL);
             VariableDeclaration constant = parseVariableDeclaration(
                 true,
@@ -90,14 +93,39 @@ public class Parser {
                 null
             );
             constants.add(constant);
-        } while (lookAheadSymbol.type == TokenTypes.FINAL);
+
+            checkExpectedSymbolsConstantDef();
+        }
         return constants;
+    }
+
+    private void checkExpectedSymbolsConstantDef() throws SyntaxErrorException {
+        switch (lookAheadSymbol.type) {
+            case FINAL, RECORD, IDENTIFIER, FUN, EOF -> {
+                // do nothing
+            }
+            default -> {
+                throw new SyntaxErrorException(
+                        "Syntax Error: Expected FINAL, RECORD, IDENTIFIER, FUN, or EOF but found " +
+                                lookAheadSymbol.lexeme +
+                                " of type " +
+                                lookAheadSymbol.type +
+                                " at line " +
+                                lookAheadSymbol.line +
+                                ", column " +
+                                lookAheadSymbol.column
+                );
+            }
+        }
     }
 
     public ArrayList<VariableDeclaration> parseGlobalDeclarations()
         throws Exception {
         ArrayList<VariableDeclaration> globalVariables = new ArrayList<>();
-        do  {
+
+        checkExpectedSymbolsGlobalVar();
+
+        while (lookAheadSymbol.type == TokenTypes.IDENTIFIER)  {
             // VariableDeclaration -> "identifier" Type "=" Expression ";"
             VariableDeclaration variable = parseVariableDeclaration(
                 false,
@@ -105,8 +133,30 @@ public class Parser {
                 null
             );
             globalVariables.add(variable);
-        } while (lookAheadSymbol.type == TokenTypes.IDENTIFIER);
+
+            checkExpectedSymbolsGlobalVar();
+        }
         return globalVariables;
+    }
+
+    private void checkExpectedSymbolsGlobalVar() throws SyntaxErrorException {
+        switch (lookAheadSymbol.type) {
+            case IDENTIFIER, FUN, EOF -> {
+                // do nothing
+            }
+            default -> {
+                throw new SyntaxErrorException(
+                        "Syntax Error: Expected IDENTIFIER, FUN, or EOF but found " +
+                        lookAheadSymbol.lexeme +
+                        " of type " +
+                        lookAheadSymbol.type +
+                        " at line " +
+                        lookAheadSymbol.line +
+                        ", column " +
+                        lookAheadSymbol.column
+                );
+            }
+        }
     }
 
     public VariableDeclaration parseVariableDeclaration(
@@ -162,7 +212,7 @@ public class Parser {
                 case FLOAT -> match(TokenTypes.FLOAT);
                 case STRING -> match(TokenTypes.STRING);
                 case BOOL -> match(TokenTypes.BOOL);
-                case IDENTIFIER -> match(TokenTypes.IDENTIFIER); // TODO: maybe remove
+                case IDENTIFIER -> match(TokenTypes.IDENTIFIER);
                 case RECORD -> match(TokenTypes.RECORD);
                 default -> null;
             };
@@ -182,7 +232,6 @@ public class Parser {
 
         Type type = new Type(symbol, false, lookAheadSymbol.line, lookAheadSymbol.column);
 
-		assert symbol != null;
 		if (symbol.type == TokenTypes.INT || symbol.type == TokenTypes.FLOAT) {
             type = new NumType(symbol);
         }
@@ -364,15 +413,39 @@ public class Parser {
         //RecordFieldsTail -> ";" RecordField RecordFieldsTail | .
         //RecordField -> "identifier" Type .
 
+        checkExpectedTypesRecordDef();
+
         ArrayList<RecordDefinition> records = new ArrayList<>();
 
-        do {
+        while (lookAheadSymbol.type == TokenTypes.RECORD) {
             // RecordDefinition -> "recordNameIdentifier" "rec" "{" RecordFields "}" .
             RecordDefinition record = parseRecord();
             records.add(record);
-        } while (lookAheadSymbol.type == TokenTypes.RECORD);
+
+            checkExpectedTypesRecordDef();
+        }
 
         return records;
+    }
+
+    private void checkExpectedTypesRecordDef() throws SyntaxErrorException {
+        switch (lookAheadSymbol.type) {
+            case RECORD, IDENTIFIER, FUN, EOF -> {
+                // do nothing
+            }
+            default -> {
+                throw new SyntaxErrorException(
+                        "Syntax Error: Expected RECORD, IDENTIFIER, FUN, or EOF but found " +
+                                lookAheadSymbol.lexeme +
+                                " of type " +
+                                lookAheadSymbol.type +
+                                " at line " +
+                                lookAheadSymbol.line +
+                                ", column " +
+                                lookAheadSymbol.column
+                );
+            }
+        }
     }
 
     public RecordDefinition parseRecord() throws Exception {
@@ -413,10 +486,34 @@ public class Parser {
         //Param -> "identifier" Type .
         ArrayList<FunctionDefinition> functions = new ArrayList<>();
 
+        checkExpectedSymbolsFunDef();
+
         while (lookAheadSymbol.type == TokenTypes.FUN) {
             functions.add(parseFunction());
+
+            checkExpectedSymbolsFunDef();
         }
         return functions;
+    }
+
+    private void checkExpectedSymbolsFunDef() throws SyntaxErrorException {
+        switch (lookAheadSymbol.type) {
+            case FUN, EOF -> {
+                // do nothing
+            }
+            default -> {
+                throw new SyntaxErrorException(
+                        "Syntax Error: Expected FUN, or EOF but found " +
+                                lookAheadSymbol.lexeme +
+                                " of type " +
+                                lookAheadSymbol.type +
+                                " at line " +
+                                lookAheadSymbol.line +
+                                ", column " +
+                                lookAheadSymbol.column
+                );
+            }
+        }
     }
 
     public FunctionDefinition parseFunction() throws Exception {

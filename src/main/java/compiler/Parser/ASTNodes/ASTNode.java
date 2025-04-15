@@ -1,5 +1,6 @@
 package compiler.Parser.ASTNodes;
 
+import compiler.CodeGen.SlotTable;
 import compiler.SemanticAnalysis.Errors.SemanticException;
 import compiler.SemanticAnalysis.SymbolTable;
 import compiler.SemanticAnalysis.Types.SemType;
@@ -14,7 +15,8 @@ public abstract class ASTNode {
         this.column = column;
     }
 
-    public abstract SemType accept(Visitor<SemType> v, SymbolTable table) throws SemanticException;
+//    public abstract SemType accept(Visitor<SemType, SymbolTable> v, SymbolTable table) throws Exception;
+    public abstract <R, T> R accept(Visitor<R, T> v, T table) throws Exception;
 
     public abstract String toString();
 

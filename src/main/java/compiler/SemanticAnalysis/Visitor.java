@@ -8,48 +8,47 @@ import compiler.Parser.ASTNodes.Types.*;
 import compiler.Parser.ASTNodes.Statements.Expressions.Terms.*;
 import compiler.Parser.ASTNodes.Statements.Expressions.Expressions.*;
 import compiler.Parser.ASTNodes.Statements.Expressions.Operators.*;
-import compiler.SemanticAnalysis.Errors.SemanticException;
 
 
-public interface Visitor<T> {
+public interface Visitor<R, T> {
 
-    T visitArrayAccess(ArrayAccess arrayAccess, SymbolTable localTable) throws SemanticException;
-    T visitIdentifierAccess(IdentifierAccess identifierAccess, SymbolTable localTable) throws SemanticException;
-    T visitRecordAccess(RecordAccess recordAccess, SymbolTable localTable) throws SemanticException;
+    R visitArrayAccess(ArrayAccess arrayAccess,T localTable) throws Exception;
+    R visitIdentifierAccess(IdentifierAccess identifierAccess, T localTable) throws Exception;
+    R visitRecordAccess(RecordAccess recordAccess, T localTable) throws Exception;
 
-    T visitArrayExpression(ArrayExpression arrayExpression, SymbolTable localTable) throws SemanticException;
-    T visitBinaryExpression(BinaryExpression binaryExpression, SymbolTable localTable) throws SemanticException;
-    T visitUnaryExpression(UnaryExpression unaryExpression, SymbolTable localTable) throws SemanticException;
+    R visitArrayExpression(ArrayExpression arrayExpression, T localTable) throws Exception;
+    R visitBinaryExpression(BinaryExpression binaryExpression, T localTable) throws Exception;
+    R visitUnaryExpression(UnaryExpression unaryExpression, T localTable) throws Exception;
 
 
-//    T visitOperator(Operator operator, SymbolTable localTable) throws SemanticException;
-    T visitBinaryOperator(BinaryOperator binaryOperator, SymbolTable localTable) throws SemanticException;
-    T visitUnaryOperator(UnaryOperator unaryOperator, SymbolTable localTable) throws SemanticException;
+//    R visitOperator(Operator operator, T localTable) throws Exception;
+    R visitBinaryOperator(BinaryOperator binaryOperator, T localTable) throws Exception;
+    R visitUnaryOperator(UnaryOperator unaryOperator, T localTable) throws Exception;
 
-//    T visitTerm(Term term, SymbolTable localTable) throws SemanticException;
-    T visitConstValue(ConstVal constVal, SymbolTable localTable) throws SemanticException;
-    T visitFunctionCall(FunctionCall functionCall, SymbolTable localTable) throws SemanticException;
-    T visitNewRecord(NewRecord newRecord, SymbolTable localTable) throws SemanticException;
-    T visitParamCall(ParamCall paramCall, SymbolTable localTable) throws SemanticException;
-    T visitParenthesesTerm(ParenthesesTerm parenthesesTerm, SymbolTable localTable) throws SemanticException;
+//    R visitTerm(Term term, T localTable) throws Exception;
+    R visitConstValue(ConstVal constVal, T localTable) throws Exception;
+    R visitFunctionCall(FunctionCall functionCall, T localTable) throws Exception;
+    R visitNewRecord(NewRecord newRecord, T localTable) throws Exception;
+    R visitParamCall(ParamCall paramCall, T localTable) throws Exception;
+    R visitParenthesesTerm(ParenthesesTerm parenthesesTerm, T localTable) throws Exception;
 
-    T visitProgram(Program program, SymbolTable localTable) throws SemanticException;
-    T visitBlock(Block block, SymbolTable localTable) throws SemanticException;
+    R visitProgram(Program program, T localTable) throws Exception;
+    R visitBlock(Block block, T localTable) throws Exception;
 
-    T visitType(Type type, SymbolTable localTable) throws SemanticException;
-    T visitNumType(NumType numType, SymbolTable localTable) throws SemanticException;
+    R visitType(Type type, T localTable) throws Exception;
+    R visitNumType(NumType numType, T localTable) throws Exception;
 
-    T visitStatement(Statement statement, SymbolTable localTable) throws SemanticException;
-    T visitForLoop(ForLoop forLoop, SymbolTable localTable) throws SemanticException;
-    T visitFreeStatement(FreeStatement freeStatement, SymbolTable localTable) throws SemanticException;
-    T visitFunctionDefinition(FunctionDefinition functionDefinition, SymbolTable localTable) throws SemanticException;
-    T visitIfStatement(IfStatement  ifStatement, SymbolTable localTable) throws SemanticException;
-    T visitParamDefinition(ParamDefinition paramDefinition, SymbolTable localTable) throws SemanticException;
-    T visitRecordDefinition(RecordDefinition recordDefinition, SymbolTable localTable) throws SemanticException;
-    T visitRecordFieldDefinition(RecordFieldDefinition recordFieldDefinition, SymbolTable localTable) throws SemanticException;
-    T visitReturnStatement(ReturnStatement returnStatement, SymbolTable localTable) throws SemanticException;
-    T visitVariableAssignment(VariableAssignment variableAssignment, SymbolTable localTable) throws SemanticException;
-    T visitVariableDeclaration(VariableDeclaration variableDeclaration, SymbolTable localTable) throws SemanticException;
+    R visitStatement(Statement statement, T localTable) throws Exception;
+    R visitForLoop(ForLoop forLoop, T localTable) throws Exception;
+    R visitFreeStatement(FreeStatement freeStatement, T localTable) throws Exception;
+    R visitFunctionDefinition(FunctionDefinition functionDefinition, T localTable) throws Exception;
+    R visitIfStatement(IfStatement  ifStatement, T localTable) throws Exception;
+    R visitParamDefinition(ParamDefinition paramDefinition, T localTable) throws Exception;
+    R visitRecordDefinition(RecordDefinition recordDefinition, T localTable) throws Exception;
+    R visitRecordFieldDefinition(RecordFieldDefinition recordFieldDefinition, T localTable) throws Exception;
+    R visitReturnStatement(ReturnStatement returnStatement, T localTable) throws Exception;
+    R visitVariableAssignment(VariableAssignment variableAssignment, T localTable) throws Exception;
+    R visitVariableDeclaration(VariableDeclaration variableDeclaration, T localTable) throws Exception;
 
-    T visitWhileLoop(WhileLoop whileLoop, SymbolTable localTable) throws SemanticException;
+    R visitWhileLoop(WhileLoop whileLoop, T localTable) throws Exception;
 }

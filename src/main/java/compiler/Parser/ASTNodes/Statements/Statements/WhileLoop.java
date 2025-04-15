@@ -1,5 +1,6 @@
 package compiler.Parser.ASTNodes.Statements.Statements;
 
+import compiler.CodeGen.SlotTable;
 import compiler.Parser.ASTNodes.Block;
 import compiler.Parser.ASTNodes.Statements.Expressions.Expressions.Expression;
 import compiler.SemanticAnalysis.Errors.SemanticException;
@@ -37,7 +38,7 @@ public class WhileLoop extends Statement {
     }
 
 	@Override
-	public SemType accept(Visitor<SemType> v, SymbolTable table) throws SemanticException {
+	public <R, T> R accept(Visitor<R, T> v, T table) throws Exception {
 		return v.visitWhileLoop(this, table);
 	}
 }

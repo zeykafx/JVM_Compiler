@@ -36,7 +36,7 @@ public class ParamCall extends Term {
     }
 
 	@Override
-	public SemType accept(Visitor<SemType> v, SymbolTable table) throws SemanticException {
+	public <R, T> R accept(Visitor<R, T> v, T table) throws Exception {
 		return v.visitParamCall(this, table);
 	}
 }

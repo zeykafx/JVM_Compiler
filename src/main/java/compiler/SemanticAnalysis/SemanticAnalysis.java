@@ -26,7 +26,7 @@ import java.util.LinkedHashMap;
 
 import static compiler.Lexer.TokenTypes.*;
 
-public class SemanticAnalysis implements Visitor<SemType> {
+public class SemanticAnalysis implements Visitor<SemType, SymbolTable> {
 
 	ASTNode rootNode;
 	SymbolTable globalSymbolTable;
@@ -130,7 +130,7 @@ public class SemanticAnalysis implements Visitor<SemType> {
 	}
 
 	@Override
-	public SemType visitProgram(Program program, SymbolTable table) throws SemanticException {
+	public SemType visitProgram(Program program, SymbolTable table) throws Exception {
 		// add constants to the symbol table
 		ArrayList<VariableDeclaration> constants = program.getConstants();
 		for (VariableDeclaration constant : constants) {
@@ -158,7 +158,7 @@ public class SemanticAnalysis implements Visitor<SemType> {
 	}
 
 	@Override
-	public SemType visitArrayAccess(ArrayAccess arrayAccess, SymbolTable table) throws SemanticException {
+	public SemType visitArrayAccess(ArrayAccess arrayAccess, SymbolTable table) throws Exception {
 		// ArrayAccess -> "[" Expression "]"
 
 		// check if the head is an array
@@ -179,7 +179,7 @@ public class SemanticAnalysis implements Visitor<SemType> {
 	}
 
 	@Override
-	public SemType visitIdentifierAccess(IdentifierAccess identifierAccess, SymbolTable table) throws SemanticException {
+	public SemType visitIdentifierAccess(IdentifierAccess identifierAccess, SymbolTable table) throws Exception {
 		// IdentifierAccess -> "identifier" AccessChain .
 		// AccessChain -> Access AccessChain | .
 
@@ -196,7 +196,7 @@ public class SemanticAnalysis implements Visitor<SemType> {
 	}
 
 	@Override
-	public SemType visitRecordAccess(RecordAccess recordAccess, SymbolTable table) throws SemanticException {
+	public SemType visitRecordAccess(RecordAccess recordAccess, SymbolTable table) throws Exception {
 		// IdentifierAccess -> "identifier" AccessChain .
 		// AccessChain -> Access AccessChain | .
 		// Access -> "[" Expression "]" | "." "identifier" .
@@ -228,7 +228,7 @@ public class SemanticAnalysis implements Visitor<SemType> {
  	}
 
 	@Override
-	public SemType visitArrayExpression(ArrayExpression arrayExpression, SymbolTable table) throws SemanticException {
+	public SemType visitArrayExpression(ArrayExpression arrayExpression, SymbolTable table) throws Exception {
 		// ArrayExpression -> "array" "[" "intval" "]" "of" Type ";" .
 
 		SemType sizeExpressionSemType = arrayExpression.getSizeExpression().accept(this, table);
@@ -242,7 +242,7 @@ public class SemanticAnalysis implements Visitor<SemType> {
  	}
 
 	@Override
-	public SemType visitBinaryExpression(BinaryExpression binaryExpression, SymbolTable table) throws SemanticException {
+	public SemType visitBinaryExpression(BinaryExpression binaryExpression, SymbolTable table) throws Exception {
 		// check if the left and right expressions are of the same SemType
 
 		SemType leftType = binaryExpression.getLeftTerm().accept(this, table);
@@ -306,7 +306,7 @@ public class SemanticAnalysis implements Visitor<SemType> {
 	}
 
 	@Override
-	public SemType visitBinaryOperator(BinaryOperator binaryOperator, SymbolTable table) throws SemanticException {
+	public SemType visitBinaryOperator(BinaryOperator binaryOperator, SymbolTable table) throws Exception {
 		// return the type that the operator implies on the expression,
 		// e.g., if the operator is + and the expression is int + int, then return int
 		// if the operator is && then return a boolean
@@ -323,7 +323,7 @@ public class SemanticAnalysis implements Visitor<SemType> {
 	}
 
 	@Override
-	public SemType visitUnaryExpression(UnaryExpression unaryExpression, SymbolTable table) throws SemanticException {
+	public SemType visitUnaryExpression(UnaryExpression unaryExpression, SymbolTable table) throws Exception {
 		// return the type of the expression with the unary operator applied
 
 		SemType expressionSemType = unaryExpression.getTerm().accept(this, table);
@@ -352,7 +352,7 @@ public class SemanticAnalysis implements Visitor<SemType> {
 	}
 
 	@Override
-	public SemType visitUnaryOperator(UnaryOperator unaryOperator, SymbolTable table) throws SemanticException {
+	public SemType visitUnaryOperator(UnaryOperator unaryOperator, SymbolTable table) throws Exception {
 		if (unaryOperator.isBooleanOperator()) {
 			return boolType;
 		} else if (unaryOperator.isNumberOperator()) {
@@ -363,7 +363,7 @@ public class SemanticAnalysis implements Visitor<SemType> {
 	}
 
 	@Override
-	public SemType visitConstValue(ConstVal constVal, SymbolTable table) throws SemanticException {
+	public SemType visitConstValue(ConstVal constVal, SymbolTable table) throws Exception {
 		// create SemType from this constant value
 		String type = switch (constVal.getSymbol().type) {
 			case INT_LITERAL -> "int";
@@ -377,7 +377,7 @@ public class SemanticAnalysis implements Visitor<SemType> {
 	}
 
 	@Override
-	public SemType visitFunctionCall(FunctionCall functionCall, SymbolTable table) throws SemanticException {
+	public SemType visitFunctionCall(FunctionCall functionCall, SymbolTable table) throws Exception {
 		// get the FunctionSemType of the function from the symbol table
 		FunctionSemType functionSemType =(FunctionSemType) table.lookup(functionCall.getIdentifier().lexeme);
 		if (functionSemType == null) {
@@ -434,7 +434,7 @@ public class SemanticAnalysis implements Visitor<SemType> {
 	}
 
 	@Override
-	public SemType visitNewRecord(NewRecord newRecord, SymbolTable table) throws SemanticException {
+	public SemType visitNewRecord(NewRecord newRecord, SymbolTable table) throws Exception {
 		// NewRecord means a record instance creation
 		// example: p Product = Product(1, "Phone", 699);
 		//                      ^^^^^^^^^^^^^^^^^^^^^^^^
@@ -477,7 +477,7 @@ public class SemanticAnalysis implements Visitor<SemType> {
 	}
 
 	@Override
-	public SemType visitParamCall(ParamCall paramCall, SymbolTable table) throws SemanticException {
+	public SemType visitParamCall(ParamCall paramCall, SymbolTable table) throws Exception {
 		// ParamCall is one parameter assignment when creating a new record or when calling a function
 		// example: p Product = Product(1, "Phone", 699);
 		//                              ^  ^^^^^^^  ^^^
@@ -488,13 +488,13 @@ public class SemanticAnalysis implements Visitor<SemType> {
 	}
 
 	@Override
-	public SemType visitParenthesesTerm(ParenthesesTerm parenthesesTerm, SymbolTable table) throws SemanticException {
+	public SemType visitParenthesesTerm(ParenthesesTerm parenthesesTerm, SymbolTable table) throws Exception {
 		// return the SemType of the expression that is inside the parentheses
 		return parenthesesTerm.getExpression().accept(this, table);
 	}
 
 	@Override
-	public SemType visitType(Type type, SymbolTable table) throws SemanticException {
+	public SemType visitType(Type type, SymbolTable table) throws Exception {
 		if (type.isList) {
 			return new ArraySemType(new SemType(type.symbol.lexeme));
 		}
@@ -502,7 +502,7 @@ public class SemanticAnalysis implements Visitor<SemType> {
 	}
 
 	@Override
-	public SemType visitNumType(NumType numType, SymbolTable table) throws SemanticException {
+	public SemType visitNumType(NumType numType, SymbolTable table) throws Exception {
 		if (numType.isList) {
 			return new ArraySemType(new SemType(numType.symbol.lexeme));
 		}
@@ -510,12 +510,12 @@ public class SemanticAnalysis implements Visitor<SemType> {
 	}
 
 	@Override
-	public SemType visitStatement(Statement statement, SymbolTable table) throws SemanticException {
+	public SemType visitStatement(Statement statement, SymbolTable table) throws Exception {
 		throw new SemanticException("this should never be called");
 	}
 
 	@Override
-	public SemType visitForLoop(ForLoop forLoop, SymbolTable table) throws SemanticException {
+	public SemType visitForLoop(ForLoop forLoop, SymbolTable table) throws Exception {
 		// ForCondition -> "identifier" "," Term "," Term "," Term .
 		//
 		// the increment shouldn't be 0
@@ -591,7 +591,7 @@ public class SemanticAnalysis implements Visitor<SemType> {
 	}
 
 	@Override
-	public SemType visitWhileLoop(WhileLoop whileLoop, SymbolTable table) throws SemanticException {
+	public SemType visitWhileLoop(WhileLoop whileLoop, SymbolTable table) throws Exception {
 		// WhileLoop -> "while" "(" Expression ")" Block .
 
 		// check that the expression evaluates to a boolean
@@ -607,7 +607,7 @@ public class SemanticAnalysis implements Visitor<SemType> {
 	}
 
 	@Override
-	public SemType visitFreeStatement(FreeStatement freeStatement, SymbolTable table) throws SemanticException {
+	public SemType visitFreeStatement(FreeStatement freeStatement, SymbolTable table) throws Exception {
 		// check if the identifier is defined in the symbol table
 		IdentifierAccess identifierAccess = freeStatement.getIdentifierAccess();
 		Symbol name = identifierAccess.getIdentifier();
@@ -624,7 +624,7 @@ public class SemanticAnalysis implements Visitor<SemType> {
 	}
 
 	@Override
-	public SemType visitFunctionDefinition(FunctionDefinition functionDefinition, SymbolTable table) throws SemanticException {
+	public SemType visitFunctionDefinition(FunctionDefinition functionDefinition, SymbolTable table) throws Exception {
 		Symbol name = functionDefinition.getName();
 
 		// create local table
@@ -716,7 +716,7 @@ public class SemanticAnalysis implements Visitor<SemType> {
     }    
 	
 	@Override
-	public SemType visitBlock(Block block, SymbolTable table) throws SemanticException {
+	public SemType visitBlock(Block block, SymbolTable table) throws Exception {
 		for (Statement stmt : block.getStatements()) {
 			stmt.accept(this, table);
 		}
@@ -728,7 +728,7 @@ public class SemanticAnalysis implements Visitor<SemType> {
 	}
 
 	@Override
-	public SemType visitIfStatement(IfStatement ifStatement, SymbolTable table) throws SemanticException {
+	public SemType visitIfStatement(IfStatement ifStatement, SymbolTable table) throws Exception {
 		// IfStmt -> "if" "(" Expression ")" Block ElseStmt .
 		//ElseStmt -> "else" Block | .
 
@@ -750,7 +750,7 @@ public class SemanticAnalysis implements Visitor<SemType> {
 	}
 
 	@Override
-	public SemType visitParamDefinition(ParamDefinition paramDefinition, SymbolTable table) throws SemanticException {
+	public SemType visitParamDefinition(ParamDefinition paramDefinition, SymbolTable table) throws Exception {
 
 		// add param to local symbol table
 		Symbol name = paramDefinition.getIdentifier();
@@ -763,7 +763,7 @@ public class SemanticAnalysis implements Visitor<SemType> {
 	}
 
 	@Override
-	public SemType visitRecordDefinition(RecordDefinition recordDefinition, SymbolTable table) throws SemanticException {
+	public SemType visitRecordDefinition(RecordDefinition recordDefinition, SymbolTable table) throws Exception {
 		LinkedHashMap<String, SemType> fields = new LinkedHashMap<>();
 
 		for (RecordFieldDefinition field : recordDefinition.getFields()) {
@@ -791,14 +791,14 @@ public class SemanticAnalysis implements Visitor<SemType> {
 	}
 
 	@Override
-	public SemType visitRecordFieldDefinition(RecordFieldDefinition recordFieldDefinition, SymbolTable table) throws SemanticException {
+	public SemType visitRecordFieldDefinition(RecordFieldDefinition recordFieldDefinition, SymbolTable table) throws Exception {
 		Type type = recordFieldDefinition.getType();
 
 		return getSemTypeFromASTNodeType(table, type);
 	}
 
 	@Override
-	public SemType visitReturnStatement(ReturnStatement returnStatement, SymbolTable table) throws SemanticException{
+	public SemType visitReturnStatement(ReturnStatement returnStatement, SymbolTable table) throws Exception{
 		String localFunctionName = table.getLocalFunctionName();
 		FunctionSemType functionSemType = (FunctionSemType) table.lookup(localFunctionName);
 
@@ -823,7 +823,7 @@ public class SemanticAnalysis implements Visitor<SemType> {
 	}
 
 	@Override
-	public SemType visitVariableAssignment(VariableAssignment variableAssignment, SymbolTable table) throws SemanticException {
+	public SemType visitVariableAssignment(VariableAssignment variableAssignment, SymbolTable table) throws Exception {
 		// VariableAssignment -> IdentifierAccess "=" Expression .
 		// IdentifierAccess -> "identifier" AccessChain .
 		// AccessChain -> Access AccessChain | .
@@ -857,7 +857,7 @@ public class SemanticAnalysis implements Visitor<SemType> {
 	}
 
 	@Override
-	public SemType visitVariableDeclaration(VariableDeclaration variableDeclaration, SymbolTable table) throws SemanticException {
+	public SemType visitVariableDeclaration(VariableDeclaration variableDeclaration, SymbolTable table) throws Exception {
 		Symbol name = variableDeclaration.getName();
 		Type type = variableDeclaration.getType();
 

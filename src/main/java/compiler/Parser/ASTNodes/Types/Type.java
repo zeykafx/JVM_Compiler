@@ -36,7 +36,7 @@ public class Type extends ASTNode {
 	}
 
 	@Override
-	public SemType accept(Visitor<SemType> v, SymbolTable table) throws SemanticException {
+	public <R, T> R accept(Visitor<R, T> v, T table) throws Exception {
 		return v.visitType(this, table);
 	}
 

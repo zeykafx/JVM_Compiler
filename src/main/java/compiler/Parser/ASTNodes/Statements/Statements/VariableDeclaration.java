@@ -91,7 +91,7 @@ public class VariableDeclaration extends Statement {
     }
 
 	@Override
-	public SemType accept(Visitor<SemType> v, SymbolTable table) throws SemanticException {
+	public <R, T> R accept(Visitor<R, T> v, T table) throws Exception {
 		return v.visitVariableDeclaration(this, table);
 	}
 }

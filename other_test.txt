@@ -1,0 +1,9 @@
+fun main() int {
+  check bool = true;
+  if (check) {
+    return 1;
+  } else {
+    writeln("hello");
+  }
+  $ No return at the end -> we check that if/else statements have returns.
+}

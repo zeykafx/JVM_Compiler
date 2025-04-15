@@ -9,7 +9,6 @@ import compiler.Parser.ASTNodes.Statements.Expressions.Terms.*;
 import compiler.Parser.ASTNodes.Statements.Statements.*;
 import compiler.Parser.ASTNodes.Types.Type;
 import compiler.Parser.Parser;
-import compiler.Parser.SyntaxErrorException;
 import compiler.SemanticAnalysis.*;
 import compiler.SemanticAnalysis.Errors.*;
 import compiler.SemanticAnalysis.Types.*;
@@ -18,11 +17,10 @@ import org.junit.Test;
 import java.io.StringReader;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
-import java.util.TreeMap;
 
 public class TestSemanticAnalysis {
     @Test
-    public void testArrayAccess() {
+    public void testArrayAccess() throws Exception {
         SymbolTable symbolTable = new SymbolTable(null);
         SemType intType = new SemType("int");
         SemType arrayType = new ArraySemType(intType);
@@ -41,7 +39,7 @@ public class TestSemanticAnalysis {
             SemanticAnalysis semanticAnalysis = new SemanticAnalysis();
             SemType resultType = semanticAnalysis.visitArrayAccess(arrayAccess, symbolTable);
             assertEquals("Expected type to be array of ints", intType, resultType);
-        } catch (SemanticException e) {
+        } catch (Exception e) {
             e.printStackTrace();
             fail("Semantic analysis failed: " + e.getMessage());
         }
@@ -64,7 +62,7 @@ public class TestSemanticAnalysis {
             SemanticAnalysis semanticAnalysis = new SemanticAnalysis();
             SemType resultType = semanticAnalysis.visitIdentifierAccess(identifierAccess, symbolTable);
             assertEquals("Expected type to be int", intType, resultType);
-        } catch (SemanticException e) {
+        } catch (Exception e) {
             e.printStackTrace();
             fail("Semantic analysis failed: " + e.getMessage());
 
@@ -92,7 +90,7 @@ public class TestSemanticAnalysis {
             SemanticAnalysis semanticAnalysis = new SemanticAnalysis();
             SemType resultType = semanticAnalysis.visitRecordAccess(recordAccess, symbolTable);
             assertEquals("Expected type to be int", new SemType("int"), resultType);
-        } catch (SemanticException e) {
+        } catch (Exception e) {
             e.printStackTrace();
             fail("Semantic analysis failed: " + e.getMessage());
         }
@@ -112,7 +110,7 @@ public class TestSemanticAnalysis {
             SemanticAnalysis semanticAnalysis = new SemanticAnalysis();
             SemType resultType = semanticAnalysis.visitArrayExpression(arrayExpression, null);
             assertEquals("Expected type to be array of ints", arrayType, resultType);
-        } catch (SemanticException e) {
+        } catch (Exception e) {
             e.printStackTrace();
             fail("Semantic analysis failed: " + e.getMessage());
         }
@@ -139,7 +137,7 @@ public class TestSemanticAnalysis {
             SemanticAnalysis semanticAnalysis = new SemanticAnalysis();
             SemType resultType = semanticAnalysis.visitArrayExpression(arrayExpression, symbolTable);
             assertEquals("Expected type to be array of ints", arrayType, resultType);
-        } catch (SemanticException e) {
+        } catch (Exception e) {
             e.printStackTrace();
             fail("Semantic analysis failed: " + e.getMessage());
         }
@@ -159,7 +157,7 @@ public class TestSemanticAnalysis {
             SemanticAnalysis semanticAnalysis = new SemanticAnalysis();
             SemType resultType = semanticAnalysis.visitBinaryExpression(binaryExpression, null);
             assertEquals("Expected type to be int", expectedType, resultType);
-        } catch (SemanticException e) {
+        } catch (Exception e) {
             e.printStackTrace();
             fail("Semantic analysis failed: " + e.getMessage());
         }
@@ -184,7 +182,7 @@ public class TestSemanticAnalysis {
             SemanticAnalysis semanticAnalysis = new SemanticAnalysis();
             SemType resultType = semanticAnalysis.visitBinaryExpression(binaryExpression, symbolTable);
             assertEquals("Expected type to be int", expectedType, resultType);
-        } catch (SemanticException e) {
+        } catch (Exception e) {
             e.printStackTrace();
             fail("Semantic analysis failed: " + e.getMessage());
         }
@@ -208,7 +206,7 @@ public class TestSemanticAnalysis {
             SemanticAnalysis semanticAnalysis = new SemanticAnalysis();
             SemType resultType = semanticAnalysis.visitBinaryExpression(binaryExpression, symbolTable);
             assertEquals("Expected type to be bool", expectedType, resultType);
-        } catch (SemanticException e) {
+        } catch (Exception e) {
             e.printStackTrace();
             fail("Semantic analysis failed: " + e.getMessage());
         }
@@ -230,7 +228,7 @@ public class TestSemanticAnalysis {
             SemanticAnalysis semanticAnalysis = new SemanticAnalysis();
             SemType resultType = semanticAnalysis.visitBinaryExpression(binaryExpression, null);
             assertEquals("Expected type to be float", expectedType, resultType);
-        } catch (SemanticException e) {
+        } catch (Exception e) {
             e.printStackTrace();
             fail("Semantic analysis failed: " + e.getMessage());
         }
@@ -252,7 +250,7 @@ public class TestSemanticAnalysis {
             SemanticAnalysis semanticAnalysis = new SemanticAnalysis();
             SemType resultType = semanticAnalysis.visitBinaryExpression(binaryExpression, null);
             assertEquals("Expected type to be float", expectedType, resultType);
-        } catch (SemanticException e) {
+        } catch (Exception e) {
             e.printStackTrace();
             fail("Semantic analysis failed: " + e.getMessage());
         }
@@ -279,7 +277,7 @@ public class TestSemanticAnalysis {
             SemanticAnalysis semanticAnalysis = new SemanticAnalysis();
             SemType resultType = semanticAnalysis.visitBinaryExpression(binaryExpression, symbolTable);
             assertEquals("Expected type to be float", expectedType, resultType);
-        } catch (SemanticException e) {
+        } catch (Exception e) {
             e.printStackTrace();
             fail("Semantic analysis failed: " + e.getMessage());
         }
@@ -313,7 +311,7 @@ public class TestSemanticAnalysis {
             SemanticAnalysis semanticAnalysis = new SemanticAnalysis();
             SemType resultType = semanticAnalysis.visitBinaryExpression(binaryExpression, symbolTable);
             assertEquals("Expected type to be bool", expectedType, resultType);
-        } catch (SemanticException e) {
+        } catch (Exception e) {
             e.printStackTrace();
             fail("Semantic analysis failed: " + e.getMessage());
         }
@@ -332,7 +330,7 @@ public class TestSemanticAnalysis {
             SemanticAnalysis semanticAnalysis = new SemanticAnalysis();
             SemType resultType = semanticAnalysis.visitUnaryExpression(unaryExpression, null);
             assertEquals("Expected type to be int", expectedType, resultType);
-        } catch (SemanticException e) {
+        } catch (Exception e) {
             e.printStackTrace();
             fail("Semantic analysis failed: " + e.getMessage());
         }
@@ -376,7 +374,7 @@ public class TestSemanticAnalysis {
             SemanticAnalysis semanticAnalysis = new SemanticAnalysis();
             SemType resultType = semanticAnalysis.visitUnaryExpression(unaryExpression, null);
             assertEquals("Expected type to be bool", expectedType, resultType);
-        } catch (SemanticException e) {
+        } catch (Exception e) {
             e.printStackTrace();
             fail("Semantic analysis failed: " + e.getMessage());
         }
@@ -400,7 +398,7 @@ public class TestSemanticAnalysis {
             SemanticAnalysis semanticAnalysis = new SemanticAnalysis();
             SemType resultType = semanticAnalysis.visitUnaryExpression(unaryExpression, symbolTable);
             assertEquals("Expected type to be bool", expectedType, resultType);
-        } catch (SemanticException e) {
+        } catch (Exception e) {
             e.printStackTrace();
             fail("Semantic analysis failed: " + e.getMessage());
         }
@@ -438,7 +436,7 @@ public class TestSemanticAnalysis {
             assertEquals("Expected type to be string", new SemType("string"), stringType);
             assertEquals("Expected type to be bool", new SemType("bool"), boolTrueType);
             assertEquals("Expected type to be bool", new SemType("bool"), boolFalseType);
-        } catch (SemanticException e) {
+        } catch (Exception e) {
             e.printStackTrace();
             fail("Semantic analysis failed: " + e.getMessage());
         }
@@ -468,7 +466,7 @@ public class TestSemanticAnalysis {
             SemanticAnalysis semanticAnalysis = new SemanticAnalysis();
             SemType resultType = semanticAnalysis.visitFunctionCall(functionCall, symbolTable);
             assertEquals("Expected type to be int", functionReturnType, resultType);
-        } catch (SemanticException e) {
+        } catch (Exception e) {
             e.printStackTrace();
             fail("Semantic analysis failed: " + e.getMessage());
         }
@@ -498,7 +496,7 @@ public class TestSemanticAnalysis {
             SemanticAnalysis semanticAnalysis = new SemanticAnalysis();
             SemType resultType = semanticAnalysis.visitFunctionCall(functionCall, symbolTable);
             assertEquals("Expected type to be void", functionReturnType, resultType);
-        } catch (SemanticException e) {
+        } catch (Exception e) {
             e.printStackTrace();
             fail("Semantic analysis failed: " + e.getMessage());
         }
@@ -557,7 +555,7 @@ public class TestSemanticAnalysis {
 
             SemType resultType4 = semanticAnalysis.visitFunctionCall(functionCall4, symbolTable);
             assertEquals("Expected type to be void", functionReturnType, resultType4);
-        } catch (SemanticException e) {
+        } catch (Exception e) {
             e.printStackTrace();
             fail("Semantic analysis failed: " + e.getMessage());
         }
@@ -642,7 +640,7 @@ public class TestSemanticAnalysis {
             SemanticAnalysis semanticAnalysis = new SemanticAnalysis();
             SemType resultType = semanticAnalysis.visitNewRecord(newRecord, symbolTable);
             assertEquals("Expected type to be MyRecord", recordType, resultType);
-        } catch (SemanticException e) {
+        } catch (Exception e) {
             e.printStackTrace();
             fail("Semantic analysis failed: " + e.getMessage());
         }
@@ -727,7 +725,7 @@ public class TestSemanticAnalysis {
         try {
             SemType recSemType = semanticAnalysis.visitRecordDefinition(recordDef, symbolTable);
             assertEquals("Expected type to be Person", expectedSemType, recSemType);
-        } catch (SemanticException e) {
+        } catch (Exception e) {
             e.printStackTrace();
             fail("Semantic analysis failed: " + e.getMessage());
         }
@@ -797,7 +795,7 @@ public class TestSemanticAnalysis {
             SemanticAnalysis semanticAnalysis = new SemanticAnalysis();
             SemType resultType = semanticAnalysis.visitParenthesesTerm(parenthesesTerm, null);
             assertEquals("Expected type to be int", new SemType("int"), resultType);
-        } catch (SemanticException e) {
+        } catch (Exception e) {
             e.printStackTrace();
             fail("Semantic analysis failed: " + e.getMessage());
         }
@@ -823,7 +821,7 @@ public class TestSemanticAnalysis {
             SemanticAnalysis semanticAnalysis = new SemanticAnalysis();
             SemType resultType = semanticAnalysis.visitParenthesesTerm(parenthesesTerm, symbolTable);
             assertEquals("Expected type to be int", expectedType, resultType);
-        } catch (SemanticException e) {
+        } catch (Exception e) {
             e.printStackTrace();
             fail("Semantic analysis failed: " + e.getMessage());
         }
@@ -855,7 +853,7 @@ public class TestSemanticAnalysis {
         try {
             SemanticAnalysis semanticAnalysis = new SemanticAnalysis();
             semanticAnalysis.visitForLoop(forLoop, symbolTable);
-        } catch (SemanticException e) {
+        } catch (Exception e) {
             e.printStackTrace();
             fail("Semantic analysis failed: " + e.getMessage());
         }
@@ -888,7 +886,7 @@ public class TestSemanticAnalysis {
         try {
             SemanticAnalysis semanticAnalysis = new SemanticAnalysis();
             semanticAnalysis.visitForLoop(forLoop, symbolTable);
-        } catch (SemanticException e) {
+        } catch (Exception e) {
             e.printStackTrace();
             fail("Semantic analysis failed: " + e.getMessage());
         }
@@ -917,7 +915,7 @@ public class TestSemanticAnalysis {
         try {
             SemanticAnalysis semanticAnalysis = new SemanticAnalysis();
             semanticAnalysis.visitWhileLoop(whileLoop, symbolTable);
-        } catch (SemanticException e) {
+        } catch (Exception e) {
             e.printStackTrace();
             fail("Semantic analysis failed: " + e.getMessage());
         }
@@ -964,7 +962,7 @@ public class TestSemanticAnalysis {
         try {
             SemanticAnalysis semanticAnalysis = new SemanticAnalysis();
             semanticAnalysis.visitFreeStatement(freeStatement, symbolTable);
-        } catch (SemanticException e) {
+        } catch (Exception e) {
             e.printStackTrace();
             fail("Semantic analysis failed: " + e.getMessage());
         }
@@ -1026,7 +1024,7 @@ public class TestSemanticAnalysis {
             SemanticAnalysis semanticAnalysis = new SemanticAnalysis();
             SemType resSemType = semanticAnalysis.visitFunctionDefinition(functionDefinition, symbolTable);
             assertEquals("Expected type to be Point", recordSemType, resSemType);
-        } catch (SemanticException e) {
+        } catch (Exception e) {
             e.printStackTrace();
             fail("Semantic analysis failed: " + e.getMessage());
         }
@@ -1058,7 +1056,7 @@ public class TestSemanticAnalysis {
         try {
             SemanticAnalysis semanticAnalysis = new SemanticAnalysis();
             semanticAnalysis.visitIfStatement(ifStatement, symbolTable);
-        } catch (SemanticException e) {
+        } catch (Exception e) {
             e.printStackTrace();
             fail("Semantic analysis failed: " + e.getMessage());
         }
@@ -1088,7 +1086,7 @@ public class TestSemanticAnalysis {
         try {
             SemanticAnalysis semanticAnalysis = new SemanticAnalysis();
             semanticAnalysis.visitIfStatement(ifStatement, symbolTable);
-        } catch (SemanticException e) {
+        } catch (Exception e) {
             e.printStackTrace();
             fail("Semantic analysis failed: " + e.getMessage());
         }
@@ -1150,7 +1148,7 @@ public class TestSemanticAnalysis {
             SemanticAnalysis semanticAnalysis = new SemanticAnalysis();
             SemType resultSemType = semanticAnalysis.visitRecordDefinition(recordDefinition, symbolTable);
             assertEquals("Expected type to be Point", recordSemType, resultSemType);
-        } catch (SemanticException e) {
+        } catch (Exception e) {
             e.printStackTrace();
             fail("Semantic analysis failed: " + e.getMessage());
         }
@@ -1189,7 +1187,7 @@ public class TestSemanticAnalysis {
             SemanticAnalysis semanticAnalysis = new SemanticAnalysis();
             SemType resultType = semanticAnalysis.visitReturnStatement(returnStatement, symbolTable);
             assertEquals("Expected type to be int", intType, resultType);
-        } catch (SemanticException e) {
+        } catch (Exception e) {
             e.printStackTrace();
             fail("Semantic analysis failed: " + e.getMessage());
         }
@@ -1228,7 +1226,7 @@ public class TestSemanticAnalysis {
         try {
             SemanticAnalysis semanticAnalysis = new SemanticAnalysis();
             semanticAnalysis.visitVariableAssignment(assignment, symbolTable);
-        } catch (SemanticException e) {
+        } catch (Exception e) {
             e.printStackTrace();
             fail("Semantic analysis failed: " + e.getMessage());
         }
@@ -1320,7 +1318,7 @@ public class TestSemanticAnalysis {
             assertEquals("Expected type to be int", intType, resType);
             assertNotNull("Expected symbol to be added to symbol table", symbolTable.lookup("x"));
             assertTrue("Expected symbol to be constant", resType.isConstant);
-        } catch (SemanticException e) {
+        } catch (Exception e) {
             e.printStackTrace();
             fail("Semantic analysis failed: " + e.getMessage());
         }
@@ -1344,7 +1342,7 @@ public class TestSemanticAnalysis {
             assertEquals("Expected type to be int", intType, resType);
             assertNotNull("Expected symbol to be added to symbol table", symbolTable.lookup("x"));
             assertFalse("Expected symbol to not be constant", resType.isConstant);
-        } catch (SemanticException e) {
+        } catch (Exception e) {
             e.printStackTrace();
             fail("Semantic analysis failed: " + e.getMessage());
         }
@@ -1364,7 +1362,7 @@ public class TestSemanticAnalysis {
             assertEquals("Expected type to be string", stringType, resType);
             assertNotNull("Expected symbol to be added to symbol table", symbolTable.lookup("x"));
             assertFalse("Expected symbol to not be constant", resType.isConstant);
-        } catch (SemanticException e) {
+        } catch (Exception e) {
             e.printStackTrace();
             fail("Semantic analysis failed: " + e.getMessage());
         }
@@ -1407,7 +1405,7 @@ public class TestSemanticAnalysis {
             SemanticAnalysis semanticAnalysis = new SemanticAnalysis();
             SemType resType = semanticAnalysis.visitVariableDeclaration(variableDeclaration, localTable);
             assertEquals("Expected type to be int", intType, resType);
-        } catch (SemanticException e) {
+        } catch (Exception e) {
             e.printStackTrace();
             fail("Semantic analysis failed: " + e.getMessage());
         }

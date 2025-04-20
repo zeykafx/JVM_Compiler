@@ -7,7 +7,6 @@ public class SemType {
 
 	public String type;
 	public Boolean isConstant = false;
-
 	public SemType(String type) {
 		this.type = type;
 		this.isConstant = false;
@@ -60,6 +59,18 @@ public class SemType {
 
 	@Override
 	public int hashCode() {
-		return Objects.hash(type, isConstant);
+		return Objects.hash(type);
+	}
+
+	// Inspired by the Norswap compiler https://github.com/norswap/sigh/blob/master/src/norswap/sigh/bytecode/TypeUtils.java#L97
+	public String fieldDescriptor () {
+		return switch (type) {
+			case "int" -> "I"; // int
+			case "bool" -> "Z"; // booleans
+			case "float" -> "F"; // float
+			case "void" -> "V"; // void
+			case "string" -> "Ljava/lang/String;";
+			default -> throw new Error("unreachable");
+		};
 	}
 }

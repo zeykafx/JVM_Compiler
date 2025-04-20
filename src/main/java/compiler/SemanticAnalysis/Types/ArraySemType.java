@@ -28,4 +28,8 @@ public class ArraySemType extends SemType {
 				", isConstant=" + isConstant +
 				'}';
 	}
+
+	public String fieldDescriptor () {
+		return "[" + elementSemType.fieldDescriptor();
+	}
 }

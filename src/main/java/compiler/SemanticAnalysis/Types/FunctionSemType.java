@@ -30,4 +30,16 @@ public class FunctionSemType extends SemType {
 				", retType=" + retType +
 				'}';
 	}
+
+	@Override
+	public String fieldDescriptor() {
+		StringBuilder descriptor = new StringBuilder();
+		descriptor.append("(");
+		for (SemType paramType : paramSemTypes) {
+			descriptor.append(paramType.fieldDescriptor());
+		}
+		descriptor.append(")");
+		descriptor.append(retType.fieldDescriptor());
+		return descriptor.toString();
+	}
 }

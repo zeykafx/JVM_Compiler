@@ -37,4 +37,10 @@ public class RecordSemType extends SemType {
 	}
 
 	// fields.values == fields2.values [int int int] == [int int int]
+
+	@Override
+	public String fieldDescriptor() {
+		String ident = "myLang/types/"+identifier;
+		return "L" + ident + ";";
+	}
 }

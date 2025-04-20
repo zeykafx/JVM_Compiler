@@ -11,8 +11,11 @@ public class ForLoop extends Statement {
 
 	private final Symbol variable;
 	private final Symbol start;
+	public SemType startType;
 	private final Symbol end;
+	public SemType endType;
 	private final Symbol step;
+	public SemType stepType;
 	private final Block block;
 
 	public ForLoop(Symbol variable, Symbol start, Symbol end, Symbol step, Block block, int line, int column) {

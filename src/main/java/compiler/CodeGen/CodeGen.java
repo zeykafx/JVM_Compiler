@@ -15,11 +15,13 @@ import compiler.Parser.ASTNodes.Statements.Expressions.Terms.*;
 import compiler.Parser.ASTNodes.Statements.Statements.*;
 import compiler.Parser.ASTNodes.Types.NumType;
 import compiler.Parser.ASTNodes.Types.Type;
+import compiler.SemanticAnalysis.SemanticAnalysis;
 import compiler.SemanticAnalysis.SymbolTable;
 import compiler.SemanticAnalysis.Types.SemType;
 import compiler.SemanticAnalysis.Visitor;
 
 import org.objectweb.asm.ClassWriter;
+import org.objectweb.asm.FieldVisitor;
 import org.objectweb.asm.MethodVisitor;
 
 import java.util.ArrayList;
@@ -29,6 +31,17 @@ import java.util.concurrent.atomic.AtomicReference;
 import static org.objectweb.asm.Opcodes.*;
 
 public class CodeGen implements Visitor<Void, SlotTable> {
+
+	SemType intType = new SemType("int");
+	SemType floatType = new SemType("float");
+	SemType numType = new SemType("num");
+	SemType numOrBoolType = new SemType("numOrBool");
+	SemType stringType = new SemType("string");
+	SemType boolType = new SemType("bool");
+	SemType voidType = new SemType("void");
+	SemType anyType = new SemType("any");
+	SemType recType = new SemType("rec");
+
 
 	private final ClassWriter cw;
 	private MethodVisitor mv;
@@ -219,28 +232,52 @@ public class CodeGen implements Visitor<Void, SlotTable> {
 
 		Type type = variableDeclaration.getType();
 
+		int seven = 5 + 2;
+		// final a int = 3;
+		// final b float = a * 2.0;
+
+
+		// final b float = 4;
 		// create the bytecode
 		if (variableDeclaration.isConstant()) {
 			// if the variable declaration is global, declare it as a constant
-//			if (type.symbol.lexeme.equals("float") && )
 //			variableDeclaration.getValue();
+			if (variableDeclaration.getValue() != null) {
+//
+//				// here the value is a constant, but if the type of the constant is float and the value is int, we need to convert it
+//				if (variableDeclaration.getType().semtype.equals(floatType) && variableDeclaration.getValue().semtype.equals(intType)) {
+////					variableDeclaration.getValue()
+//				}
+
+				cw.visitField(ACC_PUBLIC | ACC_STATIC,
+						variableDeclaration.getName().lexeme,
+						variableDeclaration.semtype.fieldDescriptor(),
+						null, // no generic signature
+						null // no initial value
+				).visitEnd();
+
+//				fv.visi
+			}
 		}
 
 		return null;
 	}
 
-	private void implicitTypeConversion(Type left, Type right) {
+	private void implicitTypeConversion(Type left, Type right, boolean convertLeftTerm) {
 		if (left.symbol.type == right.symbol.type) {
 			return;
 		}
 
-		if (left.symbol.lexeme.equals("float") && right.symbol.lexeme.equals("int")) {
+		// 3 + 5.0
+		if (left.semtype.equals(intType) && right.semtype.equals(floatType) && convertLeftTerm) {
 			this.mv.visitInsn(I2F);
 		}
 
-		if (left.symbol.lexeme.equals("int") && right.symbol.lexeme.equals("float")) {
+		// 5.0 + 3
+		if (left.semtype.equals(floatType) && right.semtype.equals(intType) && !convertLeftTerm) {
 			this.mv.visitInsn(I2F);
 		}
+
 	}
 
 	@Override

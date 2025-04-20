@@ -11,4 +11,7 @@ public abstract class Expression extends Statement {
 	public String toString() {
 		return "";
 	}
+
+	public boolean canBeStaticallyEval = false;
+	public Object staticValue = null;
 }

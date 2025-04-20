@@ -16,6 +16,8 @@ public class VariableDeclaration extends Statement {
 	boolean isConstant;
 	boolean hasValue;
 
+	public boolean conversionNeeded = false;
+
 	public VariableDeclaration(Symbol name, Type type, Expression value, boolean isConstant, int line, int column) {
 		super(line, column);
 		this.name = name;

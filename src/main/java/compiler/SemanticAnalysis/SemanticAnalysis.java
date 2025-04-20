@@ -174,6 +174,8 @@ public class SemanticAnalysis implements Visitor<SemType, SymbolTable> {
 			throw new TypeError("The index of the array access at line " + arrayAccess.line + " is not an int");
 		}
 
+		arrayAccess.semtype = arraySemType.getElementSemType();
+
 		// return the type of the array element that we are accessing
 		return arraySemType.getElementSemType();
 	}
@@ -191,6 +193,8 @@ public class SemanticAnalysis implements Visitor<SemType, SymbolTable> {
 			// if the identifier is not found throw an error
 			throw new ScopeError("Identifier " + name.lexeme + " referenced at line " + name.line + " not found in symbol table");
 		}
+
+		identifierAccess.semtype = semType;
 
 		return semType;
 	}
@@ -219,6 +223,7 @@ public class SemanticAnalysis implements Visitor<SemType, SymbolTable> {
 				throw new SemanticException("Field "+ field.lexeme + " is not defined on record type " + recordAccess.getHeadAccess().toString());
 			}
 
+			recordAccess.semtype = fieldType;
 			// return type of accessed field
 			return fieldType;
 		} else {
@@ -238,7 +243,10 @@ public class SemanticAnalysis implements Visitor<SemType, SymbolTable> {
 		}
 
 		SemType elemSemType = new SemType(arrayExpression.getType().symbol.lexeme);
-		return new ArraySemType(elemSemType);
+		SemType retType = new ArraySemType(elemSemType);
+
+		arrayExpression.semtype = retType;
+		return retType;
  	}
 
 	@Override
@@ -281,12 +289,13 @@ public class SemanticAnalysis implements Visitor<SemType, SymbolTable> {
 			if (!termsType.equals(boolType)) {
 				throw new OperatorError(String.format("Type %s cannot be used in a boolean expression, line %d", termsType, binaryExpression.line));
 			}
-
+			binaryExpression.semtype = boolType;
 			return boolType;
 		} else if (operatorSemType.equals(anyType)) {
 
 			// here we have an operator that can accept both booleans, numbers, strings, records -> "==", "!="
 			// so return a boolType
+			binaryExpression.semtype = boolType;
 			return boolType;
 
  		} else if (operatorSemType.equals(numType)) {
@@ -295,11 +304,14 @@ public class SemanticAnalysis implements Visitor<SemType, SymbolTable> {
 			}
 
 			if (binaryExpression.getOperator().numberOperatorReturnsBoolean()) {
+				binaryExpression.semtype = boolType;
 				return boolType;
 			}
-
+			binaryExpression.semtype = termsType;
 			return termsType;
 		}
+
+		binaryExpression.semtype = termsType;
 
 		// shouldn't be here
 		throw new SemanticException(String.format("Unexpected error in expression at line %s", binaryExpression.line));
@@ -313,10 +325,13 @@ public class SemanticAnalysis implements Visitor<SemType, SymbolTable> {
 		// some boolean operators expect bools (&&, ||)
 		// some other operators don't care (==, !=,...)
 		if (binaryOperator.isBooleanOperator()) {
+			binaryOperator.semtype = boolType;
 			return boolType;
 		} else if (binaryOperator.isAnyTypeOperator()) {
+			binaryOperator.semtype = anyType;
 			return anyType;
 		} else if (binaryOperator.isNumberOperator()) {
+			binaryOperator.semtype = numType;
 			return numType; // numtype means that whatever number type is fine
 		}
 		return null;
@@ -334,7 +349,7 @@ public class SemanticAnalysis implements Visitor<SemType, SymbolTable> {
 			if (!expressionSemType.equals(boolType)) {
 				throw new OperatorError(String.format("Expected boolean with operator %s", unaryExpression.getOperator().getSymbol().lexeme));
 			}
-
+			unaryExpression.semtype = boolType;
 			return boolType;
 
 		} else if (operatorSemType.equals(numType)) {
@@ -343,7 +358,7 @@ public class SemanticAnalysis implements Visitor<SemType, SymbolTable> {
 				throw new OperatorError(String.format("Expected int or float with operator %s", unaryExpression.getOperator().getSymbol().lexeme));
 			}
 
-
+			unaryExpression.semtype = numType;
 			return numType;
 		}
 
@@ -354,8 +369,10 @@ public class SemanticAnalysis implements Visitor<SemType, SymbolTable> {
 	@Override
 	public SemType visitUnaryOperator(UnaryOperator unaryOperator, SymbolTable table) throws Exception {
 		if (unaryOperator.isBooleanOperator()) {
+			unaryOperator.semtype = boolType;
 			return boolType;
 		} else if (unaryOperator.isNumberOperator()) {
+			unaryOperator.semtype = numType;
 			return numType;
 		}
 
@@ -364,6 +381,8 @@ public class SemanticAnalysis implements Visitor<SemType, SymbolTable> {
 
 	@Override
 	public SemType visitConstValue(ConstVal constVal, SymbolTable table) throws Exception {
+		Object objVal = constVal.getValue();
+
 		// create SemType from this constant value
 		String type = switch (constVal.getSymbol().type) {
 			case INT_LITERAL -> "int";
@@ -372,8 +391,15 @@ public class SemanticAnalysis implements Visitor<SemType, SymbolTable> {
 			case BOOL_TRUE, BOOL_FALSE -> "bool";
 			default -> null;
 		};
+		SemType semType = new SemType(type, true);
+//
+//		if (semType.equals(numType) || semType.equals(boolType)) {
+//			constVal.canBeStaticallyEval = true;
+//
+//		}
 
-		return new SemType(type, true);
+		constVal.semtype = semType;
+		return semType;
 	}
 
 	@Override
@@ -412,6 +438,7 @@ public class SemanticAnalysis implements Visitor<SemType, SymbolTable> {
 
 				// if we can't convert the type, we throw an error: here if it's not the convertable case, we throw
 				if (argSemType.equals(floatType) && paramCallSemType.equals(intType)) {
+					functionCall.semtype = functionSemType.getRetType();
 					return functionSemType.getRetType();
 				}
 
@@ -423,6 +450,7 @@ public class SemanticAnalysis implements Visitor<SemType, SymbolTable> {
 		if (functionSemType.getParamSemTypes().length != functionCall.getParameters().size()) {
 			// if we have a function with anyType as the argument type, we don't care about the number of arguments
 			if (functionSemType.getParamSemTypes()[0].equals(anyType)) {
+				functionCall.semtype = functionSemType.getRetType();
 				return functionSemType.getRetType();
 			}
 
@@ -430,6 +458,7 @@ public class SemanticAnalysis implements Visitor<SemType, SymbolTable> {
 		}
 
 		// return the SemType of the return value (e.g., intType if the function returns an integer)
+		functionCall.semtype = functionSemType.getRetType();
 		return functionSemType.getRetType();
 	}
 
@@ -472,7 +501,7 @@ public class SemanticAnalysis implements Visitor<SemType, SymbolTable> {
 			}
 		}
 
-
+		newRecord.semtype = recordSemType;
 		return recordSemType;
 	}
 
@@ -484,29 +513,42 @@ public class SemanticAnalysis implements Visitor<SemType, SymbolTable> {
 		//                              -> Each of these is a ParamCall
 
 		// we just return the type of the expression
-		return paramCall.getParamExpression().accept(this, table);
+		SemType paramType = paramCall.getParamExpression().accept(this, table);
+		paramCall.semtype = paramType;
+		return paramType;
 	}
 
 	@Override
 	public SemType visitParenthesesTerm(ParenthesesTerm parenthesesTerm, SymbolTable table) throws Exception {
 		// return the SemType of the expression that is inside the parentheses
-		return parenthesesTerm.getExpression().accept(this, table);
+		SemType parenthesesSemType = parenthesesTerm.getExpression().accept(this, table);
+		parenthesesTerm.semtype = parenthesesSemType;
+		return parenthesesSemType;
 	}
 
 	@Override
 	public SemType visitType(Type type, SymbolTable table) throws Exception {
 		if (type.isList) {
-			return new ArraySemType(new SemType(type.symbol.lexeme));
+			ArraySemType typeSemType = new ArraySemType(new SemType(type.symbol.lexeme));
+			type.semtype = typeSemType;
+			return typeSemType;
 		}
-		return new SemType(type.symbol.lexeme);
+		SemType typeSemType = new SemType(type.symbol.lexeme);
+		type.semtype = typeSemType;
+		return typeSemType;
 	}
 
 	@Override
 	public SemType visitNumType(NumType numType, SymbolTable table) throws Exception {
 		if (numType.isList) {
-			return new ArraySemType(new SemType(numType.symbol.lexeme));
+			SemType arraySemType = new ArraySemType(new SemType(numType.symbol.lexeme));
+			numType.semtype = arraySemType;
+			return arraySemType;
 		}
-		return new SemType(numType.symbol.lexeme);
+
+		SemType semType = new SemType(numType.symbol.lexeme);
+		numType.semtype = semType;
+		return semType;
 	}
 
 	@Override
@@ -545,10 +587,11 @@ public class SemanticAnalysis implements Visitor<SemType, SymbolTable> {
 
         // check if the start, step, and stop are of the same type as the variable
         Symbol start = forLoop.getStart();
-		typeCheckLoopFields(table,loopVarIsInt, start, "start");
+		forLoop.startType = typeCheckLoopFields(table,loopVarIsInt, start, "start");;
+
 
 		Symbol step = forLoop.getStep();
-		typeCheckLoopFields(table,loopVarIsInt, step, "step");
+		forLoop.stepType = typeCheckLoopFields(table,loopVarIsInt, step, "step");
 
 		// check that the increment is not 0 (we only check if it is a literal, otherwise we can't check atp)
 		if (step.type == INT_LITERAL && step.value == (Integer) 0) {
@@ -560,7 +603,7 @@ public class SemanticAnalysis implements Visitor<SemType, SymbolTable> {
 		}
 
 		Symbol end = forLoop.getEnd();
-		typeCheckLoopFields(table,loopVarIsInt, end, "end");
+		forLoop.endType = typeCheckLoopFields(table,loopVarIsInt, end, "end");
 
 		// then visit the block
 		forLoop.getBlock().accept(this, table);
@@ -568,7 +611,7 @@ public class SemanticAnalysis implements Visitor<SemType, SymbolTable> {
 		return null;
 	}
 
-	private void typeCheckLoopFields(SymbolTable table, boolean loopVarIsInt, Symbol fieldSymbol, String fieldName) throws TypeError {
+	private SemType typeCheckLoopFields(SymbolTable table, boolean loopVarIsInt, Symbol fieldSymbol, String fieldName) throws TypeError {
 		if (fieldSymbol.type == INT_LITERAL || fieldSymbol.type == TokenTypes.FLOAT_LITERAL) {
 
 			// if the loop var is an int and the field (start, step, stop) number is a float, we throw an error
@@ -576,6 +619,7 @@ public class SemanticAnalysis implements Visitor<SemType, SymbolTable> {
 				throw new TypeError("The "+fieldName+" number in the for loop at line" + fieldSymbol.line + ": '"+ fieldSymbol.lexeme +"' is not an integer but the loop variable is.");
 			}
 			// otherwise we're good
+			return new SemType(fieldSymbol.type.toString());
 
 		} else if (fieldSymbol.type == TokenTypes.IDENTIFIER) {
         	SemType fieldType = table.lookup(fieldSymbol.lexeme);
@@ -585,6 +629,7 @@ public class SemanticAnalysis implements Visitor<SemType, SymbolTable> {
 				throw new TypeError("The "+fieldName+" variable in the for loop at line " + fieldSymbol.line + ": '"+ fieldSymbol.lexeme +"' is not an integer but the loop variable is.");
 			}
 			// otherwise we're good (I think)
+			return fieldType;
 		} else {
 			throw new TypeError("Type of the '"+fieldName+"' field in the for loop at line " + fieldSymbol.line + " is not valid, it should either be a variable identifier, int, or float");
 		}
@@ -657,6 +702,7 @@ public class SemanticAnalysis implements Visitor<SemType, SymbolTable> {
             }
         }
 		
+		functionDefinition.semtype = retSemType;
 		return retSemType;
 	}
 	
@@ -759,6 +805,8 @@ public class SemanticAnalysis implements Visitor<SemType, SymbolTable> {
 		SemType semType = getSemTypeFromASTNodeType(table, type);
 
 		table.addSymbol(name.lexeme, semType);
+
+		paramDefinition.semtype = semType;
 		return semType;
 	}
 
@@ -787,6 +835,7 @@ public class SemanticAnalysis implements Visitor<SemType, SymbolTable> {
 
 		table.addSymbol(recordDefinition.getIdentifier().lexeme, recordSemType);
 
+		recordDefinition.semtype = recordSemType;
 		return recordSemType;
 	}
 
@@ -794,7 +843,10 @@ public class SemanticAnalysis implements Visitor<SemType, SymbolTable> {
 	public SemType visitRecordFieldDefinition(RecordFieldDefinition recordFieldDefinition, SymbolTable table) throws Exception {
 		Type type = recordFieldDefinition.getType();
 
-		return getSemTypeFromASTNodeType(table, type);
+		SemType retType = getSemTypeFromASTNodeType(table, type);
+
+		recordFieldDefinition.semtype = retType;
+		return retType;
 	}
 
 	@Override
@@ -819,6 +871,7 @@ public class SemanticAnalysis implements Visitor<SemType, SymbolTable> {
 			throw new ReturnError("Return at line "+returnStatement.line+" type does not match function return type. Expected: " + functionSemType.getRetType() + ", found: " + returnSemType);
 		}
 
+		returnStatement.semtype = returnSemType;
 		return returnSemType;
 	}
 
@@ -870,16 +923,26 @@ public class SemanticAnalysis implements Visitor<SemType, SymbolTable> {
 			// if the variable is declared as a prototype
 			semType = new SemType(type.symbol.lexeme, variableDeclaration.isConstant());
 		} else {
+			// a float = 3 + 7.0;
+			// or c float = 5;
 			semType = variableDeclaration.getValue().accept(this, table);
 			semType.setIsConstant(variableDeclaration.isConstant());
 
-			if (!getSemTypeFromASTNodeType(table, type).equals(semType)) {
+			SemType declType = getSemTypeFromASTNodeType(table, type);
+			if (!declType.equals(semType)) {
+
+//				if (declType.equals(floatType) && semType.equals(intType)) {
+//					variableDeclaration.conversionNeeded = true;
+//				}
+
 				throw new TypeError("Type of the variable " + name.lexeme + " at line " + variableDeclaration.line + " does not match the type of the expression " + variableDeclaration.getValue().toString());
 			}
 		}
 
 		table.addSymbol(name.lexeme, semType);
 
+
+		variableDeclaration.semtype = semType;
 		return semType;
 	}
 

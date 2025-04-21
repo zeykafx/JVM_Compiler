@@ -29,6 +29,8 @@ dependencies {
     implementation("com.google.guava:guava:31.1-jre")
 
     implementation("org.ow2.asm:asm:9.8")
+    implementation("org.jcommander:jcommander:2.0")
+
 }
 
 application {

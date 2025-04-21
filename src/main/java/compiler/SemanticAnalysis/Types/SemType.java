@@ -7,6 +7,8 @@ public class SemType {
 
 	public String type;
 	public Boolean isConstant = false;
+	public Boolean toConvert = false;
+
 	public SemType(String type) {
 		this.type = type;
 		this.isConstant = false;

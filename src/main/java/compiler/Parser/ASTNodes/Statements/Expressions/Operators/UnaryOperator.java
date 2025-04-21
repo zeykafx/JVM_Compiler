@@ -22,6 +22,10 @@ public class UnaryOperator extends Operator {
         return operator;
     }
 
+    public String getOperator() {
+        return operator.lexeme;
+    }
+
     @Override
     public String toString() {
         return "UnaryOperator [operator=" + operator.lexeme + "]";

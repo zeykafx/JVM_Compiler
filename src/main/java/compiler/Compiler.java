@@ -3,27 +3,55 @@
  */
 package compiler;
 
+import com.beust.jcommander.JCommander;
+import com.beust.jcommander.ParameterException;
+import compiler.CodeGen.CodeGen;
 import compiler.Lexer.Lexer;
 import compiler.Lexer.Symbol;
 import compiler.Parser.ASTNodes.ASTNode;
 import compiler.Parser.Parser;
 import compiler.SemanticAnalysis.SemanticAnalysis;
+import com.beust.jcommander.Parameter;
 
+import java.io.File;
 import java.io.FileReader;
+import java.util.Arrays;
+
 
 public class Compiler {
+	@Parameter(description = "Target", required = true)
+	String file;
+
+	@Parameter(names={"--out", "-o"}, description = "Filepath of output classfile")
+	String out;
+	@Parameter(names={"--module", "-m"}, description = "Choose what module will be executed")
+	String module;
+
+
 	public static void main(String[] args) {
+
+		Compiler main = new Compiler();
 		try {
-			if (args.length >= 2) {
-				validateArgs(args);
-				Module module = Module.fromFlag(args[0]);
-				String filepath = args[1];
+			JCommander.newBuilder()
+					.addObject(main)
+					.build()
+					.parse(args);
 
-				processModule(module, filepath);
+		} catch (ParameterException e) {
+			e.usage();
+			System.exit(1);
+		}
+
+		main.run();
+	}
+
+	public void run() {
+		try {
+			if (module != null) {
+				Module parsedModule = Module.fromFlag(module);
+				processModule(parsedModule, file);
 			} else {
-				String filepath = args[0];
-				runEverything(filepath);
-
+				runEverything(file);
 			}
 
 		} catch (Exception e) {
@@ -32,13 +60,7 @@ public class Compiler {
 		}
 	}
 
-	private static void validateArgs(String[] args) {
-		if (args.length != 2) {
-			throw new IllegalArgumentException("Usage: compiler -<module> <filepath>");
-		}
-	}
-
-	private static void processModule(Module module, String filepath) throws Exception {
+	private void processModule(Module module, String filepath) throws Exception {
 		switch (module) {
 			case LEXER:
 				runLexer(filepath);
@@ -53,7 +75,7 @@ public class Compiler {
 		}
 	}
 
-	private static void runLexer(String filepath) throws Exception {
+	private void runLexer(String filepath) throws Exception {
 		FileReader reader = new FileReader(filepath);
 		Lexer lexer = new Lexer(reader);
 
@@ -64,7 +86,7 @@ public class Compiler {
 		} while (symbol.type != compiler.Lexer.TokenTypes.EOF);
 	}
 	
-	private static void runParser(String filepath) throws Exception {
+	private void runParser(String filepath) throws Exception {
         FileReader reader = new FileReader(filepath);
   		Lexer lexer = new Lexer(reader);	
         Parser parser = new Parser(lexer);
@@ -72,8 +94,14 @@ public class Compiler {
 		System.out.println("AST: " + root.prettyPrint(0));
     }
 
-	private static void runEverything(String filepath) throws Exception {
+	private void runEverything(String filepath) throws Exception {
+		File f = new File(filepath);
+
+		// If you are given the arguments "./tests/script.lang -o ./tests/test.class", it should
+		//save the test.class in the given argument ("./tests/test.class").
+
 		FileReader reader = new FileReader(filepath);
+
 		Lexer lexer = new Lexer(reader);
 		Parser parser = new Parser(lexer);
 		ASTNode root = parser.getAST();
@@ -81,13 +109,22 @@ public class Compiler {
 
 		SemanticAnalysis analyzer = new SemanticAnalysis();
 		analyzer.analyze(root, false);
+
+		String filename = out == null ? f.getPath() : new File(out).getPath();
+		String className = out == null ? f.getName() : new File(out).getName();
+		className = className.split("\\.")[0];
+		className = className.substring(0, 1).toUpperCase() + className.substring(1);
+		System.out.println(className);
+
+		CodeGen codeGen = new CodeGen(filename, className);
+		codeGen.generateCode(root);
 	}
 }
 
 
 enum Module {
-	LEXER("-lexer"),
-	PARSER("-parser");
+	LEXER("lexer"),
+	PARSER("parser");
 
 	private final String flag;
 

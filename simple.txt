@@ -1,0 +1,6 @@
+final j float = 3.2*5.0;
+
+
+fun main() {
+    $val = val + 1;
+}

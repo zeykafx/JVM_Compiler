@@ -20,8 +20,13 @@ public class BinaryOperator extends Operator {
         this.operator = operator;
     }
 
+
     public Symbol getSymbol() {
         return operator;
+    }
+
+    public String getOperator() {
+        return operator.lexeme;
     }
 
     @Override

@@ -15,17 +15,15 @@ import compiler.Parser.ASTNodes.Statements.Expressions.Terms.*;
 import compiler.Parser.ASTNodes.Statements.Statements.*;
 import compiler.Parser.ASTNodes.Types.NumType;
 import compiler.Parser.ASTNodes.Types.Type;
-import compiler.SemanticAnalysis.SemanticAnalysis;
-import compiler.SemanticAnalysis.SymbolTable;
 import compiler.SemanticAnalysis.Types.SemType;
 import compiler.SemanticAnalysis.Visitor;
 
 import org.objectweb.asm.ClassWriter;
-import org.objectweb.asm.FieldVisitor;
+import org.objectweb.asm.Label;
 import org.objectweb.asm.MethodVisitor;
 
-import java.util.ArrayList;
-import java.util.HashMap;
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
 import java.util.concurrent.atomic.AtomicReference;
 
 import static org.objectweb.asm.Opcodes.*;
@@ -43,16 +41,18 @@ public class CodeGen implements Visitor<Void, SlotTable> {
 	SemType recType = new SemType("rec");
 
 
-	private final ClassWriter cw;
+	private ClassWriter cw;
 	private MethodVisitor mv;
+	private boolean isMvTopLevel;
 	private final SlotTable slotTable;
+	private final String filePath;
+	private final String className;
 
-	public CodeGen(String className) {
+	public CodeGen(String filePath, String className) {
 
 		this.slotTable = new SlotTable(new AtomicReference<>(0), null);
-
-		this.cw = new ClassWriter(ClassWriter.COMPUTE_FRAMES);
-		this.cw.visit(V1_8, ACC_PUBLIC, className, null, "java/lang/Object", null);
+		this.filePath = filePath;
+		this.className = className;
 	}
 	
 	public void generateCode(ASTNode root) throws Exception {
@@ -67,11 +67,17 @@ public class CodeGen implements Visitor<Void, SlotTable> {
 	@Override
 	public Void visitProgram(Program program, SlotTable localTable) throws Exception {
 
+		cw = new ClassWriter(ClassWriter.COMPUTE_FRAMES);
+		cw.visit(V1_8, ACC_PUBLIC, this.className, null, "java/lang/Object", null);
+
+		mv = cw.visitMethod(ACC_PUBLIC | ACC_STATIC, "main", "([Ljava/lang/String;)V", null, null);
+		mv.visitCode();
+		isMvTopLevel = true;
+
 		// 2 + 7.9
 		// float b = 4.3
 		// int a = b
 
-		cw.visit(V1_8, ACC_PUBLIC, "Main", null, "java/lang/Object", null);
 
 		// first visit the constants
 		for (VariableDeclaration constant : program.getConstants()) {
@@ -86,9 +92,27 @@ public class CodeGen implements Visitor<Void, SlotTable> {
 			global.accept(this, slotTable);
 		}
 
+
+		// function declarations save and restore the method visitor
 		for (FunctionDefinition function : program.getFunctions()) {
 			function.accept(this, slotTable);
 		}
+
+		mv.visitInsn(RETURN); // return void from main
+		mv.visitEnd();
+		mv.visitMaxs(-1, -1); // let ASM calculate the size needed on the stack and of the slots.
+		cw.visitEnd();
+
+
+
+		byte[] bytearray = cw.toByteArray();
+
+		try (FileOutputStream outputStream = new FileOutputStream(filePath) ) {
+			outputStream.write(bytearray);
+		} catch (FileNotFoundException e) {
+			e.printStackTrace();
+			System.exit(3);
+		};
 
 		return null;
 	}
@@ -116,26 +140,149 @@ public class CodeGen implements Visitor<Void, SlotTable> {
 
 	@Override
 	public Void visitBinaryExpression(BinaryExpression binaryExpression, SlotTable localTable) throws Exception {
+		binaryExpression.getLeftTerm().accept(this, slotTable);
+		binaryExpression.getRightTerm().accept(this, slotTable);
+
+		BinaryOperator binaryOperator = binaryExpression.getOperator();
+		// TODO: implicit type conversion
+
+		// mega switch case for binary operators
+		switch (binaryOperator.getOperator()) {
+			case "&&":
+				// TODO: use the right type for the instructions based on the type of the terms
+				mv.visitInsn(IAND);
+				break;
+			case "||":
+				mv.visitInsn(IOR);
+				break;
+			case "+":
+				mv.visitInsn(IADD);
+				break;
+			case "-":
+				mv.visitInsn(ISUB);
+				break;
+			case "*":
+				mv.visitInsn(IMUL);
+				break;
+			case "/":
+				mv.visitInsn(IDIV);
+				break;
+			case "%":
+				mv.visitInsn(IREM);
+				break;
+			case "<":
+				mv.visitInsn(IF_ICMPLT);
+				break;
+			case "<=":
+				mv.visitInsn(IF_ICMPLE);
+				break;
+			case ">":
+				mv.visitInsn(IF_ICMPGT);
+				break;
+			case ">=":
+				mv.visitInsn(IF_ICMPGE);
+				break;
+			case "==":
+				mv.visitInsn(IF_ICMPEQ);
+				break;
+			case "!=":
+				mv.visitInsn(IF_ICMPNE);
+				break;
+		}
+
+
 		return null;
 	}
 
 	@Override
 	public Void visitUnaryExpression(UnaryExpression unaryExpression, SlotTable localTable) throws Exception {
+		unaryExpression.getTerm().accept(this, slotTable);
+
+		UnaryOperator unaryOperator = unaryExpression.getOperator();
+		switch (unaryOperator.getOperator()) {
+			case "!":
+				// heavily inspired by the code here https://github.com/norswap/sigh/blob/8301a3a988eb4ddd2667de1c8edef11e1d790709/src/norswap/sigh/bytecode/BytecodeCompiler.java#L499
+				Label falseLabel = new Label();
+				Label endLabel = new Label();
+				mv.visitInsn(ICONST_0);
+				mv.visitJumpInsn(IFEQ, falseLabel);
+				mv.visitInsn(ICONST_0);
+				mv.visitJumpInsn(GOTO, endLabel);
+				mv.visitLabel(falseLabel);
+				mv.visitInsn(ICONST_1);
+				mv.visitLabel(endLabel);
+				break;
+			case "-":
+				if (unaryExpression.getTerm().semtype.equals(floatType)) {
+					mv.visitInsn(FNEG);
+				} else {
+					// else is sufficient here because the semantic analysis guarantees us that nothing else can be here
+					mv.visitInsn(INEG);
+				}
+				break;
+		}
 		return null;
 	}
 
 	@Override
 	public Void visitBinaryOperator(BinaryOperator binaryOperator, SlotTable localTable) throws Exception {
+		// bypassed because of the distinction between float and int operation.
+
+		// mega switch case for binary operators
+		switch (binaryOperator.getOperator()) {
+			case "&&":
+				mv.visitInsn(IAND);
+				break;
+			case "||":
+				mv.visitInsn(IOR);
+				break;
+			case "+":
+				mv.visitInsn(IADD);
+				break;
+			case "-":
+				mv.visitInsn(ISUB);
+				break;
+			case "*":
+				mv.visitInsn(IMUL);
+				break;
+			case "/":
+				mv.visitInsn(IDIV);
+				break;
+			case "%":
+				mv.visitInsn(IREM);
+				break;
+			case "<":
+				mv.visitInsn(IF_ICMPLT);
+				break;
+			case "<=":
+				mv.visitInsn(IF_ICMPLE);
+				break;
+			case ">":
+				mv.visitInsn(IF_ICMPGT);
+				break;
+			case ">=":
+				mv.visitInsn(IF_ICMPGE);
+				break;
+			case "==":
+				mv.visitInsn(IF_ICMPEQ);
+				break;
+			case "!=":
+				mv.visitInsn(IF_ICMPNE);
+				break;
+		}
+
 		return null;
 	}
 
 	@Override
 	public Void visitUnaryOperator(UnaryOperator unaryOperator, SlotTable localTable) throws Exception {
+		// THIS FUNCTION IS BYPASSED, the relevant code is located in visitUnaryExpression
 		return null;
 	}
 
 	@Override
 	public Void visitConstValue(ConstVal constVal, SlotTable localTable) throws Exception {
+		mv.visitLdcInsn(constVal.getValue());
 		return null;
 	}
 
@@ -227,38 +374,25 @@ public class CodeGen implements Visitor<Void, SlotTable> {
 
 	@Override
 	public Void visitVariableDeclaration(VariableDeclaration variableDeclaration, SlotTable localTable) throws Exception {
-		// add the variable to the local table
-		Integer slotIndex = localTable.addSlot(variableDeclaration.getName().lexeme);
-
-		Type type = variableDeclaration.getType();
-
-		int seven = 5 + 2;
-		// final a int = 3;
-		// final b float = a * 2.0;
-
-
-		// final b float = 4;
 		// create the bytecode
 		if (variableDeclaration.isConstant()) {
 			// if the variable declaration is global, declare it as a constant
-//			variableDeclaration.getValue();
 			if (variableDeclaration.getValue() != null) {
-//
-//				// here the value is a constant, but if the type of the constant is float and the value is int, we need to convert it
-//				if (variableDeclaration.getType().semtype.equals(floatType) && variableDeclaration.getValue().semtype.equals(intType)) {
-////					variableDeclaration.getValue()
-//				}
-
-				cw.visitField(ACC_PUBLIC | ACC_STATIC,
+				cw.visitField(ACC_PUBLIC | ACC_STATIC | ACC_FINAL,
 						variableDeclaration.getName().lexeme,
 						variableDeclaration.semtype.fieldDescriptor(),
 						null, // no generic signature
 						null // no initial value
 				).visitEnd();
 
-//				fv.visi
+				// visit expression
+				variableDeclaration.getValue().accept(this, slotTable);
+				mv.visitFieldInsn(PUTSTATIC, className, variableDeclaration.getName().lexeme, variableDeclaration.semtype.fieldDescriptor());
 			}
 		}
+
+		// add the variable to the local table
+		localTable.addSlot(variableDeclaration.getName().lexeme);
 
 		return null;
 	}

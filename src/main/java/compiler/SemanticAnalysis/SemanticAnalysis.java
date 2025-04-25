@@ -23,6 +23,7 @@ import compiler.SemanticAnalysis.Types.SemType;
 
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
+import java.util.Objects;
 
 import static compiler.Lexer.TokenTypes.*;
 
@@ -163,6 +164,13 @@ public class SemanticAnalysis implements Visitor<SemType, SymbolTable> {
 
 		// check if the head is an array
 		SemType headType = arrayAccess.getHeadAccess().accept(this, table);
+
+
+		// quick fix for strings access
+		if (headType.equals(stringType)) {
+			return headType;
+		}
+
 
 		if (!(headType instanceof ArraySemType arraySemType)) {
 			throw new TypeError("The head of the array access at line " + arrayAccess.line + " is not an array");
@@ -309,8 +317,9 @@ public class SemanticAnalysis implements Visitor<SemType, SymbolTable> {
 			return boolType;
 
  		} else if (operatorSemType.equals(numType)) {
-			if (!termsType.equals(numType)) {
-				throw new OperatorError(String.format("Type %s cannot be used in a with the %s operator, expected int or float", termsType, binaryExpression.getOperator().getSymbol().lexeme));
+			// check if it is a string too
+			if (!termsType.equals(numType) && !termsType.equals(stringType)) {
+				throw new OperatorError(String.format("Type %s cannot be used in a with the %s operator, expected int, float or string", termsType, binaryExpression.getOperator().getSymbol().lexeme));
 			}
 
 			if (binaryExpression.getOperator().numberOperatorReturnsBoolean()) {

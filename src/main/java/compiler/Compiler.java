@@ -114,9 +114,9 @@ public class Compiler {
 		String className = out == null ? f.getName() : new File(out).getName();
 		className = className.split("\\.")[0];
 		className = className.substring(0, 1).toUpperCase() + className.substring(1);
-		System.out.println(className);
-
-		CodeGen codeGen = new CodeGen(filename, className);
+//		System.out.println(className);
+		String outFilename = className + ".class";
+		CodeGen codeGen = new CodeGen(outFilename, className);
 		codeGen.generateCode(root);
 	}
 }

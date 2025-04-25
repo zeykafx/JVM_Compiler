@@ -56,6 +56,13 @@ public class BinaryOperator extends Operator {
         };
     }
 
+//    public boolean isStringOperator() {
+//        return switch (operator.lexeme) {
+//            case "+", "==", "!=" -> true;
+//            default -> false;
+//        };
+//    }
+
     /// Returns true if the operator can only be applied to numbers, false otherwise
     public boolean isNumberOperator() {
         return switch (operator.lexeme) {

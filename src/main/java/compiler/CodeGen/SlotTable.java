@@ -36,6 +36,9 @@ public class SlotTable {
 		if (slot == null && parent != null) {
 			return parent.lookup(name);
 		}
+		if (slot == null) {
+			return -1;
+		}
 		return slot;
 	}
 }

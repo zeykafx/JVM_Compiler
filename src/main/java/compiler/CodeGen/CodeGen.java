@@ -15,6 +15,7 @@ import compiler.Parser.ASTNodes.Statements.Expressions.Terms.*;
 import compiler.Parser.ASTNodes.Statements.Statements.*;
 import compiler.Parser.ASTNodes.Types.NumType;
 import compiler.Parser.ASTNodes.Types.Type;
+import compiler.SemanticAnalysis.Types.ArraySemType;
 import compiler.SemanticAnalysis.Types.SemType;
 import compiler.SemanticAnalysis.Visitor;
 
@@ -125,6 +126,25 @@ public class CodeGen implements Visitor<Void, SlotTable> {
 
 	@Override
 	public Void visitIdentifierAccess(IdentifierAccess identifierAccess, SlotTable localTable) throws Exception {
+		// load symbol in slot table or insert it and put it in constant pool
+		int index = localTable.lookup(identifierAccess.getIdentifier().lexeme);
+		if (index == -1) {
+			// unexpected error : the term should be in the slot table.
+			throw new RuntimeException("Unexpected error : the variable " + identifierAccess.getIdentifier().lexeme + " is not in the slot table.");
+		}
+
+		SemType semtype = identifierAccess.semtype;
+
+		if (semtype.equals(intType) || semtype.equals(boolType)) {
+				mv.visitVarInsn(ILOAD, index);
+        } else if (semtype.equals(floatType)) {
+			mv.visitVarInsn(FLOAD, index);
+		} else {
+			mv.visitVarInsn(AALOAD, index);
+		}
+
+		// a[0]
+
 		return null;
 	}
 
@@ -140,57 +160,13 @@ public class CodeGen implements Visitor<Void, SlotTable> {
 
 	@Override
 	public Void visitBinaryExpression(BinaryExpression binaryExpression, SlotTable localTable) throws Exception {
+		// TODO: handle implicit type conversion in terms
 		binaryExpression.getLeftTerm().accept(this, slotTable);
 		binaryExpression.getRightTerm().accept(this, slotTable);
 
-		BinaryOperator binaryOperator = binaryExpression.getOperator();
-		// TODO: implicit type conversion
-
-		// mega switch case for binary operators
-		switch (binaryOperator.getOperator()) {
-			case "&&":
-				// TODO: use the right type for the instructions based on the type of the terms
-				mv.visitInsn(IAND);
-				break;
-			case "||":
-				mv.visitInsn(IOR);
-				break;
-			case "+":
-				mv.visitInsn(IADD);
-				break;
-			case "-":
-				mv.visitInsn(ISUB);
-				break;
-			case "*":
-				mv.visitInsn(IMUL);
-				break;
-			case "/":
-				mv.visitInsn(IDIV);
-				break;
-			case "%":
-				mv.visitInsn(IREM);
-				break;
-			case "<":
-				mv.visitInsn(IF_ICMPLT);
-				break;
-			case "<=":
-				mv.visitInsn(IF_ICMPLE);
-				break;
-			case ">":
-				mv.visitInsn(IF_ICMPGT);
-				break;
-			case ">=":
-				mv.visitInsn(IF_ICMPGE);
-				break;
-			case "==":
-				mv.visitInsn(IF_ICMPEQ);
-				break;
-			case "!=":
-				mv.visitInsn(IF_ICMPNE);
-				break;
-		}
-
-
+		// TODO: on etait entrain de faire string concat donc faut gerer arrayAccess
+		opCodeGenerator op = new opCodeGenerator(binaryExpression, mv);
+		op.generateCode();
 		return null;
 	}
 
@@ -222,55 +198,13 @@ public class CodeGen implements Visitor<Void, SlotTable> {
 				break;
 		}
 		return null;
+
+		// a[0]
 	}
 
 	@Override
 	public Void visitBinaryOperator(BinaryOperator binaryOperator, SlotTable localTable) throws Exception {
 		// bypassed because of the distinction between float and int operation.
-
-		// mega switch case for binary operators
-		switch (binaryOperator.getOperator()) {
-			case "&&":
-				mv.visitInsn(IAND);
-				break;
-			case "||":
-				mv.visitInsn(IOR);
-				break;
-			case "+":
-				mv.visitInsn(IADD);
-				break;
-			case "-":
-				mv.visitInsn(ISUB);
-				break;
-			case "*":
-				mv.visitInsn(IMUL);
-				break;
-			case "/":
-				mv.visitInsn(IDIV);
-				break;
-			case "%":
-				mv.visitInsn(IREM);
-				break;
-			case "<":
-				mv.visitInsn(IF_ICMPLT);
-				break;
-			case "<=":
-				mv.visitInsn(IF_ICMPLE);
-				break;
-			case ">":
-				mv.visitInsn(IF_ICMPGT);
-				break;
-			case ">=":
-				mv.visitInsn(IF_ICMPGE);
-				break;
-			case "==":
-				mv.visitInsn(IF_ICMPEQ);
-				break;
-			case "!=":
-				mv.visitInsn(IF_ICMPNE);
-				break;
-		}
-
 		return null;
 	}
 
@@ -283,6 +217,7 @@ public class CodeGen implements Visitor<Void, SlotTable> {
 	@Override
 	public Void visitConstValue(ConstVal constVal, SlotTable localTable) throws Exception {
 		mv.visitLdcInsn(constVal.getValue());
+		// put it in slot table ?
 		return null;
 	}
 

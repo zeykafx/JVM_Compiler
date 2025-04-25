@@ -18,13 +18,17 @@ $ int values are automatically promoted to float values in mixed expressions.
 
 $ There is no dedicated char type. Characters are represented by integers. 
 
-$ Strings are immutable. 
+$ Strings are immutable.
+
+$  s string = "hello"
+$ s += " !"
+$s = "Jello"
 
   
 
 $ Operations: 
 
-$  For int and float, available operations are 
+$  For int and float, available operations are
 
 $      +, -, * , /, - (unary). 
 
@@ -40,7 +44,7 @@ $      && (and operator), || (or operator), ==, !=
 
 $  For strings 
 
-$      + (concatenation), ==, != 
+$      + (concatenation), ==, !=
 
 $  The i-th characters/element in a string/array can be read by the index operator [i]. 
 

@@ -3,12 +3,10 @@ final i string = "hello";
 final j string = "world";
 $final val int = 1;
 
-fun test(g string, f float[]) {
-
-}
+val string = "empty string woo";
 
 fun main() {
     $ val = val + 1;
-    val string = i + j;
+    val = i + j;
     $writeln(val[0]);
 }

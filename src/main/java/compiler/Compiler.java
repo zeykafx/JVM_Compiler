@@ -111,16 +111,20 @@ public class Compiler {
 		analyzer.analyze(root, false);
 
 		String filename = out == null ? f.getPath() : new File(out).getPath();
-		System.out.println("filename = " + filename);
+//		System.out.println("filename = " + filename);
 
 		String className = out == null ? f.getName() : new File(out).getName();
 		String lowercaseClassname = className;
 
 		className = className.split("\\.")[0];
 		className = className.substring(0, 1).toUpperCase() + className.substring(1);
-		System.out.println("className = " + className);
+//		System.out.println("className = " + className);
 
-		String outFilename = filename.split(lowercaseClassname)[0] + className + ".class";
+		String outFilename = className + ".class";
+		String[] filenameParts = filename.split(lowercaseClassname);
+		if (filenameParts.length > 1) {
+			outFilename = filename.split(lowercaseClassname)[0] + className + ".class";
+		}
 		System.out.println("outFilename = " + outFilename);
 		CodeGen codeGen = new CodeGen(outFilename, className);
 		codeGen.generateCode(root);

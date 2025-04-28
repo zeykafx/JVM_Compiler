@@ -925,6 +925,7 @@ public class SemanticAnalysis implements Visitor<SemType, SymbolTable> {
 			throw new TypeError("Cannot assign to a constant variable " + variableAssignment.getAccess().toString() + " at line " + variableAssignment.line);
 		}
 
+		variableAssignment.semtype = varType;
 		return null;
 	}
 
@@ -946,6 +947,7 @@ public class SemanticAnalysis implements Visitor<SemType, SymbolTable> {
 			// or c float = 5;
 			semType = variableDeclaration.getValue().accept(this, table);
 			semType.setIsConstant(variableDeclaration.isConstant());
+			semType.setGlobal(variableDeclaration.isGlobal());
 
 			SemType declType = getSemTypeFromASTNodeType(table, type);
 			if (!declType.equals(semType)) {

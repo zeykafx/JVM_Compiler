@@ -16,7 +16,18 @@ public class VariableDeclaration extends Statement {
 	boolean isConstant;
 	boolean hasValue;
 
+	boolean isGlobal = false;
 	public boolean conversionNeeded = false;
+
+	public VariableDeclaration(Symbol name, Type type, Expression value, boolean isConstant, boolean isGlobal, int line, int column) {
+		super(line, column);
+		this.name = name;
+		this.type = type;
+		this.value = value;
+		this.isConstant = isConstant;
+		this.isGlobal = isGlobal;
+		this.hasValue = value != null;
+	}
 
 	public VariableDeclaration(Symbol name, Type type, Expression value, boolean isConstant, int line, int column) {
 		super(line, column);
@@ -24,6 +35,7 @@ public class VariableDeclaration extends Statement {
 		this.type = type;
 		this.value = value;
 		this.isConstant = isConstant;
+		this.isGlobal = false;
 		this.hasValue = value != null;
 	}
 
@@ -34,6 +46,7 @@ public class VariableDeclaration extends Statement {
 		this.type = type;
 		this.value = value;
 		this.isConstant = false;
+		this.isGlobal = false;
 		this.hasValue = value != null;
 	}
 
@@ -44,6 +57,7 @@ public class VariableDeclaration extends Statement {
 		this.type = type;
 		this.value = null;
 		this.isConstant = false;
+		this.isGlobal = false;
 		this.hasValue = false;
 	}
 
@@ -65,6 +79,14 @@ public class VariableDeclaration extends Statement {
 
 	public boolean isConstant() {
 		return isConstant;
+	}
+
+	public boolean isGlobal() {
+		return isGlobal;
+	}
+
+	public void setGlobal(boolean global) {
+		isGlobal = global;
 	}
 
 	@Override

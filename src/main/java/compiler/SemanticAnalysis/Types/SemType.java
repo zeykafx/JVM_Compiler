@@ -7,11 +7,11 @@ public class SemType {
 
 	public String type;
 	public Boolean isConstant = false;
+	public Boolean isGlobal = false;
 	public Boolean toConvert = false;
 
 	public SemType(String type) {
 		this.type = type;
-		this.isConstant = false;
 	}
 
 	public SemType(String type, Boolean isConstant) {
@@ -25,7 +25,12 @@ public class SemType {
 
 	@Override
 	public String toString() {
-		return type;
+		return "SemType{" +
+				"type='" + type + '\'' +
+				", isConstant=" + isConstant +
+				", isGlobal=" + isGlobal +
+				", toConvert=" + toConvert +
+				'}';
 	}
 
 	public Boolean getConstant() {
@@ -34,6 +39,14 @@ public class SemType {
 
 	public void setIsConstant(Boolean isConstant) {
 		this.isConstant = isConstant;
+	}
+
+	public Boolean getGlobal() {
+		return isGlobal;
+	}
+
+	public void setGlobal(Boolean global) {
+		isGlobal = global;
 	}
 
 	@Override
@@ -72,7 +85,11 @@ public class SemType {
 			case "float" -> "F"; // float
 			case "void" -> "V"; // void
 			case "string" -> "Ljava/lang/String;";
-			default -> throw new Error("unreachable");
+			default -> throw new Error("Unknown type: " + type);
 		};
+	}
+
+	public org.objectweb.asm.Type asmType () {
+		return org.objectweb.asm.Type.getType(fieldDescriptor());
 	}
 }

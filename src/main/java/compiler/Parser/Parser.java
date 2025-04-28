@@ -90,7 +90,8 @@ public class Parser {
             VariableDeclaration constant = parseVariableDeclaration(
                 true,
                 false,
-                null
+                null,
+                false // technically constants are global but here globals are not constant
             );
             constants.add(constant);
 
@@ -130,7 +131,8 @@ public class Parser {
             VariableDeclaration variable = parseVariableDeclaration(
                 false,
                 false,
-                null
+                null,
+                true
             );
             globalVariables.add(variable);
 
@@ -162,7 +164,8 @@ public class Parser {
     public VariableDeclaration parseVariableDeclaration(
         boolean isConstant,
         boolean skipIdent,
-        Symbol identIfSkipped
+        Symbol identIfSkipped,
+        boolean isGlobal
     ) throws Exception {
         Symbol identifier;
 
@@ -185,6 +188,7 @@ public class Parser {
                 type,
                 expression,
                 isConstant,
+                isGlobal,
                 identifier.line,
                 identifier.column
             );
@@ -708,7 +712,7 @@ public class Parser {
         // NOT LL(1)
         if (lookAheadSymbol.type == TokenTypes.FINAL) {
             // Declaration (final or not)
-            return parseVariableDeclaration(true, false, null);
+            return parseVariableDeclaration(true, false, null, false);
         } else if (lookAheadSymbol.type == TokenTypes.IDENTIFIER) {
             // VariableAssignment (using an Access) or non-constant declaration
             Symbol identifier = match(TokenTypes.IDENTIFIER);
@@ -721,7 +725,7 @@ public class Parser {
                 }
 
                 // or it could be something like "i int"
-                return parseVariableDeclaration(false, true, identifier);
+                return parseVariableDeclaration(false, true, identifier, false);
             }
 
             // otherwise we have a variable assignment

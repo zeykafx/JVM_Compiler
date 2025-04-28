@@ -165,12 +165,10 @@ public class SemanticAnalysis implements Visitor<SemType, SymbolTable> {
 		// check if the head is an array
 		SemType headType = arrayAccess.getHeadAccess().accept(this, table);
 
-
 		// quick fix for strings access
 		if (headType.equals(stringType)) {
 			return headType;
 		}
-
 
 		if (!(headType instanceof ArraySemType arraySemType)) {
 			throw new TypeError("The head of the array access at line " + arrayAccess.line + " is not an array");
@@ -702,10 +700,12 @@ public class SemanticAnalysis implements Visitor<SemType, SymbolTable> {
 			paramTypes.add(paramSemType);
 		}
 
+		functionDefinition.setParamTypes(paramTypes);
 		// add function to the symbol table
 		Type returnType = functionDefinition.getReturnType();
 
 		SemType retSemType = getSemTypeFromASTNodeType(table, returnType);
+		functionDefinition.setRetSemType(retSemType);
 
 		FunctionSemType semType = new FunctionSemType(retSemType, paramTypes.toArray(new SemType[0]));
 		table.addSymbol(name.lexeme, semType);
@@ -721,7 +721,7 @@ public class SemanticAnalysis implements Visitor<SemType, SymbolTable> {
             }
         }
 		
-		functionDefinition.semtype = retSemType;
+		functionDefinition.semtype = semType;
 		return retSemType;
 	}
 	

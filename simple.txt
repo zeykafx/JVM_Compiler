@@ -1,9 +1,14 @@
 $final j float = 3.2*5.0;
 final i string = "hello";
 final j string = "world";
+$final val int = 1;
+
+fun test(g string, f float[]) {
+
+}
 
 fun main() {
-    $val = val + 1;
+    $ val = val + 1;
     val string = i + j;
-    writeln(val[0]);
+    $writeln(val[0]);
 }

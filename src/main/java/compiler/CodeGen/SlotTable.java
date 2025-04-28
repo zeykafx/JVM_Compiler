@@ -11,7 +11,7 @@ public class SlotTable {
 	// same principle as the symbol table but with a currentSlot counter
 
 	private final SlotTable parent;
-	private final HashMap<String, Integer> slots;
+	public final HashMap<String, Integer> slots;
 	private final AtomicReference<Integer> currentSlot;
 	private String localFunctionName;
 

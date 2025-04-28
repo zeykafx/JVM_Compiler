@@ -16,6 +16,7 @@ import compiler.Parser.ASTNodes.Statements.Statements.*;
 import compiler.Parser.ASTNodes.Types.NumType;
 import compiler.Parser.ASTNodes.Types.Type;
 import compiler.SemanticAnalysis.Types.ArraySemType;
+import compiler.SemanticAnalysis.Types.FunctionSemType;
 import compiler.SemanticAnalysis.Types.SemType;
 import compiler.SemanticAnalysis.Visitor;
 
@@ -25,6 +26,8 @@ import org.objectweb.asm.MethodVisitor;
 
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
+import java.util.ArrayList;
+import java.util.Map;
 import java.util.concurrent.atomic.AtomicReference;
 
 import static org.objectweb.asm.Opcodes.*;
@@ -45,6 +48,7 @@ public class CodeGen implements Visitor<Void, SlotTable> {
 	private ClassWriter cw;
 	private MethodVisitor mv;
 	private boolean isMvTopLevel;
+	private Label endLabel;
 	private final SlotTable slotTable;
 	private final String filePath;
 	private final String className;
@@ -52,6 +56,7 @@ public class CodeGen implements Visitor<Void, SlotTable> {
 	public CodeGen(String filePath, String className) {
 
 		this.slotTable = new SlotTable(new AtomicReference<>(0), null);
+
 		this.filePath = filePath;
 		this.className = className;
 	}
@@ -79,7 +84,6 @@ public class CodeGen implements Visitor<Void, SlotTable> {
 		// float b = 4.3
 		// int a = b
 
-
 		// first visit the constants
 		for (VariableDeclaration constant : program.getConstants()) {
 			constant.accept(this, slotTable);
@@ -103,8 +107,6 @@ public class CodeGen implements Visitor<Void, SlotTable> {
 		mv.visitEnd();
 		mv.visitMaxs(-1, -1); // let ASM calculate the size needed on the stack and of the slots.
 		cw.visitEnd();
-
-
 
 		byte[] bytearray = cw.toByteArray();
 
@@ -134,14 +136,15 @@ public class CodeGen implements Visitor<Void, SlotTable> {
 		}
 
 		SemType semtype = identifierAccess.semtype;
-
-		if (semtype.equals(intType) || semtype.equals(boolType)) {
-				mv.visitVarInsn(ILOAD, index);
-        } else if (semtype.equals(floatType)) {
-			mv.visitVarInsn(FLOAD, index);
-		} else {
-			mv.visitVarInsn(AALOAD, index);
-		}
+		org.objectweb.asm.Type asmType = org.objectweb.asm.Type.getType(semtype.fieldDescriptor());
+		mv.visitVarInsn(asmType.getOpcode(ILOAD), index);
+//		if (semtype.equals(intType) || semtype.equals(boolType)) {
+//				mv.visitVarInsn(ILOAD, index);
+//        } else if (semtype.equals(floatType)) {
+//			mv.visitVarInsn(FLOAD, index);
+//		} else {
+//			mv.visitVarInsn(AALOAD, index);
+//		}
 
 		// a[0]
 
@@ -155,16 +158,18 @@ public class CodeGen implements Visitor<Void, SlotTable> {
 
 	@Override
 	public Void visitArrayExpression(ArrayExpression arrayExpression, SlotTable localTable) throws Exception {
+		// note: for strings use string.charAt(idx)
 		return null;
 	}
 
 	@Override
 	public Void visitBinaryExpression(BinaryExpression binaryExpression, SlotTable localTable) throws Exception {
+
 		// TODO: handle implicit type conversion in terms
 		binaryExpression.getLeftTerm().accept(this, slotTable);
 		binaryExpression.getRightTerm().accept(this, slotTable);
 
-		// TODO: on etait entrain de faire string concat donc faut gerer arrayAccess
+		// TODO: on etait en train de faire string concat donc faut gerer arrayAccess
 		opCodeGenerator op = new opCodeGenerator(binaryExpression, mv);
 		op.generateCode();
 		return null;
@@ -217,6 +222,7 @@ public class CodeGen implements Visitor<Void, SlotTable> {
 	@Override
 	public Void visitConstValue(ConstVal constVal, SlotTable localTable) throws Exception {
 		mv.visitLdcInsn(constVal.getValue());
+
 		// put it in slot table ?
 		return null;
 	}
@@ -243,11 +249,6 @@ public class CodeGen implements Visitor<Void, SlotTable> {
 
 
 	@Override
-	public Void visitBlock(Block block, SlotTable localTable) throws Exception {
-		return null;
-	}
-
-	@Override
 	public Void visitType(Type type, SlotTable localTable) throws Exception {
 		return null;
 	}
@@ -259,7 +260,8 @@ public class CodeGen implements Visitor<Void, SlotTable> {
 
 	@Override
 	public Void visitStatement(Statement statement, SlotTable localTable) throws Exception {
-		return null;
+		throw new RuntimeException("this should never be called");
+//		return null;
 	}
 
 	@Override
@@ -274,6 +276,57 @@ public class CodeGen implements Visitor<Void, SlotTable> {
 
 	@Override
 	public Void visitFunctionDefinition(FunctionDefinition functionDefinition, SlotTable localTable) throws Exception {
+
+		MethodVisitor oldMv = mv;
+		// the main function is already defined, so we skip the function definition
+		if (!functionDefinition.getName().lexeme.equals("main")) {
+			isMvTopLevel = false;
+
+			// generate string for descriptor
+			FunctionSemType functionSemType = (FunctionSemType) functionDefinition.semtype;
+			String descriptor = functionSemType.fieldDescriptor();
+
+			// add params to slot table
+			mv = cw.visitMethod(ACC_PUBLIC | ACC_STATIC, functionDefinition.getName().lexeme, descriptor, null, null);
+			mv.visitCode();
+
+		}
+
+		// accept block (the block handles the return)
+		functionDefinition.getBlock().accept(this, localTable);
+
+		// this isn't needed for the main function
+		if (!functionDefinition.getName().lexeme.equals("main")) {
+
+			mv.visitEnd();
+			mv.visitMaxs(-1, -1);
+
+			mv = oldMv;
+			isMvTopLevel = true;
+		}
+		return null;
+	}
+
+	@Override
+	public Void visitBlock(Block block, SlotTable localTable) throws Exception {
+		for (Statement stmt : block.getStatements()) {
+			stmt.accept(this, localTable);
+		}
+		ReturnStatement returnStatement = (ReturnStatement) block.getReturnStatement();
+		if (returnStatement != null) {
+			returnStatement.accept(this, localTable);
+		}
+		return null;
+	}
+
+	@Override
+	public Void visitReturnStatement(ReturnStatement returnStatement, SlotTable localTable) throws Exception {
+		if (returnStatement.getExpression() != null) {
+			returnStatement.getExpression().accept(this, localTable); // load the values on the stack
+		}
+
+		// return
+		mv.visitInsn(RETURN);
 		return null;
 	}
 
@@ -284,6 +337,7 @@ public class CodeGen implements Visitor<Void, SlotTable> {
 
 	@Override
 	public Void visitParamDefinition(ParamDefinition paramDefinition, SlotTable localTable) throws Exception {
+//		localTable.addSlot(paramDefinition.semtype.)
 		return null;
 	}
 
@@ -297,10 +351,7 @@ public class CodeGen implements Visitor<Void, SlotTable> {
 		return null;
 	}
 
-	@Override
-	public Void visitReturnStatement(ReturnStatement returnStatement, SlotTable localTable) throws Exception {
-		return null;
-	}
+
 
 	@Override
 	public Void visitVariableAssignment(VariableAssignment variableAssignment, SlotTable localTable) throws Exception {
@@ -323,11 +374,29 @@ public class CodeGen implements Visitor<Void, SlotTable> {
 				// visit expression
 				variableDeclaration.getValue().accept(this, slotTable);
 				mv.visitFieldInsn(PUTSTATIC, className, variableDeclaration.getName().lexeme, variableDeclaration.semtype.fieldDescriptor());
-			}
-		}
 
-		// add the variable to the local table
-		localTable.addSlot(variableDeclaration.getName().lexeme);
+				// add the variable to the local table
+				localTable.addSlot(variableDeclaration.getName().lexeme);
+			}
+		} else {
+			// load on the stack
+			variableDeclaration.getValue().accept(this, localTable);
+			Label start = new Label();
+			mv.visitLabel(start);
+
+
+			String desc = variableDeclaration.semtype.fieldDescriptor();
+			org.objectweb.asm.Type asmType = org.objectweb.asm.Type.getType(desc);
+
+			int idx = localTable.addSlot(variableDeclaration.getName().lexeme);
+			System.out.println("slot index: " + idx);
+			mv.visitVarInsn(asmType.getOpcode(ISTORE), idx);
+//			mv.visitLocalVariable(variableDeclaration.getName().lexeme, desc, null, start, endLabel, idx);
+
+			mv.visitFieldInsn(GETSTATIC, "java/lang/System", "out", "Ljava/io/PrintStream;");
+			mv.visitVarInsn(ALOAD, idx);
+			mv.visitMethodInsn(INVOKEVIRTUAL, "java/io/PrintStream", "println", "(Ljava/lang/String;)V", false);
+		}
 
 		return null;
 	}

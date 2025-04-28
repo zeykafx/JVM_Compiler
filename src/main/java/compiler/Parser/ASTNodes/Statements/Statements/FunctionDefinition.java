@@ -15,6 +15,8 @@ public class FunctionDefinition extends Statement {
 
 	private final Symbol name;
 	private final Type returnType;
+	private SemType retSemType;
+	private ArrayList<SemType> paramTypes;
 	private final ArrayList<ParamDefinition> paramDefinitions;
 	private final Block block;
 	private final boolean voidReturnType;
@@ -41,6 +43,22 @@ public class FunctionDefinition extends Statement {
 
 	public Type getReturnType() {
 		return returnType;
+	}
+
+	public SemType getRetSemType(){
+		return retSemType;
+	}
+
+	public void setRetSemType(SemType retSemType) {
+		this.retSemType = retSemType;
+	}
+
+	public ArrayList<SemType> getParamTypes() {
+		return paramTypes;
+	}
+
+	public void setParamTypes(ArrayList<SemType> paramTypes) {
+		this.paramTypes = paramTypes;
 	}
 
 	public boolean isVoidReturnType() {

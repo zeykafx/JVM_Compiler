@@ -55,9 +55,8 @@ public class opCodeGenerator {
             if (expression.getOperator().getOperator().equals("+")) {
                 // handle concatenation of strings
 //                mv.visitInsn(IADD);
-                System.out.println("lqksjfdmqslkdjf");
-                mv.visitMethodInsn(INVOKEDYNAMIC, "java/lang/String", "makeConcatWithConstants", "(Ljava/lang/String;)Ljava/lang/String;", false);
-
+//                String test = "test".concat("qdsf");
+                mv.visitMethodInsn(INVOKEVIRTUAL, "java/lang/String", "concat", "(Ljava/lang/String;)Ljava/lang/String;", false);
 
             } else if (expression.getOperator().getOperator().equals("==")) {
                 mv.visitMethodInsn(INVOKESTATIC, "java/lang/String", "equals", "(Ljava/lang/Object;)Z", false);

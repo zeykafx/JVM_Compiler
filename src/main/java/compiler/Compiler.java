@@ -97,6 +97,7 @@ public class Compiler {
 	private void runEverything(String filepath) throws Exception {
 		File f = new File(filepath);
 
+
 		// If you are given the arguments "./tests/script.lang -o ./tests/test.class", it should
 		//save the test.class in the given argument ("./tests/test.class").
 
@@ -125,7 +126,7 @@ public class Compiler {
 		if (filenameParts.length > 1) {
 			outFilename = filename.split(lowercaseClassname)[0] + className + ".class";
 		}
-		System.out.println("outFilename = " + outFilename);
+//		System.out.println("outFilename = " + outFilename);
 		CodeGen codeGen = new CodeGen(outFilename, className);
 		codeGen.generateCode(root);
 	}

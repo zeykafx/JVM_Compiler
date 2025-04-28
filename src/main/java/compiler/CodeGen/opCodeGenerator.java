@@ -37,7 +37,6 @@ public class opCodeGenerator {
 
         // if left & right terms are type strings, set isString to true
         if (expression.getLeftTerm().semtype.equals(stringType) && expression.getRightTerm().semtype.equals(stringType)) {
-            System.out.println("setting type to String");
             isString = true;
         }
     }
@@ -53,9 +52,7 @@ public class opCodeGenerator {
         } else {
             // +, ==, !=
             if (expression.getOperator().getOperator().equals("+")) {
-                // handle concatenation of strings
-//                mv.visitInsn(IADD);
-//                String test = "test".concat("qdsf");
+                // handle concatenation of strings: we use the .concat method on strings
                 mv.visitMethodInsn(INVOKEVIRTUAL, "java/lang/String", "concat", "(Ljava/lang/String;)Ljava/lang/String;", false);
 
             } else if (expression.getOperator().getOperator().equals("==")) {

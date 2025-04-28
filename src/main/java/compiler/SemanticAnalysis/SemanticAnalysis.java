@@ -21,6 +21,7 @@ import compiler.SemanticAnalysis.Types.FunctionSemType;
 import compiler.SemanticAnalysis.Types.RecordSemType;
 import compiler.SemanticAnalysis.Types.SemType;
 
+import java.io.File;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.Objects;
@@ -270,12 +271,12 @@ public class SemanticAnalysis implements Visitor<SemType, SymbolTable> {
 			// if either of the types is a float, then we can convert the other type to a float
 			if (leftType.equals(floatType) && rightType.equals(intType)) {
 				rightType = floatType;
-				binaryExpression.getRightTerm().semtype = floatType;
+//				binaryExpression.getRightTerm().semtype = floatType;
 				binaryExpression.getRightTerm().semtype.toConvert = true;
 
 			} else if (rightType.equals(floatType) && leftType.equals(intType)) {
 				leftType = floatType;
-				binaryExpression.getLeftTerm().semtype = floatType;
+//				binaryExpression.getLeftTerm().semtype = floatType;
 				binaryExpression.getLeftTerm().semtype.toConvert = true;
 
 			} else {
@@ -911,13 +912,14 @@ public class SemanticAnalysis implements Visitor<SemType, SymbolTable> {
 		if (!varType.equals(expressionType)) {
 
 			// the types didn't match, but if the expected type is a float and the given type is an int, we can convert it (here that means we keep going)
-
 			// if we can't convert the type, we throw an error: here if it's not the convertable case, we throw
 			if (varType.equals(floatType) && expressionType.equals(intType)) {
+				varType.toConvert = true;
+				variableAssignment.semtype = varType;
 				return null;
 			}
 
-			throw new TypeError("Type of the variable " + variableAssignment.getAccess().toString() + " at line " + variableAssignment.line + " does not match the type of the expression " + variableAssignment.getExpression().toString());
+			throw new TypeError("Type of the variable '" + variableAssignment.getAccess().semtype + "' at line " + variableAssignment.line + " does not match the type of the expression '" + variableAssignment.getExpression().semtype + "'");
 		}
 
 		// then check that the variable is not a constant
@@ -952,11 +954,12 @@ public class SemanticAnalysis implements Visitor<SemType, SymbolTable> {
 			SemType declType = getSemTypeFromASTNodeType(table, type);
 			if (!declType.equals(semType)) {
 
-//				if (declType.equals(floatType) && semType.equals(intType)) {
+				if (declType.equals(floatType) && semType.equals(intType)) {
 //					variableDeclaration.conversionNeeded = true;
-//				}
+					semType.toConvert = true;
+				}
 
-				throw new TypeError("Type of the variable " + name.lexeme + " at line " + variableDeclaration.line + " does not match the type of the expression " + variableDeclaration.getValue().toString());
+				throw new TypeError("Type of the variable " + name.lexeme + " ("+ declType +") at line " + variableDeclaration.line + " does not match the type of the expression " + semType);
 			}
 		}
 

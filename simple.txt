@@ -3,10 +3,11 @@ final i string = "hello";
 final j string = "world";
 $final val int = 1;
 
-val string = "empty string woo";
+val float = 56.3 + 33;
 
 fun main() {
     $ val = val + 1;
-    val = i + j;
+    $val = i + j;
+    val = 44;
     $writeln(val[0]);
 }

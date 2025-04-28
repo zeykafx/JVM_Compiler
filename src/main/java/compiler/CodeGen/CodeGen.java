@@ -107,7 +107,6 @@ public class CodeGen implements Visitor<Void, SlotTable> {
 			global.accept(this, slotTable);
 		}
 
-
 		// function declarations save and restore the method visitor
 		for (FunctionDefinition function : program.getFunctions()) {
 			function.accept(this, slotTable);
@@ -140,15 +139,14 @@ public class CodeGen implements Visitor<Void, SlotTable> {
 	public Void visitIdentifierAccess(IdentifierAccess identifierAccess, SlotTable localTable) throws Exception {
 		String identLexeme = identifierAccess.getIdentifier().lexeme;
 
-		// if the identifier is a constant or a global
-		// TODO: investigate for globals
+		// if the identifier is a constant or a global, we need to visit the field
 		if (constantsAndGlobals.containsKey(identLexeme)){
 			SemType constSemType = constantsAndGlobals.get(identLexeme);
 			mv.visitFieldInsn(GETSTATIC, className, identLexeme, constSemType.fieldDescriptor());
 			return null;
 		}
 
-		// load symbol in slot table or insert it and put it in constant pool
+		// load symbol in slot table or insert it
 		int index = localTable.lookup(identLexeme);
 		if (index == -1) {
 			// unexpected error : the term should be in the slot table.
@@ -156,7 +154,6 @@ public class CodeGen implements Visitor<Void, SlotTable> {
 		}
 
 		SemType semtype = identifierAccess.semtype;
-//		org.objectweb.asm.Type asmType = org.objectweb.asm.Type.getType(semtype.fieldDescriptor());
 		org.objectweb.asm.Type asmType = semtype.asmType();
 		mv.visitVarInsn(asmType.getOpcode(ILOAD), index);
 
@@ -176,10 +173,15 @@ public class CodeGen implements Visitor<Void, SlotTable> {
 
 	@Override
 	public Void visitBinaryExpression(BinaryExpression binaryExpression, SlotTable localTable) throws Exception {
-
-		// TODO: handle implicit type conversion in terms
 		binaryExpression.getLeftTerm().accept(this, slotTable);
+//		if (binaryExpression.semtype.toConvert) {
+//			implicitTypeConversion(binaryExpression.getLeftTerm().semtype, binaryExpression.getRightTerm().semtype);
+//		}
 		binaryExpression.getRightTerm().accept(this, slotTable);
+		// note: we only convert the right one, and since the i2f operation works on the last value on the stack, it comes after we loaded both of the values
+		if (binaryExpression.semtype.toConvert) {
+			implicitTypeConversion(binaryExpression.getLeftTerm().semtype, binaryExpression.getRightTerm().semtype);
+		}
 
 		opCodeGenerator op = new opCodeGenerator(binaryExpression, mv);
 		op.generateCode();
@@ -215,7 +217,6 @@ public class CodeGen implements Visitor<Void, SlotTable> {
 		}
 		return null;
 
-		// a[0]
 	}
 
 	@Override
@@ -326,8 +327,8 @@ public class CodeGen implements Visitor<Void, SlotTable> {
 
 		mv.visitFieldInsn(GETSTATIC, "java/lang/System", "out", "Ljava/io/PrintStream;");
 //		mv.visitVarInsn(ALOAD, 1);
-		mv.visitFieldInsn(GETSTATIC, className, "val", "Ljava/lang/String;");
-		mv.visitMethodInsn(INVOKEVIRTUAL, "java/io/PrintStream", "println", "(Ljava/lang/String;)V", false);
+		mv.visitFieldInsn(GETSTATIC, className, "val", constantsAndGlobals.get("val").fieldDescriptor());
+		mv.visitMethodInsn(INVOKEVIRTUAL, "java/io/PrintStream", "println", "("+constantsAndGlobals.get("val").fieldDescriptor()+")V", false);
 
 		ReturnStatement returnStatement = (ReturnStatement) block.getReturnStatement();
 		if (returnStatement != null) {
@@ -377,6 +378,9 @@ public class CodeGen implements Visitor<Void, SlotTable> {
 
 		// then visit the expression
 		variableAssignment.getExpression().accept(this, localTable);
+
+		implicitTypeConversion(variableAssignment.getAccess().semtype, variableAssignment.getExpression().semtype);
+
 
 		// then store the results
 		if (variableAssignment.semtype.isGlobal || variableAssignment.semtype.isConstant) {
@@ -431,7 +435,6 @@ public class CodeGen implements Visitor<Void, SlotTable> {
 			}
 
 			// if the variable declaration is global, declare it as a constant or a global
-//			if (variableDeclaration.hasValue()) {
 				cw.visitField(access,
 						variableDeclaration.getName().lexeme,
 						variableDeclaration.semtype.fieldDescriptor(),
@@ -450,15 +453,13 @@ public class CodeGen implements Visitor<Void, SlotTable> {
 				variableDeclaration.semtype.setIsConstant(variableDeclaration.isConstant());
 				variableDeclaration.semtype.setGlobal(variableDeclaration.isGlobal());
 				constantsAndGlobals.put(variableDeclaration.getName().lexeme, variableDeclaration.semtype);
-//			}
+
 		} else {
 			if (variableDeclaration.hasValue()) {
 				// load on the stack if it has a value
 				variableDeclaration.getValue().accept(this, localTable);
 			}
 
-//			String desc = variableDeclaration.semtype.fieldDescriptor();
-//			org.objectweb.asm.Type asmType = org.objectweb.asm.Type.getType(desc);
 			org.objectweb.asm.Type asmType = variableDeclaration.semtype.asmType();
 
 			int idx = localTable.addSlot(variableDeclaration.getName().lexeme);
@@ -468,22 +469,30 @@ public class CodeGen implements Visitor<Void, SlotTable> {
 		return null;
 	}
 
-	private void implicitTypeConversion(Type left, Type right, boolean convertLeftTerm) {
-		if (left.symbol.type == right.symbol.type) {
-			return;
+	private SemType implicitTypeConversion(SemType left, SemType right) {
+		if (left.equals(floatType) && right.equals(intType)) {
+			mv.visitInsn(I2F);
+			return left;
 		}
-
-		// 3 + 5.0
-		if (left.semtype.equals(intType) && right.semtype.equals(floatType) && convertLeftTerm) {
-			this.mv.visitInsn(I2F);
-		}
-
-		// 5.0 + 3
-		if (left.semtype.equals(floatType) && right.semtype.equals(intType) && !convertLeftTerm) {
-			this.mv.visitInsn(I2F);
-		}
-
+		return right;
 	}
+
+//	private void implicitTypeConversion(SemType left, SemType right) {
+//		if (left.equals(right)) {
+//			return;
+//		}
+//
+//		// 3 + 5.0
+//		if ((left.equals(intType) && right.equals(floatType)) || left.toConvert) {
+//			this.mv.visitInsn(I2F);
+//		}
+//
+//		// 5.0 + 3
+//		if (left.equals(floatType) && right.equals(intType) &&) {
+//			this.mv.visitInsn(I2F);
+//		}
+//
+//	}
 
 	@Override
 	public Void visitWhileLoop(WhileLoop whileLoop, SlotTable localTable) throws Exception {

@@ -25,12 +25,13 @@ public class SemType {
 
 	@Override
 	public String toString() {
-		return "SemType{" +
-				"type='" + type + '\'' +
-				", isConstant=" + isConstant +
-				", isGlobal=" + isGlobal +
-				", toConvert=" + toConvert +
-				'}';
+//		return "SemType{" +
+//				"type='" + type + '\'' +
+//				", isConstant=" + isConstant +
+//				", isGlobal=" + isGlobal +
+//				", toConvert=" + toConvert +
+//				'}';
+		return type;
 	}
 
 	public Boolean getConstant() {

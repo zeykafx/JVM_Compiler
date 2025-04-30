@@ -188,12 +188,6 @@ public class CodeGen implements Visitor<Void, SlotTable> {
 		return null;
 	}
 
-	private void implicitTypeConversion(SemType left, SemType right) {
-		if (left.equals(floatType) && right.equals(intType)) {
-			mv.visitInsn(I2F);
-		}
-	}
-
 	@Override
 	public Void visitVariableAssignment(VariableAssignment variableAssignment, SlotTable localTable) throws Exception {
 		variableAssignment.getAccess().accept(this, localTable);
@@ -204,30 +198,13 @@ public class CodeGen implements Visitor<Void, SlotTable> {
 		implicitTypeConversion(variableAssignment.getAccess().semtype, variableAssignment.getExpression().semtype);
 
 		// then store the results
-		if (variableAssignment.semtype.isGlobal || variableAssignment.semtype.isConstant) {
-			switch (variableAssignment.getAccess()) {
-				case IdentifierAccess identifierAccess:
+		switch (variableAssignment.getAccess()) {
+			case IdentifierAccess identifierAccess:
+
+				if (variableAssignment.semtype.isGlobal || variableAssignment.semtype.isConstant) {
 					SemType constSemType = constantsAndGlobals.get(identifierAccess.getIdentifier().lexeme);
 					mv.visitFieldInsn(PUTSTATIC, className, identifierAccess.getIdentifier().lexeme, constSemType.fieldDescriptor());
-					break;
-				case RecordAccess recordAccess:
-					RecordSemType recordSemType = (RecordSemType) recordAccess.getHeadAccess().semtype;
-					String accessDesc = recordSemType.recordFielDesc(recordAccess.getIdentifier().lexeme);
-
-					mv.visitFieldInsn(PUTFIELD, recordSemType.identifier, recordAccess.getIdentifier().lexeme, accessDesc);
-					break;
-				case ArrayAccess arrayAccess:
-					ArraySemType arraySemType = (ArraySemType) arrayAccess.getHeadAccess().semtype;
-					org.objectweb.asm.Type arrayAsmType = arraySemType.getElementSemType().asmType();
-					mv.visitInsn(arrayAsmType.getOpcode(IASTORE));
-					break;
-				default:
-					throw new IllegalStateException("Unexpected value: " + variableAssignment.getAccess());
-			}
-
-		} else {
-			switch (variableAssignment.getAccess()) {
-				case IdentifierAccess identifierAccess:
+				} else {
 					int index = localTable.lookup(identifierAccess.getIdentifier().lexeme);
 					if (index == -1) {
 						// unexpected error : the term should be in the slot table.
@@ -235,25 +212,35 @@ public class CodeGen implements Visitor<Void, SlotTable> {
 					}
 					org.objectweb.asm.Type asmType = variableAssignment.semtype.asmType();
 					mv.visitVarInsn(asmType.getOpcode(ISTORE), index);
-					break;
-				case RecordAccess recordAccess:
+				}
+				break;
+			case RecordAccess recordAccess:
+				RecordSemType recordSemType = (RecordSemType) recordAccess.getHeadAccess().semtype;
+				String accessDesc = recordSemType.recordFielDesc(recordAccess.getIdentifier().lexeme);
 
-					RecordSemType recordSemType = (RecordSemType) recordAccess.getHeadAccess().semtype;
-					String accessDesc = recordSemType.recordFielDesc(recordAccess.getIdentifier().lexeme);
-
-					mv.visitFieldInsn(PUTFIELD, recordSemType.identifier, recordAccess.getIdentifier().lexeme, accessDesc);
-					break;
-				case ArrayAccess arrayAccess:
-					ArraySemType arraySemType = (ArraySemType) arrayAccess.getHeadAccess().semtype;
-					org.objectweb.asm.Type arrayAsmType = arraySemType.getElementSemType().asmType();
-					mv.visitInsn(arrayAsmType.getOpcode(IASTORE));
-					break;
-				default:
-					throw new IllegalStateException("Unexpected value: " + variableAssignment.getAccess());
-			}
+				mv.visitFieldInsn(PUTFIELD, recordSemType.identifier, recordAccess.getIdentifier().lexeme, accessDesc);
+				break;
+			case ArrayAccess arrayAccess:
+				// TODO: finish the string indexing
+//				if (arrayAccess.semtype.equals(stringType)) {
+//					return null;
+//				}
+				ArraySemType arraySemType = (ArraySemType) arrayAccess.getHeadAccess().semtype;
+				org.objectweb.asm.Type arrayAsmType = arraySemType.getElementSemType().asmType();
+				mv.visitInsn(arrayAsmType.getOpcode(IASTORE));
+				break;
+			default:
+				throw new IllegalStateException("Unexpected value: " + variableAssignment.getAccess());
 		}
 
+
 		return null;
+	}
+
+	private void implicitTypeConversion(SemType left, SemType right) {
+		if (left.equals(floatType) && right.equals(intType)) {
+			mv.visitInsn(I2F);
+		}
 	}
 
 	@Override
@@ -427,6 +414,15 @@ public class CodeGen implements Visitor<Void, SlotTable> {
 		// ArrayAccess -> "[" Expression "]"
 
 		arrayAccess.getHeadAccess().accept(this, localTable);
+
+//		if (arrayAccess.semtype.equals(stringType)) {
+//
+//			mv.visitMethodInsn(INVOKEVIRTUAL, "java/lang/String", "toCharArray", "()[C", false);
+//			org.objectweb.asm.Type arrSemType = arrayAccess.getHeadAccess().semtype.asmType();
+//			mv.visitInsn(arrSemType.getOpcode(ISTORE));
+//			return null;
+//		}
+
 		arrayAccess.getIndexExpression().accept(this, localTable);
 
 		if (!arrayAccess.willStore) {
@@ -442,6 +438,16 @@ public class CodeGen implements Visitor<Void, SlotTable> {
 
 	@Override
 	public Void visitFunctionCall(FunctionCall functionCall, SlotTable localTable) throws Exception {
+		for (ParamCall paramCall : functionCall.getParameters()) {
+			// push the params on the stack
+			paramCall.accept(this, localTable);
+		}
+		// TODO: Handle predefined functions
+		FunctionSemType functionSemType = (FunctionSemType) functionCall.semtype;
+		String descriptor = functionSemType.asmType().getDescriptor();
+
+		mv.visitMethodInsn(INVOKESTATIC, className, functionCall.getIdentifier().lexeme, descriptor, false);
+
 		return null;
 	}
 

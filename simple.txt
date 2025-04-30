@@ -6,22 +6,21 @@ Point rec {
     y int;
 }
 
-points Point[] = array [3] of Point;
-$globalPoint Point = Point(44, 21);
+$points Point[] = array [3] of Point;
 
-$fun createPoint(x int, y int) Point {
-$    return Point(x, y);
-$}
+fun createPoint(x int, y int) Point {
+    return Point(x, y);
+}
 
 fun main() {
-    $p Point = Point(3, 5);
+    p Point = createPoint(3, 5);
     $p.y = 4;
 
- $   points[0] = p;
- $   val4 int = points[0].x;
+    $points[0] = p;
+    $val4 int = points[0].x;
 
-    points = array [5] of Point;
+    $points = array [5] of Point;
 
-   $ globalPoint.x = 22;
-    $globalPoint = p;
+    $val string = "123";
+    $val[2] = "4"
 }

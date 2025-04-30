@@ -168,6 +168,8 @@ public class SemanticAnalysis implements Visitor<SemType, SymbolTable> {
 
 		// quick fix for strings access
 		if (headType.equals(stringType)) {
+			arrayAccess.semtype = headType;
+
 			return headType;
 		}
 
@@ -456,7 +458,7 @@ public class SemanticAnalysis implements Visitor<SemType, SymbolTable> {
 
 				// if we can't convert the type, we throw an error: here if it's not the convertable case, we throw
 				if (argSemType.equals(floatType) && paramCallSemType.equals(intType)) {
-					functionCall.semtype = functionSemType.getRetType();
+					functionCall.semtype = functionSemType;
 					return functionSemType.getRetType();
 				}
 
@@ -469,7 +471,7 @@ public class SemanticAnalysis implements Visitor<SemType, SymbolTable> {
 		if (functionSemType.getParamSemTypes().length != functionCall.getParameters().size()) {
 			// if we have a function with anyType as the argument type, we don't care about the number of arguments
 			if (functionSemType.getParamSemTypes()[0].equals(anyType)) {
-				functionCall.semtype = functionSemType.getRetType();
+				functionCall.semtype = functionSemType;
 				return functionSemType.getRetType();
 			}
 
@@ -477,7 +479,7 @@ public class SemanticAnalysis implements Visitor<SemType, SymbolTable> {
 		}
 
 		// return the SemType of the return value (e.g., intType if the function returns an integer)
-		functionCall.semtype = functionSemType.getRetType();
+		functionCall.semtype = functionSemType;
 		return functionSemType.getRetType();
 	}
 

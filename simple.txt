@@ -7,8 +7,13 @@ Point rec {
     y int;
 }
 
+fun createPoint(x int, y int) Point {
+    return Point(x, y);
+}
+
 fun main() {
     val float = 54.0;
+    val2 float = val + 44;
     p Point = Point(3, 5);
 
     $writeln(val[0]);

@@ -44,6 +44,23 @@ public class RecordSemType extends SemType {
 	@Override
 	public String fieldDescriptor() {
 
+//		StringBuilder descriptor = new StringBuilder();
+//		descriptor.append("(");
+//		for (SemType recordDef : fields.values()) {
+//			descriptor.append(recordDef.fieldDescriptor());
+//		}
+//		descriptor.append(")");
+//		descriptor.append("V");
+//		descriptor.append("Lmylang/types/");
+//		descriptor.append(identifier);
+//		descriptor.append(";");
+
+		return "L" + identifier + ";";
+//		descriptor.append(retType.fieldDescriptor());
+//		return descriptor.toString();
+	}
+
+	public String constructorFieldDescriptor() {
 		StringBuilder descriptor = new StringBuilder();
 		descriptor.append("(");
 		for (SemType recordDef : fields.values()) {
@@ -54,12 +71,9 @@ public class RecordSemType extends SemType {
 //		descriptor.append("Lmylang/types/");
 //		descriptor.append(identifier);
 //		descriptor.append(";");
-
-//		String ident = "myLang/types/"+identifier;
-//		return "L" + ident + ";";
-//		descriptor.append(retType.fieldDescriptor());
 		return descriptor.toString();
 	}
+
 
 	public org.objectweb.asm.Type asmType () {
 //		return org.objectweb.asm.Type.getType(fieldDescriptor());

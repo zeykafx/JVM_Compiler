@@ -28,7 +28,7 @@ public interface Visitor<R, T> {
 //    R visitTerm(Term term, T localTable) throws Exception;
     R visitConstValue(ConstVal constVal, T localTable) throws Exception;
     R visitFunctionCall(FunctionCall functionCall, T localTable) throws Exception;
-    R visitNewRecord(NewRecord newRecord, T localTable) throws Exception;
+    R visitRecordInstantiation(NewRecord newRecord, T localTable) throws Exception;
     R visitParamCall(ParamCall paramCall, T localTable) throws Exception;
     R visitParenthesesTerm(ParenthesesTerm parenthesesTerm, T localTable) throws Exception;
 

@@ -1,8 +1,11 @@
 package compiler.SemanticAnalysis.Types;
 
+import org.objectweb.asm.Type;
+
 import java.util.LinkedHashMap;
 import java.util.Objects;
 import java.util.TreeMap;
+import static org.objectweb.asm.Opcodes.*;
 
 public class RecordSemType extends SemType {
 	public LinkedHashMap<String, SemType> fields;
@@ -40,7 +43,26 @@ public class RecordSemType extends SemType {
 
 	@Override
 	public String fieldDescriptor() {
-		String ident = "myLang/types/"+identifier;
-		return "L" + ident + ";";
+
+		StringBuilder descriptor = new StringBuilder();
+		descriptor.append("(");
+		for (SemType recordDef : fields.values()) {
+			descriptor.append(recordDef.fieldDescriptor());
+		}
+		descriptor.append(")");
+		descriptor.append("V");
+//		descriptor.append("Lmylang/types/");
+//		descriptor.append(identifier);
+//		descriptor.append(";");
+
+//		String ident = "myLang/types/"+identifier;
+//		return "L" + ident + ";";
+//		descriptor.append(retType.fieldDescriptor());
+		return descriptor.toString();
+	}
+
+	public org.objectweb.asm.Type asmType () {
+//		return org.objectweb.asm.Type.getType(fieldDescriptor());
+		return org.objectweb.asm.Type.getType(RecordSemType.class);
 	}
 }

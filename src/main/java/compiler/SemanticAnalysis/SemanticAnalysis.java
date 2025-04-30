@@ -462,6 +462,7 @@ public class SemanticAnalysis implements Visitor<SemType, SymbolTable> {
 
 				throw new ArgumentError("Type of the argument index " + paramCall.getParamIndex() + " in the function call " + functionCall.getIdentifier().lexeme + " at line "+ functionCall.line +" does not match the type of the argument " + argSemType);
 			}
+			paramCall.semtype = paramCallSemType;
 		}
 
 		// check that the number of arguments is correct
@@ -481,7 +482,7 @@ public class SemanticAnalysis implements Visitor<SemType, SymbolTable> {
 	}
 
 	@Override
-	public SemType visitNewRecord(NewRecord newRecord, SymbolTable table) throws Exception {
+	public SemType visitRecordInstantiation(NewRecord newRecord, SymbolTable table) throws Exception {
 		// NewRecord means a record instance creation
 		// example: p Product = Product(1, "Phone", 699);
 		//                      ^^^^^^^^^^^^^^^^^^^^^^^^
@@ -517,6 +518,7 @@ public class SemanticAnalysis implements Visitor<SemType, SymbolTable> {
 					throw new ArgumentError("Type of the parameter index " + paramCall.getParamIndex() + " in the record " + newRecord.getIdentifier().lexeme + " at line "+newRecord.line+" does not match the type of the field " + fieldSemType);
 				}
 			}
+			paramCall.semtype = paramCallSemType;
 		}
 
 		newRecord.semtype = recordSemType;
@@ -943,7 +945,8 @@ public class SemanticAnalysis implements Visitor<SemType, SymbolTable> {
 		SemType semType;
 		if (!variableDeclaration.hasValue()) {
 			// if the variable is declared as a prototype
-			semType = new SemType(type.symbol.lexeme, variableDeclaration.isConstant());
+//			semType = new SemType(type.symbol.lexeme, variableDeclaration.isConstant());
+			semType = getSemTypeFromASTNodeType(table, variableDeclaration.getType());
 		} else {
 			// a float = 3 + 7.0;
 			// or c float = 5;

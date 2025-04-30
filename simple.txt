@@ -3,11 +3,17 @@ final i string = "hello";
 final j string = "world";
 $final val int = 1;
 
-val float = 56.3 + 33;
+Point rec {
+    x int;
+    y int;
+}
+
+
+val float = 54.0;
 
 fun main() {
-    $ val = val + 1;
-    $val = i + j;
     val = 44;
+    p Point = Point(3, 5);
+
     $writeln(val[0]);
 }

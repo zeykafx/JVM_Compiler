@@ -28,6 +28,7 @@ import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicReference;
 
@@ -47,11 +48,13 @@ public class CodeGen implements Visitor<Void, SlotTable> {
 
 
 	private ClassWriter cw;
+	private ClassWriter structCw;
 	private MethodVisitor mv;
 	private boolean isMvTopLevel;
 	private Label endLabel;
 	private final SlotTable slotTable;
 	private final Map<String, SemType> constantsAndGlobals;
+	private final LinkedHashMap<String, ClassWriter> structs;
 	private final String filePath;
 	private final String className;
 
@@ -59,6 +62,7 @@ public class CodeGen implements Visitor<Void, SlotTable> {
 
 		this.slotTable = new SlotTable(new AtomicReference<>(1), null);
 		this.constantsAndGlobals = new HashMap<>();
+		this.structs = new LinkedHashMap<>();
 		this.filePath = filePath;
 		this.className = className;
 	}
@@ -118,13 +122,28 @@ public class CodeGen implements Visitor<Void, SlotTable> {
 		cw.visitEnd();
 
 		byte[] bytearray = cw.toByteArray();
-
-		try (FileOutputStream outputStream = new FileOutputStream(filePath) ) {
+		System.out.println("filePath = " + filePath);
+		try (FileOutputStream outputStream = new FileOutputStream(filePath + className + ".class") ) {
 			outputStream.write(bytearray);
 		} catch (FileNotFoundException e) {
 			e.printStackTrace();
 			System.exit(3);
 		};
+
+		// iterate over the structs and store them in files
+		for (Map.Entry<String, ClassWriter> entry : structs.entrySet()) {
+			String structName = entry.getKey();
+			ClassWriter structCw = entry.getValue();
+
+			byte[] structByteArray = structCw.toByteArray();
+			try (FileOutputStream outputStream = new FileOutputStream(filePath + structName + ".class") ) {
+				outputStream.write(structByteArray);
+			} catch (FileNotFoundException e) {
+				e.printStackTrace();
+				System.exit(3);
+			};
+		}
+
 
 		return null;
 	}
@@ -162,6 +181,8 @@ public class CodeGen implements Visitor<Void, SlotTable> {
 
 	@Override
 	public Void visitRecordAccess(RecordAccess recordAccess, SlotTable localTable) throws Exception {
+
+
 		return null;
 	}
 
@@ -174,14 +195,14 @@ public class CodeGen implements Visitor<Void, SlotTable> {
 	@Override
 	public Void visitBinaryExpression(BinaryExpression binaryExpression, SlotTable localTable) throws Exception {
 		binaryExpression.getLeftTerm().accept(this, slotTable);
-//		if (binaryExpression.semtype.toConvert) {
-//			implicitTypeConversion(binaryExpression.getLeftTerm().semtype, binaryExpression.getRightTerm().semtype);
-//		}
-		binaryExpression.getRightTerm().accept(this, slotTable);
-		// note: we only convert the right one, and since the i2f operation works on the last value on the stack, it comes after we loaded both of the values
-		if (binaryExpression.semtype.toConvert) {
-			implicitTypeConversion(binaryExpression.getLeftTerm().semtype, binaryExpression.getRightTerm().semtype);
+		if (binaryExpression.getLeftTerm().semtype.toConvert) {
+			mv.visitInsn(I2F);
 		}
+		binaryExpression.getRightTerm().accept(this, slotTable);
+		if (binaryExpression.getRightTerm().semtype.toConvert) {
+			mv.visitInsn(I2F);
+		}
+
 
 		opCodeGenerator op = new opCodeGenerator(binaryExpression, mv);
 		op.generateCode();
@@ -245,12 +266,24 @@ public class CodeGen implements Visitor<Void, SlotTable> {
 	}
 
 	@Override
-	public Void visitNewRecord(NewRecord newRecord, SlotTable localTable) throws Exception {
+	public Void visitRecordInstantiation(NewRecord newRecord, SlotTable localTable) throws Exception {
+		mv.visitTypeInsn(NEW, newRecord.getIdentifier().lexeme);
+		mv.visitInsn(DUP); // why ? don't touch
+
+		for (ParamCall paramCall : newRecord.getTerms()) {
+			// push the params on the stack
+			paramCall.accept(this, localTable);
+		}
+
+		// call the constructor
+		mv.visitMethodInsn(INVOKESPECIAL, newRecord.getIdentifier().lexeme, "<init>", newRecord.semtype.fieldDescriptor(), false);
 		return null;
 	}
 
 	@Override
 	public Void visitParamCall(ParamCall paramCall, SlotTable localTable) throws Exception {
+		// load the param on the stack
+		paramCall.getParamExpression().accept(this, localTable);
 		return null;
 	}
 
@@ -298,11 +331,11 @@ public class CodeGen implements Visitor<Void, SlotTable> {
 			FunctionSemType functionSemType = (FunctionSemType) functionDefinition.semtype;
 			String descriptor = functionSemType.fieldDescriptor();
 
-			// add params to slot table
 			mv = cw.visitMethod(ACC_PUBLIC | ACC_STATIC, functionDefinition.getName().lexeme, descriptor, null, null);
 			mv.visitCode();
-
 		}
+		// TODO: Finish
+		// need to do the param defintion
 
 		// accept block (the block handles the return)
 		functionDefinition.getBlock().accept(this, localTable);
@@ -316,6 +349,12 @@ public class CodeGen implements Visitor<Void, SlotTable> {
 			mv = oldMv;
 			isMvTopLevel = true;
 		}
+		return null;
+	}
+
+	@Override
+	public Void visitParamDefinition(ParamDefinition paramDefinition, SlotTable localTable) throws Exception {
+//		localTable.addSlot(paramDefinition.semtype.)
 		return null;
 	}
 
@@ -353,19 +392,40 @@ public class CodeGen implements Visitor<Void, SlotTable> {
 		return null;
 	}
 
-	@Override
-	public Void visitParamDefinition(ParamDefinition paramDefinition, SlotTable localTable) throws Exception {
-//		localTable.addSlot(paramDefinition.semtype.)
-		return null;
-	}
+
 
 	@Override
 	public Void visitRecordDefinition(RecordDefinition recordDefinition, SlotTable localTable) throws Exception {
+		structCw = new ClassWriter(ClassWriter.COMPUTE_FRAMES);
+		structCw.visit(V1_8, ACC_PUBLIC, recordDefinition.getIdentifier().lexeme, null, "java/lang/Object", null);
+		for (RecordFieldDefinition recordField: recordDefinition.getFields()) {
+			recordField.accept(this, null);
+		}
+
+		MethodVisitor init = structCw.visitMethod(ACC_PUBLIC, "<init>", recordDefinition.semtype.fieldDescriptor(), null, null);
+		init.visitCode();
+		init.visitVarInsn(ALOAD, 0); // this
+		init.visitMethodInsn(INVOKESPECIAL, "java/lang/Object", "<init>", "()V", false);
+
+		for (RecordFieldDefinition fieldDefinition : recordDefinition.getFields()) {
+			init.visitVarInsn(ALOAD, 0); // this
+			init.visitVarInsn(fieldDefinition.semtype.asmType().getOpcode(ILOAD), fieldDefinition.getFieldIndex()+1);
+			init.visitFieldInsn(PUTFIELD, recordDefinition.getIdentifier().lexeme, fieldDefinition.getIdentifier().lexeme, fieldDefinition.semtype.fieldDescriptor());
+		}
+
+		init.visitInsn(RETURN);
+		init.visitMaxs(-1, -1);
+		init.visitEnd();
+
+		structCw.visitEnd();
+		structs.put(recordDefinition.getIdentifier().lexeme, structCw);
+		structCw = null;
 		return null;
 	}
 
 	@Override
 	public Void visitRecordFieldDefinition(RecordFieldDefinition recordFieldDefinition, SlotTable localTable) throws Exception {
+		structCw.visitField(ACC_PUBLIC, recordFieldDefinition.getIdentifier().lexeme, recordFieldDefinition.semtype.fieldDescriptor(), null, null);
 		return null;
 	}
 
@@ -459,9 +519,7 @@ public class CodeGen implements Visitor<Void, SlotTable> {
 				// load on the stack if it has a value
 				variableDeclaration.getValue().accept(this, localTable);
 			}
-
 			org.objectweb.asm.Type asmType = variableDeclaration.semtype.asmType();
-
 			int idx = localTable.addSlot(variableDeclaration.getName().lexeme);
 			mv.visitVarInsn(asmType.getOpcode(ISTORE), idx);
 		}
@@ -477,22 +535,6 @@ public class CodeGen implements Visitor<Void, SlotTable> {
 		return right;
 	}
 
-//	private void implicitTypeConversion(SemType left, SemType right) {
-//		if (left.equals(right)) {
-//			return;
-//		}
-//
-//		// 3 + 5.0
-//		if ((left.equals(intType) && right.equals(floatType)) || left.toConvert) {
-//			this.mv.visitInsn(I2F);
-//		}
-//
-//		// 5.0 + 3
-//		if (left.equals(floatType) && right.equals(intType) &&) {
-//			this.mv.visitInsn(I2F);
-//		}
-//
-//	}
 
 	@Override
 	public Void visitWhileLoop(WhileLoop whileLoop, SlotTable localTable) throws Exception {

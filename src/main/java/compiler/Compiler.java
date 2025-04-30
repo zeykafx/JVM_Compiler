@@ -121,11 +121,12 @@ public class Compiler {
 		className = className.substring(0, 1).toUpperCase() + className.substring(1);
 //		System.out.println("className = " + className);
 
-		String outFilename = className + ".class";
+		String outFilename = "";
 		String[] filenameParts = filename.split(lowercaseClassname);
 		if (filenameParts.length > 1) {
-			outFilename = filename.split(lowercaseClassname)[0] + className + ".class";
+			outFilename = filename.split(lowercaseClassname)[0];
 		}
+
 //		System.out.println("outFilename = " + outFilename);
 		CodeGen codeGen = new CodeGen(outFilename, className);
 		codeGen.generateCode(root);

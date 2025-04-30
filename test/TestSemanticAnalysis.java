@@ -638,7 +638,7 @@ public class TestSemanticAnalysis {
 
         try {
             SemanticAnalysis semanticAnalysis = new SemanticAnalysis();
-            SemType resultType = semanticAnalysis.visitNewRecord(newRecord, symbolTable);
+            SemType resultType = semanticAnalysis.visitRecordInstantiation(newRecord, symbolTable);
             assertEquals("Expected type to be MyRecord", recordType, resultType);
         } catch (Exception e) {
             e.printStackTrace();
@@ -670,7 +670,7 @@ public class TestSemanticAnalysis {
         NewRecord newRecord = new NewRecord(recordSymbol, paramCalls, 0, 0);
 
         SemanticAnalysis semanticAnalysis = new SemanticAnalysis();
-        semanticAnalysis.visitNewRecord(newRecord, symbolTable);
+        semanticAnalysis.visitRecordInstantiation(newRecord, symbolTable);
     }
 
     @Test()
@@ -752,7 +752,7 @@ public class TestSemanticAnalysis {
         NewRecord newRecord = new NewRecord(recordSymbol, paramCalls, 0, 0);
 
         SemanticAnalysis semanticAnalysis = new SemanticAnalysis();
-        semanticAnalysis.visitNewRecord(newRecord, symbolTable);
+        semanticAnalysis.visitRecordInstantiation(newRecord, symbolTable);
     }
 
     @Test(expected = ArgumentError.class)
@@ -782,7 +782,7 @@ public class TestSemanticAnalysis {
         NewRecord newRecord = new NewRecord(recordSymbol, paramCalls, 0, 0);
 
         SemanticAnalysis semanticAnalysis = new SemanticAnalysis();
-        semanticAnalysis.visitNewRecord(newRecord, symbolTable);
+        semanticAnalysis.visitRecordInstantiation(newRecord, symbolTable);
     }
 
     @Test

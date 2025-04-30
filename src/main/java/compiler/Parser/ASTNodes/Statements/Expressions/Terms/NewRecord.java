@@ -1,9 +1,6 @@
 package compiler.Parser.ASTNodes.Statements.Expressions.Terms;
 
 import compiler.Lexer.Symbol;
-import compiler.SemanticAnalysis.Errors.SemanticException;
-import compiler.SemanticAnalysis.SymbolTable;
-import compiler.SemanticAnalysis.Types.SemType;
 import compiler.SemanticAnalysis.Visitor;
 
 import java.util.ArrayList;
@@ -28,6 +25,10 @@ public class NewRecord extends Term {
         return terms;
     }
 
+    public String getDescriptor(){
+        return "myLang/types/" + identifier.lexeme;
+    }
+
     @Override
     public String toString() {
         return "NewRecord [identifier=" + identifier + ", terms=" + terms + "]";
@@ -45,6 +46,6 @@ public class NewRecord extends Term {
 
     @Override
     public <R, T> R accept(Visitor<R, T> v, T table) throws Exception {
-        return v.visitNewRecord(this, table);
+        return v.visitRecordInstantiation(this, table);
     }
 }

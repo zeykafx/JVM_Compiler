@@ -15,6 +15,7 @@ import compiler.Parser.ASTNodes.Statements.Expressions.Terms.*;
 import compiler.Parser.ASTNodes.Statements.Statements.*;
 import compiler.Parser.ASTNodes.Types.NumType;
 import compiler.Parser.ASTNodes.Types.Type;
+import compiler.SemanticAnalysis.Types.ArraySemType;
 import compiler.SemanticAnalysis.Types.FunctionSemType;
 import compiler.SemanticAnalysis.Types.RecordSemType;
 import compiler.SemanticAnalysis.Types.SemType;
@@ -35,15 +36,15 @@ import static org.objectweb.asm.Opcodes.*;
 
 public class CodeGen implements Visitor<Void, SlotTable> {
 
-	SemType intType = new SemType("int");
-	SemType floatType = new SemType("float");
-	SemType numType = new SemType("num");
-	SemType numOrBoolType = new SemType("numOrBool");
-	SemType stringType = new SemType("string");
-	SemType boolType = new SemType("bool");
-	SemType voidType = new SemType("void");
-	SemType anyType = new SemType("any");
-	SemType recType = new SemType("rec");
+	final SemType intType = new SemType("int");
+	final SemType floatType = new SemType("float");
+	final SemType numType = new SemType("num");
+	final SemType numOrBoolType = new SemType("numOrBool");
+	final SemType stringType = new SemType("string");
+	final SemType boolType = new SemType("bool");
+	final SemType voidType = new SemType("void");
+	final SemType anyType = new SemType("any");
+	final SemType recType = new SemType("rec");
 
 
 	private ClassWriter cw;
@@ -86,7 +87,7 @@ public class CodeGen implements Visitor<Void, SlotTable> {
 		mv.visitVarInsn(ALOAD, 0);
 		mv.visitMethodInsn(INVOKESPECIAL, "java/lang/Object", "<init>", "()V", false);
 		mv.visitInsn(RETURN);
-		mv.visitMaxs(1,1);
+		mv.visitMaxs(-1,-1);
 		mv.visitEnd();
 
 		mv = cw.visitMethod(ACC_PUBLIC | ACC_STATIC, "main", "([Ljava/lang/String;)V", null, null);
@@ -194,9 +195,7 @@ public class CodeGen implements Visitor<Void, SlotTable> {
 
 	@Override
 	public Void visitVariableAssignment(VariableAssignment variableAssignment, SlotTable localTable) throws Exception {
-		// NOTE: we actually don't need to visit the access, otherwise it creates another local var with the contents
-		// first visit the access
-//		variableAssignment.getAccess().accept(this, localTable);
+		variableAssignment.getAccess().accept(this, localTable);
 
 		// then visit the expression
 		variableAssignment.getExpression().accept(this, localTable);
@@ -211,10 +210,15 @@ public class CodeGen implements Visitor<Void, SlotTable> {
 					mv.visitFieldInsn(PUTSTATIC, className, identifierAccess.getIdentifier().lexeme, constSemType.fieldDescriptor());
 					break;
 				case RecordAccess recordAccess:
-					// TODO
+					RecordSemType recordSemType = (RecordSemType) recordAccess.getHeadAccess().semtype;
+					String accessDesc = recordSemType.recordFielDesc(recordAccess.getIdentifier().lexeme);
+
+					mv.visitFieldInsn(PUTFIELD, recordSemType.identifier, recordAccess.getIdentifier().lexeme, accessDesc);
 					break;
 				case ArrayAccess arrayAccess:
-					// TODO
+					ArraySemType arraySemType = (ArraySemType) arrayAccess.getHeadAccess().semtype;
+					org.objectweb.asm.Type arrayAsmType = arraySemType.getElementSemType().asmType();
+					mv.visitInsn(arrayAsmType.getOpcode(IASTORE));
 					break;
 				default:
 					throw new IllegalStateException("Unexpected value: " + variableAssignment.getAccess());
@@ -232,10 +236,16 @@ public class CodeGen implements Visitor<Void, SlotTable> {
 					mv.visitVarInsn(asmType.getOpcode(ISTORE), index);
 					break;
 				case RecordAccess recordAccess:
-					// TODO
+
+					RecordSemType recordSemType = (RecordSemType) recordAccess.getHeadAccess().semtype;
+					String accessDesc = recordSemType.recordFielDesc(recordAccess.getIdentifier().lexeme);
+
+					mv.visitFieldInsn(PUTFIELD, recordSemType.identifier, recordAccess.getIdentifier().lexeme, accessDesc);
 					break;
 				case ArrayAccess arrayAccess:
-					// TODO
+					ArraySemType arraySemType = (ArraySemType) arrayAccess.getHeadAccess().semtype;
+					org.objectweb.asm.Type arrayAsmType = arraySemType.getElementSemType().asmType();
+					mv.visitInsn(arrayAsmType.getOpcode(IASTORE));
 					break;
 				default:
 					throw new IllegalStateException("Unexpected value: " + variableAssignment.getAccess());
@@ -400,16 +410,33 @@ public class CodeGen implements Visitor<Void, SlotTable> {
 	public Void visitRecordAccess(RecordAccess recordAccess, SlotTable localTable) throws Exception {
 		recordAccess.getHeadAccess().accept(this, localTable);
 
-		RecordSemType recordSemType = (RecordSemType) recordAccess.getHeadAccess().semtype;
-		String headAccessDescriptor = recordSemType.recordFielDesc(recordAccess.getIdentifier().lexeme);
-		System.out.println(recordSemType.identifier);
-		mv.visitFieldInsn(GETFIELD, recordSemType.identifier, recordAccess.getIdentifier().lexeme, headAccessDescriptor);
+		// No need to load if we will store something there
+		// willStore is set during the semantic analysis phase.
+		if (!recordAccess.willStore) {
+			RecordSemType recordSemType = (RecordSemType) recordAccess.getHeadAccess().semtype;
+			String headAccessDescriptor = recordSemType.recordFielDesc(recordAccess.getIdentifier().lexeme);
+
+			mv.visitFieldInsn(GETFIELD, recordSemType.identifier, recordAccess.getIdentifier().lexeme, headAccessDescriptor);
+		}
 
 		return null;
 	}
 
 	@Override
 	public Void visitArrayAccess(ArrayAccess arrayAccess, SlotTable localTable) throws Exception {
+		// ArrayAccess -> "[" Expression "]"
+
+		arrayAccess.getHeadAccess().accept(this, localTable);
+		arrayAccess.getIndexExpression().accept(this, localTable);
+
+		if (!arrayAccess.willStore) {
+			ArraySemType arraySemType = (ArraySemType) arrayAccess.getHeadAccess().semtype;
+			org.objectweb.asm.Type arrayAsmType = arraySemType.getElementSemType().asmType();
+			mv.visitInsn(arrayAsmType.getOpcode(IALOAD));
+		}
+
+		// note: for strings use string.charAt(idx)
+
 		return null;
 	}
 
@@ -502,7 +529,32 @@ public class CodeGen implements Visitor<Void, SlotTable> {
 
 	@Override
 	public Void visitArrayExpression(ArrayExpression arrayExpression, SlotTable localTable) throws Exception {
-		// note: for strings use string.charAt(idx)
+		// ArrayExpression -> "array" "[" "intval" "]" "of" Type ";" .
+
+		// first visit the size expression because, as the name implies, it can be an expression
+		arrayExpression.getSizeExpression().accept(this, localTable);
+
+		ArraySemType arraySemType = (ArraySemType) arrayExpression.semtype;
+		String arrayElemDesc = arraySemType.getElementSemType().fieldDescriptor();
+		// note: we can't use asm.Type.getOpcode because it doesn't support NEWARRAY
+		switch (arraySemType.getElementSemType().type) {
+			case "int":
+				mv.visitIntInsn(NEWARRAY, T_INT);
+				break;
+			case "float":
+				mv.visitIntInsn(NEWARRAY, T_FLOAT);
+				break;
+			case "bool":
+				mv.visitIntInsn(NEWARRAY, T_BOOLEAN);
+				break;
+			case "string":
+				mv.visitTypeInsn(ANEWARRAY, "java/lang/String");
+				break;
+			default:
+				mv.visitTypeInsn(ANEWARRAY, arrayElemDesc);
+				break;
+		}
+
 		return null;
 	}
 

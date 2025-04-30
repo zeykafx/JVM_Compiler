@@ -33,7 +33,7 @@ public class VariableAssignment extends Statement {
 	
 	@Override
 	public String prettyPrint(int indent) {
-        return "  ".repeat(indent) + "VariableAssigment: \n" + access.prettyPrint(indent) + " \n" + expression.prettyPrint(indent+1);
+        return "  ".repeat(indent) + "VariableAssigment: \n" + access.prettyPrint(indent+1) + " \n" + expression.prettyPrint(indent+1);
     }
 
 	@Override

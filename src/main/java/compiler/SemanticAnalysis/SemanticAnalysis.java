@@ -249,7 +249,7 @@ public class SemanticAnalysis implements Visitor<SemType, SymbolTable> {
 			throw new TypeError("Size expression of array creation at line " + arrayExpression.line + " is not an int or a float (variable or literal)");
 		}
 
-		SemType elemSemType = new SemType(arrayExpression.getType().symbol.lexeme);
+		SemType elemSemType = getSemTypeFromASTNodeType(table, arrayExpression.getType());
 		SemType retType = new ArraySemType(elemSemType);
 
 		arrayExpression.semtype = retType;
@@ -906,6 +906,7 @@ public class SemanticAnalysis implements Visitor<SemType, SymbolTable> {
 
 		// first get the type of the variable
 		SemType varType = variableAssignment.getAccess().accept(this, table);
+		variableAssignment.getAccess().willStore = true;
 
 		// then get the type of the expression
 		SemType expressionType = variableAssignment.getExpression().accept(this, table);
@@ -947,6 +948,8 @@ public class SemanticAnalysis implements Visitor<SemType, SymbolTable> {
 			// if the variable is declared as a prototype
 //			semType = new SemType(type.symbol.lexeme, variableDeclaration.isConstant());
 			semType = getSemTypeFromASTNodeType(table, variableDeclaration.getType());
+			semType.setIsConstant(variableDeclaration.isConstant());
+			semType.setGlobal(variableDeclaration.isGlobal());
 		} else {
 			// a float = 3 + 7.0;
 			// or c float = 5;

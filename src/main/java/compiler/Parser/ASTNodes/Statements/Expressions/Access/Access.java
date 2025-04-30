@@ -8,4 +8,6 @@ public abstract class Access extends Term {
 	public Access(int line, int column) {
 		super(line, column);
 	}
+
+	public boolean willStore = false;
 }

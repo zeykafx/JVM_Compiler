@@ -718,7 +718,7 @@ public class Parser {
             Symbol identifier = match(TokenTypes.IDENTIFIER);
 
             // If the lookahead is not an equal sign, then we have a non-constant declaration or a function call
-            if (lookAheadSymbol.type != TokenTypes.ASSIGN) {
+            if (lookAheadSymbol.type != TokenTypes.ASSIGN && lookAheadSymbol.type != TokenTypes.LEFT_SQUARE_BRACKET && lookAheadSymbol.type != TokenTypes.DOT) {
                 if (lookAheadSymbol.type == TokenTypes.LEFT_PAR) {
                     // Function call
                     return parseParamCall(identifier);

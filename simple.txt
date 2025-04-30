@@ -1,22 +1,27 @@
-$final j float = 3.2*5.0;
-final i string = "hello";
-final j string = "world";
+$final i string = "hello";
+$final j string = "world";
 
 Point rec {
     x int;
     y int;
 }
 
-fun createPoint(x int, y int) Point {
-    return Point(x, y);
-}
+$fun createPoint(x int, y int) Point {
+$    return Point(x, y);
+$}
+
+c Point[] = array [3] of Point;
+globalPoint Point = Point(44, 21);
 
 fun main() {
-    $val float = 54.0;
-    $val2 float = val + 44;
     p Point = Point(3, 5);
+    $p.y = 4;
 
-    val3 int = p.x;
+    $c[0] = p;
+    $val4 int = c[0].x;
 
-    $writeln(val[0]);
+    c = array [5] of Point;
+
+    globalPoint.x = 22;
+    globalPoint = p;
 }

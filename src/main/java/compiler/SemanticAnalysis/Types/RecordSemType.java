@@ -45,7 +45,6 @@ public class RecordSemType extends SemType {
 		return fields.get(fieldIdent).fieldDescriptor();
 	}
 
-
 	@Override
 	public String fieldDescriptor() {
 

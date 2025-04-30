@@ -164,6 +164,7 @@ public class CodeGen implements Visitor<Void, SlotTable> {
 				// visit expression
 				variableDeclaration.getValue().accept(this, slotTable);
 			}
+
 			mv.visitFieldInsn(PUTSTATIC, className, variableDeclaration.getName().lexeme, variableDeclaration.semtype.fieldDescriptor());
 
 			// NOTE: Don't add to the local table because it's not a local variable!
@@ -254,7 +255,6 @@ public class CodeGen implements Visitor<Void, SlotTable> {
 
 		return null;
 	}
-
 
 	@Override
 	public Void visitRecordDefinition(RecordDefinition recordDefinition, SlotTable localTable) throws Exception {
@@ -535,7 +535,9 @@ public class CodeGen implements Visitor<Void, SlotTable> {
 		arrayExpression.getSizeExpression().accept(this, localTable);
 
 		ArraySemType arraySemType = (ArraySemType) arrayExpression.semtype;
-		String arrayElemDesc = arraySemType.getElementSemType().fieldDescriptor();
+//		String arrayElemDesc = arraySemType.getElementSemType().fieldDescriptor();
+		String arrayElemDesc = arrayExpression.getType().symbol.lexeme;
+
 		// note: we can't use asm.Type.getOpcode because it doesn't support NEWARRAY
 		switch (arraySemType.getElementSemType().type) {
 			case "int":

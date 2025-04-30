@@ -148,9 +148,207 @@ public class CodeGen implements Visitor<Void, SlotTable> {
 		return null;
 	}
 
+	@Override
+	public Void visitVariableDeclaration(VariableDeclaration variableDeclaration, SlotTable localTable) throws Exception {
+		// create the bytecode
+		if (variableDeclaration.isConstant() || variableDeclaration.isGlobal()) {
+			boolean isConstant = variableDeclaration.isConstant();
+			int access = ACC_PUBLIC | ACC_STATIC;
+			if (isConstant){
+				access |= ACC_FINAL;
+			}
+
+			// if the variable declaration is global, declare it as a constant or a global
+			cw.visitField(access,
+					variableDeclaration.getName().lexeme,
+					variableDeclaration.semtype.fieldDescriptor(),
+					null, // no generic signature
+					null // no initial value
+			).visitEnd();
+
+			if (variableDeclaration.hasValue()) {
+				// visit expression
+				variableDeclaration.getValue().accept(this, slotTable);
+			}
+			mv.visitFieldInsn(PUTSTATIC, className, variableDeclaration.getName().lexeme, variableDeclaration.semtype.fieldDescriptor());
+
+			// NOTE: Don't add to the local table because it's not a local variable!
+
+			variableDeclaration.semtype.setIsConstant(variableDeclaration.isConstant());
+			variableDeclaration.semtype.setGlobal(variableDeclaration.isGlobal());
+			constantsAndGlobals.put(variableDeclaration.getName().lexeme, variableDeclaration.semtype);
+
+		} else {
+			if (variableDeclaration.hasValue()) {
+				// load on the stack if it has a value
+				variableDeclaration.getValue().accept(this, localTable);
+			}
+
+			org.objectweb.asm.Type asmType = variableDeclaration.semtype.asmType();
+			int idx = localTable.addSlot(variableDeclaration.getName().lexeme);
+			mv.visitVarInsn(asmType.getOpcode(ISTORE), idx);
+		}
+
+		return null;
+	}
+
+	private SemType implicitTypeConversion(SemType left, SemType right) {
+		if (left.equals(floatType) && right.equals(intType)) {
+			mv.visitInsn(I2F);
+			return left;
+		}
+		return right;
+	}
 
 	@Override
-	public Void visitArrayAccess(ArrayAccess arrayAccess, SlotTable localTable) throws Exception {
+	public Void visitRecordDefinition(RecordDefinition recordDefinition, SlotTable localTable) throws Exception {
+		structCw = new ClassWriter(ClassWriter.COMPUTE_FRAMES);
+		structCw.visit(V1_8, ACC_PUBLIC, recordDefinition.getIdentifier().lexeme, null, "java/lang/Object", null);
+		for (RecordFieldDefinition recordField: recordDefinition.getFields()) {
+			recordField.accept(this, null);
+		}
+
+		MethodVisitor init = structCw.visitMethod(ACC_PUBLIC, "<init>", recordDefinition.semtype.fieldDescriptor(), null, null);
+		init.visitCode();
+		init.visitVarInsn(ALOAD, 0); // this
+		init.visitMethodInsn(INVOKESPECIAL, "java/lang/Object", "<init>", "()V", false);
+
+		for (RecordFieldDefinition fieldDefinition : recordDefinition.getFields()) {
+			init.visitVarInsn(ALOAD, 0); // this
+			init.visitVarInsn(fieldDefinition.semtype.asmType().getOpcode(ILOAD), fieldDefinition.getFieldIndex()+1);
+			init.visitFieldInsn(PUTFIELD, recordDefinition.getIdentifier().lexeme, fieldDefinition.getIdentifier().lexeme, fieldDefinition.semtype.fieldDescriptor());
+		}
+
+		init.visitInsn(RETURN);
+		init.visitMaxs(-1, -1);
+		init.visitEnd();
+
+		structCw.visitEnd();
+		structs.put(recordDefinition.getIdentifier().lexeme, structCw);
+		structCw = null;
+		return null;
+	}
+
+	@Override
+	public Void visitRecordFieldDefinition(RecordFieldDefinition recordFieldDefinition, SlotTable localTable) throws Exception {
+		structCw.visitField(ACC_PUBLIC, recordFieldDefinition.getIdentifier().lexeme, recordFieldDefinition.semtype.fieldDescriptor(), null, null);
+		return null;
+	}
+
+	@Override
+	public Void visitVariableAssignment(VariableAssignment variableAssignment, SlotTable localTable) throws Exception {
+		// NOTE: we actually don't need to visit the access, otherwise it creates another local var with the contents
+		// first visit the access
+//		variableAssignment.getAccess().accept(this, localTable);
+
+		// then visit the expression
+		variableAssignment.getExpression().accept(this, localTable);
+
+		implicitTypeConversion(variableAssignment.getAccess().semtype, variableAssignment.getExpression().semtype);
+
+
+		// then store the results
+		if (variableAssignment.semtype.isGlobal || variableAssignment.semtype.isConstant) {
+			switch (variableAssignment.getAccess()) {
+				case IdentifierAccess identifierAccess:
+					SemType constSemType = constantsAndGlobals.get(identifierAccess.getIdentifier().lexeme);
+					mv.visitFieldInsn(PUTSTATIC, className, identifierAccess.getIdentifier().lexeme, constSemType.fieldDescriptor());
+					break;
+				case RecordAccess recordAccess:
+					// TODO
+					break;
+				case ArrayAccess arrayAccess:
+					// TODO
+					break;
+				default:
+					throw new IllegalStateException("Unexpected value: " + variableAssignment.getAccess());
+			}
+
+		} else {
+			switch (variableAssignment.getAccess()) {
+				case IdentifierAccess identifierAccess:
+					int index = localTable.lookup(identifierAccess.getIdentifier().lexeme);
+					if (index == -1) {
+						// unexpected error : the term should be in the slot table.
+						throw new RuntimeException("Unexpected error : the variable " + identifierAccess.getIdentifier().lexeme + " is not in the slot table.");
+					}
+					org.objectweb.asm.Type asmType = variableAssignment.semtype.asmType();
+					mv.visitVarInsn(asmType.getOpcode(ISTORE), index);
+					break;
+				case RecordAccess recordAccess:
+					// TODO
+					break;
+				case ArrayAccess arrayAccess:
+					// TODO
+					break;
+				default:
+					throw new IllegalStateException("Unexpected value: " + variableAssignment.getAccess());
+			}
+		}
+
+		return null;
+	}
+
+	@Override
+	public Void visitFunctionDefinition(FunctionDefinition functionDefinition, SlotTable localTable) throws Exception {
+
+		MethodVisitor oldMv = mv;
+		// the main function is already defined, so we skip the function definition
+		if (!functionDefinition.getName().lexeme.equals("main")) {
+			isMvTopLevel = false;
+
+			// generate string for descriptor
+			FunctionSemType functionSemType = (FunctionSemType) functionDefinition.semtype;
+			String descriptor = functionSemType.fieldDescriptor();
+
+			mv = cw.visitMethod(ACC_PUBLIC | ACC_STATIC, functionDefinition.getName().lexeme, descriptor, null, null);
+			mv.visitCode();
+		}
+		// TODO: Finish
+		// need to do the param defintion
+
+		// accept block (the block handles the return)
+		functionDefinition.getBlock().accept(this, localTable);
+
+		// this isn't needed for the main function
+		if (!functionDefinition.getName().lexeme.equals("main")) {
+
+			mv.visitEnd();
+			mv.visitMaxs(-1, -1);
+
+			mv = oldMv;
+			isMvTopLevel = true;
+		}
+		return null;
+	}
+
+	@Override
+	public Void visitParamDefinition(ParamDefinition paramDefinition, SlotTable localTable) throws Exception {
+//		localTable.addSlot(paramDefinition.semtype.)
+		return null;
+	}
+
+	@Override
+	public Void visitStatement(Statement statement, SlotTable localTable) throws Exception {
+		throw new RuntimeException("this should never be called");
+//		return null;
+	}
+
+	@Override
+	public Void visitBlock(Block block, SlotTable localTable) throws Exception {
+		for (Statement stmt : block.getStatements()) {
+			stmt.accept(this, localTable);
+		}
+
+//		mv.visitFieldInsn(GETSTATIC, "java/lang/System", "out", "Ljava/io/PrintStream;");
+////		mv.visitVarInsn(ALOAD, 1);
+//		mv.visitFieldInsn(GETSTATIC, className, "val", constantsAndGlobals.get("val").fieldDescriptor());
+//		mv.visitMethodInsn(INVOKEVIRTUAL, "java/io/PrintStream", "println", "("+constantsAndGlobals.get("val").fieldDescriptor()+")V", false);
+
+		ReturnStatement returnStatement = (ReturnStatement) block.getReturnStatement();
+		if (returnStatement != null) {
+			returnStatement.accept(this, localTable);
+		}
 		return null;
 	}
 
@@ -187,8 +385,34 @@ public class CodeGen implements Visitor<Void, SlotTable> {
 	}
 
 	@Override
-	public Void visitArrayExpression(ArrayExpression arrayExpression, SlotTable localTable) throws Exception {
-		// note: for strings use string.charAt(idx)
+	public Void visitArrayAccess(ArrayAccess arrayAccess, SlotTable localTable) throws Exception {
+		return null;
+	}
+
+	@Override
+	public Void visitFunctionCall(FunctionCall functionCall, SlotTable localTable) throws Exception {
+		return null;
+	}
+
+	@Override
+	public Void visitRecordInstantiation(NewRecord newRecord, SlotTable localTable) throws Exception {
+		mv.visitTypeInsn(NEW, newRecord.getIdentifier().lexeme);
+		mv.visitInsn(DUP);
+
+		for (ParamCall paramCall : newRecord.getTerms()) {
+			// push the params on the stack
+			paramCall.accept(this, localTable);
+		}
+
+		// call the constructor
+		mv.visitMethodInsn(INVOKESPECIAL, newRecord.getIdentifier().lexeme, "<init>", newRecord.semtype.fieldDescriptor(), false);
+		return null;
+	}
+
+	@Override
+	public Void visitParamCall(ParamCall paramCall, SlotTable localTable) throws Exception {
+		// load the param on the stack
+		paramCall.getParamExpression().accept(this, localTable);
 		return null;
 	}
 
@@ -253,6 +477,12 @@ public class CodeGen implements Visitor<Void, SlotTable> {
 	}
 
 	@Override
+	public Void visitArrayExpression(ArrayExpression arrayExpression, SlotTable localTable) throws Exception {
+		// note: for strings use string.charAt(idx)
+		return null;
+	}
+
+	@Override
 	public Void visitConstValue(ConstVal constVal, SlotTable localTable) throws Exception {
 		mv.visitLdcInsn(constVal.getValue());
 
@@ -261,52 +491,8 @@ public class CodeGen implements Visitor<Void, SlotTable> {
 	}
 
 	@Override
-	public Void visitFunctionCall(FunctionCall functionCall, SlotTable localTable) throws Exception {
-		return null;
-	}
-
-	@Override
-	public Void visitRecordInstantiation(NewRecord newRecord, SlotTable localTable) throws Exception {
-		mv.visitTypeInsn(NEW, newRecord.getIdentifier().lexeme);
-		mv.visitInsn(DUP); // why ? don't touch
-
-		for (ParamCall paramCall : newRecord.getTerms()) {
-			// push the params on the stack
-			paramCall.accept(this, localTable);
-		}
-
-		// call the constructor
-		mv.visitMethodInsn(INVOKESPECIAL, newRecord.getIdentifier().lexeme, "<init>", newRecord.semtype.fieldDescriptor(), false);
-		return null;
-	}
-
-	@Override
-	public Void visitParamCall(ParamCall paramCall, SlotTable localTable) throws Exception {
-		// load the param on the stack
-		paramCall.getParamExpression().accept(this, localTable);
-		return null;
-	}
-
-	@Override
 	public Void visitParenthesesTerm(ParenthesesTerm parenthesesTerm, SlotTable localTable) throws Exception {
 		return null;
-	}
-
-
-	@Override
-	public Void visitType(Type type, SlotTable localTable) throws Exception {
-		return null;
-	}
-
-	@Override
-	public Void visitNumType(NumType numType, SlotTable localTable) throws Exception {
-		return null;
-	}
-
-	@Override
-	public Void visitStatement(Statement statement, SlotTable localTable) throws Exception {
-		throw new RuntimeException("this should never be called");
-//		return null;
 	}
 
 	@Override
@@ -316,63 +502,6 @@ public class CodeGen implements Visitor<Void, SlotTable> {
 
 	@Override
 	public Void visitFreeStatement(FreeStatement freeStatement, SlotTable localTable) throws Exception {
-		return null;
-	}
-
-	@Override
-	public Void visitFunctionDefinition(FunctionDefinition functionDefinition, SlotTable localTable) throws Exception {
-
-		MethodVisitor oldMv = mv;
-		// the main function is already defined, so we skip the function definition
-		if (!functionDefinition.getName().lexeme.equals("main")) {
-			isMvTopLevel = false;
-
-			// generate string for descriptor
-			FunctionSemType functionSemType = (FunctionSemType) functionDefinition.semtype;
-			String descriptor = functionSemType.fieldDescriptor();
-
-			mv = cw.visitMethod(ACC_PUBLIC | ACC_STATIC, functionDefinition.getName().lexeme, descriptor, null, null);
-			mv.visitCode();
-		}
-		// TODO: Finish
-		// need to do the param defintion
-
-		// accept block (the block handles the return)
-		functionDefinition.getBlock().accept(this, localTable);
-
-		// this isn't needed for the main function
-		if (!functionDefinition.getName().lexeme.equals("main")) {
-
-			mv.visitEnd();
-			mv.visitMaxs(-1, -1);
-
-			mv = oldMv;
-			isMvTopLevel = true;
-		}
-		return null;
-	}
-
-	@Override
-	public Void visitParamDefinition(ParamDefinition paramDefinition, SlotTable localTable) throws Exception {
-//		localTable.addSlot(paramDefinition.semtype.)
-		return null;
-	}
-
-	@Override
-	public Void visitBlock(Block block, SlotTable localTable) throws Exception {
-		for (Statement stmt : block.getStatements()) {
-			stmt.accept(this, localTable);
-		}
-
-		mv.visitFieldInsn(GETSTATIC, "java/lang/System", "out", "Ljava/io/PrintStream;");
-//		mv.visitVarInsn(ALOAD, 1);
-		mv.visitFieldInsn(GETSTATIC, className, "val", constantsAndGlobals.get("val").fieldDescriptor());
-		mv.visitMethodInsn(INVOKEVIRTUAL, "java/io/PrintStream", "println", "("+constantsAndGlobals.get("val").fieldDescriptor()+")V", false);
-
-		ReturnStatement returnStatement = (ReturnStatement) block.getReturnStatement();
-		if (returnStatement != null) {
-			returnStatement.accept(this, localTable);
-		}
 		return null;
 	}
 
@@ -392,152 +521,19 @@ public class CodeGen implements Visitor<Void, SlotTable> {
 		return null;
 	}
 
-
-
-	@Override
-	public Void visitRecordDefinition(RecordDefinition recordDefinition, SlotTable localTable) throws Exception {
-		structCw = new ClassWriter(ClassWriter.COMPUTE_FRAMES);
-		structCw.visit(V1_8, ACC_PUBLIC, recordDefinition.getIdentifier().lexeme, null, "java/lang/Object", null);
-		for (RecordFieldDefinition recordField: recordDefinition.getFields()) {
-			recordField.accept(this, null);
-		}
-
-		MethodVisitor init = structCw.visitMethod(ACC_PUBLIC, "<init>", recordDefinition.semtype.fieldDescriptor(), null, null);
-		init.visitCode();
-		init.visitVarInsn(ALOAD, 0); // this
-		init.visitMethodInsn(INVOKESPECIAL, "java/lang/Object", "<init>", "()V", false);
-
-		for (RecordFieldDefinition fieldDefinition : recordDefinition.getFields()) {
-			init.visitVarInsn(ALOAD, 0); // this
-			init.visitVarInsn(fieldDefinition.semtype.asmType().getOpcode(ILOAD), fieldDefinition.getFieldIndex()+1);
-			init.visitFieldInsn(PUTFIELD, recordDefinition.getIdentifier().lexeme, fieldDefinition.getIdentifier().lexeme, fieldDefinition.semtype.fieldDescriptor());
-		}
-
-		init.visitInsn(RETURN);
-		init.visitMaxs(-1, -1);
-		init.visitEnd();
-
-		structCw.visitEnd();
-		structs.put(recordDefinition.getIdentifier().lexeme, structCw);
-		structCw = null;
-		return null;
-	}
-
-	@Override
-	public Void visitRecordFieldDefinition(RecordFieldDefinition recordFieldDefinition, SlotTable localTable) throws Exception {
-		structCw.visitField(ACC_PUBLIC, recordFieldDefinition.getIdentifier().lexeme, recordFieldDefinition.semtype.fieldDescriptor(), null, null);
-		return null;
-	}
-
-
-	@Override
-	public Void visitVariableAssignment(VariableAssignment variableAssignment, SlotTable localTable) throws Exception {
-		// NOTE: we actually don't need to visit the access, otherwise it creates another local var with the contents
-		// first visit the access
-//		variableAssignment.getAccess().accept(this, localTable);
-
-		// then visit the expression
-		variableAssignment.getExpression().accept(this, localTable);
-
-		implicitTypeConversion(variableAssignment.getAccess().semtype, variableAssignment.getExpression().semtype);
-
-
-		// then store the results
-		if (variableAssignment.semtype.isGlobal || variableAssignment.semtype.isConstant) {
-			switch (variableAssignment.getAccess()) {
-				case IdentifierAccess identifierAccess:
-					SemType constSemType = constantsAndGlobals.get(identifierAccess.getIdentifier().lexeme);
-					mv.visitFieldInsn(PUTSTATIC, className, identifierAccess.getIdentifier().lexeme, constSemType.fieldDescriptor());
-					break;
-				case RecordAccess recordAccess:
-					// TODO
-					break;
-				case ArrayAccess arrayAccess:
-					// TODO
-					break;
-				default:
-					throw new IllegalStateException("Unexpected value: " + variableAssignment.getAccess());
-			}
-
-		} else {
-			switch (variableAssignment.getAccess()) {
-				case IdentifierAccess identifierAccess:
-					int index = localTable.lookup(identifierAccess.getIdentifier().lexeme);
-					if (index == -1) {
-						// unexpected error : the term should be in the slot table.
-						throw new RuntimeException("Unexpected error : the variable " + identifierAccess.getIdentifier().lexeme + " is not in the slot table.");
-					}
-					org.objectweb.asm.Type asmType = variableAssignment.semtype.asmType();
-					mv.visitVarInsn(asmType.getOpcode(ISTORE), index);
-					break;
-				case RecordAccess recordAccess:
-					// TODO
-					break;
-				case ArrayAccess arrayAccess:
-					// TODO
-					break;
-				default:
-					throw new IllegalStateException("Unexpected value: " + variableAssignment.getAccess());
-			}
-		}
-
-		return null;
-	}
-
-	@Override
-	public Void visitVariableDeclaration(VariableDeclaration variableDeclaration, SlotTable localTable) throws Exception {
-		// create the bytecode
-		if (variableDeclaration.isConstant() || variableDeclaration.isGlobal()) {
-			boolean isConstant = variableDeclaration.isConstant();
-			int access = ACC_PUBLIC | ACC_STATIC;
-			if (isConstant){
-				access |= ACC_FINAL;
-			}
-
-			// if the variable declaration is global, declare it as a constant or a global
-				cw.visitField(access,
-						variableDeclaration.getName().lexeme,
-						variableDeclaration.semtype.fieldDescriptor(),
-						null, // no generic signature
-						null // no initial value
-				).visitEnd();
-
-			if (variableDeclaration.hasValue()) {
-				// visit expression
-				variableDeclaration.getValue().accept(this, slotTable);
-			}
-				mv.visitFieldInsn(PUTSTATIC, className, variableDeclaration.getName().lexeme, variableDeclaration.semtype.fieldDescriptor());
-
-				// NOTE: Don't add to the local table because it's not a local variable!
-
-				variableDeclaration.semtype.setIsConstant(variableDeclaration.isConstant());
-				variableDeclaration.semtype.setGlobal(variableDeclaration.isGlobal());
-				constantsAndGlobals.put(variableDeclaration.getName().lexeme, variableDeclaration.semtype);
-
-		} else {
-			if (variableDeclaration.hasValue()) {
-				// load on the stack if it has a value
-				variableDeclaration.getValue().accept(this, localTable);
-			}
-			org.objectweb.asm.Type asmType = variableDeclaration.semtype.asmType();
-			int idx = localTable.addSlot(variableDeclaration.getName().lexeme);
-			mv.visitVarInsn(asmType.getOpcode(ISTORE), idx);
-		}
-
-		return null;
-	}
-
-	private SemType implicitTypeConversion(SemType left, SemType right) {
-		if (left.equals(floatType) && right.equals(intType)) {
-			mv.visitInsn(I2F);
-			return left;
-		}
-		return right;
-	}
-
-
 	@Override
 	public Void visitWhileLoop(WhileLoop whileLoop, SlotTable localTable) throws Exception {
 		return null;
 	}
+
+	@Override
+	public Void visitType(Type type, SlotTable localTable) throws Exception {
+		return null;
+	}
+
+	@Override
+	public Void visitNumType(NumType numType, SlotTable localTable) throws Exception {
+		return null;
+	}
+
 }

@@ -1,18 +1,14 @@
 $final j float = 3.2*5.0;
 final i string = "hello";
 final j string = "world";
-$final val int = 1;
 
 Point rec {
     x int;
     y int;
 }
 
-
-val float = 54.0;
-
 fun main() {
-    val = 44;
+    val float = 54.0;
     p Point = Point(3, 5);
 
     $writeln(val[0]);

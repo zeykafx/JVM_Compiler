@@ -41,6 +41,11 @@ public class RecordSemType extends SemType {
 
 	// fields.values == fields2.values [int int int] == [int int int]
 
+	public String recordFielDesc(String fieldIdent) {
+		return fields.get(fieldIdent).fieldDescriptor();
+	}
+
+
 	@Override
 	public String fieldDescriptor() {
 

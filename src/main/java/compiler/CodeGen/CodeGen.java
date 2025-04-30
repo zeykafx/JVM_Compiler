@@ -59,7 +59,7 @@ public class CodeGen implements Visitor<Void, SlotTable> {
 
 	public CodeGen(String filePath, String className) {
 
-		this.slotTable = new SlotTable(new AtomicReference<>(0), null);
+		this.slotTable = new SlotTable(new AtomicReference<>(1), null);
 		this.constantsAndGlobals = new HashMap<>();
 		this.structs = new LinkedHashMap<>();
 		this.filePath = filePath;
@@ -117,7 +117,6 @@ public class CodeGen implements Visitor<Void, SlotTable> {
 		cw.visitEnd();
 
 		byte[] bytearray = cw.toByteArray();
-		System.out.println("filePath = " + filePath);
 		try (FileOutputStream outputStream = new FileOutputStream(filePath + className + ".class") ) {
 			outputStream.write(bytearray);
 		} catch (FileNotFoundException e) {
@@ -306,7 +305,6 @@ public class CodeGen implements Visitor<Void, SlotTable> {
 			FunctionSemType functionSemType = (FunctionSemType) functionDefinition.semtype;
 //			String descriptor = functionSemType.fieldDescriptor();
 			String descriptor = functionSemType.asmType().getDescriptor();
-			System.out.println(descriptor);
 
 			mv = cw.visitMethod(ACC_PUBLIC | ACC_STATIC, functionDefinition.getName().lexeme, descriptor, null, null);
 			mv.visitCode();
@@ -368,6 +366,7 @@ public class CodeGen implements Visitor<Void, SlotTable> {
 			returnStatement.getExpression().accept(this, localTable); // load the values on the stack
 		}
 
+		// get the return statement that corresponds to the asmType of the return value.
 		mv.visitInsn(returnStatement.semtype.asmType().getOpcode(IRETURN));
 		return null;
 	}
@@ -399,7 +398,12 @@ public class CodeGen implements Visitor<Void, SlotTable> {
 
 	@Override
 	public Void visitRecordAccess(RecordAccess recordAccess, SlotTable localTable) throws Exception {
+		recordAccess.getHeadAccess().accept(this, localTable);
 
+		RecordSemType recordSemType = (RecordSemType) recordAccess.getHeadAccess().semtype;
+		String headAccessDescriptor = recordSemType.recordFielDesc(recordAccess.getIdentifier().lexeme);
+		System.out.println(recordSemType.identifier);
+		mv.visitFieldInsn(GETFIELD, recordSemType.identifier, recordAccess.getIdentifier().lexeme, headAccessDescriptor);
 
 		return null;
 	}

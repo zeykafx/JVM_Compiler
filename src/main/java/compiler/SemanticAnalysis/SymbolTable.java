@@ -76,4 +76,14 @@ public class SymbolTable {
 
     // fun main(int x, int y)
 
+
+    @Override
+    public String toString() {
+        return "SymbolTable{" +
+                "parent=" + parent +
+                ", scope=" + scope +
+                ", symbols=" + symbols.toString() +
+                ", localFunctionName='" + localFunctionName + '\'' +
+                '}';
+    }
 }

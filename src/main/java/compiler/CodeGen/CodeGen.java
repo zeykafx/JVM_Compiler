@@ -51,7 +51,6 @@ public class CodeGen implements Visitor<Void, SlotTable> {
 	private ClassWriter structCw;
 	private MethodVisitor mv;
 	private boolean isMvTopLevel;
-	private Label endLabel;
 	private final SlotTable slotTable;
 	private final Map<String, SemType> constantsAndGlobals;
 	private final LinkedHashMap<String, ClassWriter> structs;
@@ -66,7 +65,7 @@ public class CodeGen implements Visitor<Void, SlotTable> {
 		this.filePath = filePath;
 		this.className = className;
 	}
-	
+
 	public void generateCode(ASTNode root) throws Exception {
 		try {
 			root.accept(this, slotTable);
@@ -345,11 +344,6 @@ public class CodeGen implements Visitor<Void, SlotTable> {
 			stmt.accept(this, localTable);
 		}
 
-//		mv.visitFieldInsn(GETSTATIC, "java/lang/System", "out", "Ljava/io/PrintStream;");
-////		mv.visitVarInsn(ALOAD, 1);
-//		mv.visitFieldInsn(GETSTATIC, className, "val", constantsAndGlobals.get("val").fieldDescriptor());
-//		mv.visitMethodInsn(INVOKEVIRTUAL, "java/io/PrintStream", "println", "("+constantsAndGlobals.get("val").fieldDescriptor()+")V", false);
-
 		ReturnStatement returnStatement = (ReturnStatement) block.getReturnStatement();
 		if (returnStatement != null) {
 			returnStatement.accept(this, localTable);
@@ -438,17 +432,114 @@ public class CodeGen implements Visitor<Void, SlotTable> {
 
 	@Override
 	public Void visitFunctionCall(FunctionCall functionCall, SlotTable localTable) throws Exception {
-		for (ParamCall paramCall : functionCall.getParameters()) {
-			// push the params on the stack
-			paramCall.accept(this, localTable);
+		// $ "writeInt" and "writeFloat" take an "int" and "float" as argument respectively, and return nothing or True/False if it succeeded or not (to be decided at the code generation phase; for now you can make an arbitrary choice).
+		//
+		//$ "write" and "writeln" can take anything as argument (including any primitive type). "writeln" will add an end-of-line at the end of what is written. The output is the same as the other "write" functions
+		//
+		//$ Hint: writeFloat should accept “-a” as an argument, where “a” is a float variable.
+		//
+		//$ Function calls can forward-reference functions, even in initializers of global variables, but not in constants.
+		//
+		//
+		switch (functionCall.getIdentifier().lexeme) {
+			case "chr":
+				break;
+			case "len":
+				handleLenCall(functionCall, localTable);
+				break;
+			case "floor":
+				break;
+			case "readInt":
+				break;
+			case "readFloat":
+				break;
+			case "readString":
+				break;
+			case "writeFloat":
+				handleWriteCall(functionCall, false, true, localTable);
+				break;
+			case "writeInt": // No break, fall back to "write" case
+			case "write":
+				handleWriteCall(functionCall, false, false, localTable);
+				break;
+			case "writeln":
+				handleWriteCall(functionCall, true, false, localTable);
+				break;
+			default:
+				for (ParamCall paramCall : functionCall.getParameters()) {
+					// push the params on the stack
+					paramCall.accept(this, localTable);
+				}
+
+				FunctionSemType functionSemType = (FunctionSemType) functionCall.semtype;
+				String descriptor = functionSemType.asmType().getDescriptor();
+
+				mv.visitMethodInsn(INVOKESTATIC, className, functionCall.getIdentifier().lexeme, descriptor, false);
+				break;
 		}
-		// TODO: Handle predefined functions
-		FunctionSemType functionSemType = (FunctionSemType) functionCall.semtype;
-		String descriptor = functionSemType.asmType().getDescriptor();
-
-		mv.visitMethodInsn(INVOKESTATIC, className, functionCall.getIdentifier().lexeme, descriptor, false);
-
 		return null;
+	}
+
+	private void handleLenCall(FunctionCall functionCall, SlotTable localTable) throws Exception {
+		// the len method can be used on strings or arrays
+		// again, the first argument is the only one we care about
+
+		ParamCall paramCall = functionCall.getParameters().getFirst();
+		SemType argSemType = paramCall.semtype;
+
+		paramCall.accept(this, localTable);
+
+		if (argSemType.equals(stringType)) {
+			// we use the .length method on strings to get their length, it returns an integer on the stack (i think)
+			String descriptor = "()I";
+			mv.visitMethodInsn(INVOKEVIRTUAL, "java/lang/String", "length", descriptor, false);
+		} else {
+			// use the arraylength instruction to the length of the array
+			// https://asm.ow2.io/javadoc/org/objectweb/asm/Opcodes.html#ARRAYLENGTH
+			mv.visitInsn(ARRAYLENGTH);
+		}
+
+	}
+
+	private void handleWriteCall(FunctionCall functionCall, boolean addNewLine, boolean isFloat, SlotTable localTable) throws Exception {
+		mv.visitFieldInsn(GETSTATIC, "java/lang/System", "out", "Ljava/io/PrintStream;");
+
+		StringBuilder functionDesc = new StringBuilder();
+		// the write methods have different type descriptors based on what gets passed in as argument
+		// I don't think the write functions can have more than one thing as argument, so we can jus take the first element
+		SemType argSemType;
+		if (!functionCall.getParameters().isEmpty()) {
+			ParamCall paramCall = functionCall.getParameters().getFirst();
+			// load the value in the params
+			paramCall.accept(this, localTable);
+
+			argSemType = paramCall.semtype;
+
+			// if the function is writeFloat, and we passed an Int, we convert the int to a float
+			// (though it worked when we called writeFloat with an int, but it would just print an int and not a float)
+			if (isFloat && argSemType.equals(intType)) {
+				implicitTypeConversion(floatType, intType);
+				argSemType = floatType;
+			}
+
+		} else {
+			// if there was no arguments given in (e.g. "writeln()"), we assume that we want to print an empty string
+			argSemType = stringType;
+			mv.visitLdcInsn("");
+		}
+
+		functionDesc.append("(");
+		functionDesc.append(argSemType.fieldDescriptor());
+		functionDesc.append(")");
+		functionDesc.append("V"); // the write functions return nothing I guess, if they returned something we'd have to handle it
+
+		String descriptor = functionDesc.toString();
+		String functionToCall = "print";
+		if (addNewLine) {
+			functionToCall += "ln";
+		}
+
+		mv.visitMethodInsn(INVOKEVIRTUAL, "java/io/PrintStream", functionToCall, descriptor, false);
 	}
 
 	@Override

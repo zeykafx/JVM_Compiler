@@ -82,13 +82,13 @@ public class SemanticAnalysis implements Visitor<SemType, SymbolTable> {
 		// len function definition for strings
 		SemType[] paramTypesLenString = {stringType};
 		FunctionSemType len = new FunctionSemType(intType, paramTypesLenString);
-		globalSymbolTable.addSymbol("len", len);
+		globalSymbolTable.addSymbol("len_string", len);
 
 		// len function definition for arrays (of any SemType)
 		ArraySemType arrayType = new ArraySemType(anyType);
 		SemType[] paramTypesLenArray = {arrayType};
 		FunctionSemType lenArray = new FunctionSemType(intType, paramTypesLenArray);
-		globalSymbolTable.addSymbol("len", lenArray);
+		globalSymbolTable.addSymbol("len_array", lenArray);
 
 		// floor(float) -> int
 		SemType[] paramTypesFloor = {floatType};
@@ -378,8 +378,14 @@ public class SemanticAnalysis implements Visitor<SemType, SymbolTable> {
 				throw new OperatorError(String.format("Expected int or float with operator %s", unaryExpression.getOperator().getSymbol().lexeme));
 			}
 
-			unaryExpression.semtype = numType;
-			return numType;
+			if (expressionSemType.equals(intType)) {
+				unaryExpression.semtype = intType;
+			} else if (expressionSemType.equals(floatType)) {
+				unaryExpression.semtype = floatType;
+			} else {
+				unaryExpression.semtype = numType;
+			}
+			return unaryExpression.semtype;
 		}
 
 		// shouldn't be here
@@ -424,10 +430,12 @@ public class SemanticAnalysis implements Visitor<SemType, SymbolTable> {
 
 	@Override
 	public SemType visitFunctionCall(FunctionCall functionCall, SymbolTable table) throws Exception {
+		String functionIdentifierInGlobalTable = getFunctionName(functionCall, table);
+
 		// get the FunctionSemType of the function from the symbol table
-		FunctionSemType functionSemType =(FunctionSemType) table.lookup(functionCall.getIdentifier().lexeme);
+		FunctionSemType functionSemType = (FunctionSemType) table.lookup(functionIdentifierInGlobalTable);
 		if (functionSemType == null) {
-			throw new ScopeError("function "+functionCall.getIdentifier().lexeme+" doesn't exist");
+			throw new ScopeError("function "+functionIdentifierInGlobalTable+" doesn't exist");
 		}
 
 		// for each argument/param, compared the present types to the types from the definition
@@ -462,7 +470,7 @@ public class SemanticAnalysis implements Visitor<SemType, SymbolTable> {
 					return functionSemType.getRetType();
 				}
 
-				throw new ArgumentError("Type of the argument index " + paramCall.getParamIndex() + " in the function call " + functionCall.getIdentifier().lexeme + " at line "+ functionCall.line +" does not match the type of the argument " + argSemType);
+				throw new ArgumentError("Type of the argument index " + paramCall.getParamIndex() + " in the function call '" + functionCall.getIdentifier().lexeme + "' at line "+ functionCall.line +" does not match the type of the argument " + argSemType);
 			}
 			paramCall.semtype = paramCallSemType;
 		}
@@ -481,6 +489,23 @@ public class SemanticAnalysis implements Visitor<SemType, SymbolTable> {
 		// return the SemType of the return value (e.g., intType if the function returns an integer)
 		functionCall.semtype = functionSemType;
 		return functionSemType.getRetType();
+	}
+
+	private String getFunctionName(FunctionCall functionCall, SymbolTable localTable) throws Exception {
+		String functionIdentifierInGlobalTable = functionCall.getIdentifier().lexeme;
+
+		if (functionIdentifierInGlobalTable.startsWith("len") && !functionCall.getParameters().isEmpty()) {
+			// the len function has two definitions in the table, one for strings and the other for arrays, to avoid conflicts
+			// we renamed the len functions len_string and len_array resp.
+			// we now need to figure out which one we need to use
+			SemType firstSemType = functionCall.getParameters().getFirst().accept(this, localTable);
+			if (firstSemType.equals(stringType)) {
+				functionIdentifierInGlobalTable += "_string";
+			} else {
+				functionIdentifierInGlobalTable += "_array";
+			}
+		}
+		return functionIdentifierInGlobalTable;
 	}
 
 	@Override

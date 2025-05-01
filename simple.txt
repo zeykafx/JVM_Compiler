@@ -13,7 +13,8 @@ fun createPoint(x int, y int) Point {
 }
 
 fun main() {
-    p Point = createPoint(3, 5);
+    $p Point = createPoint(3, 5);
+    writeln(len("123"));
     $p.y = 4;
 
     $points[0] = p;

@@ -26,7 +26,7 @@ public class opCodeGenerator {
         this.expression = binaryExpression;
         this.mv = mv;
 
-        if (expression.semtype.equals(floatType)) {
+        if (expression.semtype.equals(floatType) || binaryExpression.getLeftTerm().semtype.equals(floatType) || binaryExpression.getRightTerm().semtype.equals(floatType)) {
             isFloat = true;
         }
 
@@ -112,6 +112,9 @@ public class opCodeGenerator {
     }
 
     private int getAnd() {
+        if (isFloat) {
+            return LAND;
+        }
         return IAND;
     }
 

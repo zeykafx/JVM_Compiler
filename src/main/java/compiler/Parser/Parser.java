@@ -301,6 +301,8 @@ public class Parser {
 
         // Check for binary operators
         if (
+            lookAheadSymbol.type == TokenTypes.AND ||
+            lookAheadSymbol.type == TokenTypes.OR ||
             lookAheadSymbol.type == TokenTypes.PLUS ||
             lookAheadSymbol.type == TokenTypes.MINUS ||
             lookAheadSymbol.type == TokenTypes.MULTIPLY ||

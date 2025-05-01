@@ -745,7 +745,7 @@ public class CodeGen implements Visitor<Void, SlotTable> {
 		if (loopVarIsFloat) {
 			mv.visitInsn(FCMPG);
 		}
-		mv.visitJumpInsn( IFGE, endLabel);
+		mv.visitJumpInsn(IFGE, endLabel);
 
 		// visit the loop body
 		forLoop.getBlock().accept(this, localTable);

@@ -443,17 +443,26 @@ public class CodeGen implements Visitor<Void, SlotTable> {
 		//
 		switch (functionCall.getIdentifier().lexeme) {
 			case "chr":
+				functionCall.getParameters().getFirst().accept(this, localTable);
+				mv.visitMethodInsn(INVOKESTATIC, "java/lang/String", "valueOf", "(C)Ljava/lang/String;", false);
 				break;
 			case "len":
 				handleLenCall(functionCall, localTable);
 				break;
 			case "floor":
+				// there doesn't seem to be a simple way to round down a float to an int without using math.floor, so we can just use the f2i instruction that
+				// converts the float to an int and rounds down in the process
+				functionCall.getParameters().getFirst().accept(this, localTable);
+				mv.visitInsn(F2I);
 				break;
 			case "readInt":
+				handleReadCall(intType);
 				break;
 			case "readFloat":
+				handleReadCall(floatType);
 				break;
 			case "readString":
+				handleReadCall(stringType);
 				break;
 			case "writeFloat":
 				handleWriteCall(functionCall, false, true, localTable);
@@ -499,6 +508,28 @@ public class CodeGen implements Visitor<Void, SlotTable> {
 			mv.visitInsn(ARRAYLENGTH);
 		}
 
+	}
+
+	private void handleReadCall(SemType version)  {
+		// to read we need to create a scanner object
+		mv.visitTypeInsn(NEW, "java/util/Scanner");
+		mv.visitInsn(DUP); // duplicate to get a ref on the stack
+
+		// java/lang/System.in:Ljava/io/InputStream;
+		mv.visitFieldInsn(GETSTATIC, "java/lang/System", "in", "Ljava/io/InputStream;");
+		//          7: invokespecial #15                 // Method java/util/Scanner."<init>":(Ljava/io/InputStream;)V
+		mv.visitMethodInsn(INVOKESPECIAL, "java/util/Scanner", "<init>", "(Ljava/io/InputStream;)V", false);
+
+		String versionDesc = "()" + version.fieldDescriptor();
+		String methodName;
+		switch (version.type) {
+			case "int" -> methodName = "nextInt";
+			case "float" -> methodName = "nextFloat";
+			case "string" -> methodName = "next";
+			default -> methodName = "nextLine";
+		}
+		//		12: invokevirtual #18                 // Method java/util/Scanner.next:()Ljava/lang/String;
+		mv.visitMethodInsn(INVOKEVIRTUAL, "java/util/Scanner", methodName, versionDesc, false);
 	}
 
 	private void handleWriteCall(FunctionCall functionCall, boolean addNewLine, boolean isFloat, SlotTable localTable) throws Exception {
@@ -591,7 +622,7 @@ public class CodeGen implements Visitor<Void, SlotTable> {
 				// heavily inspired by the code here https://github.com/norswap/sigh/blob/8301a3a988eb4ddd2667de1c8edef11e1d790709/src/norswap/sigh/bytecode/BytecodeCompiler.java#L499
 				Label falseLabel = new Label();
 				Label endLabel = new Label();
-				mv.visitInsn(ICONST_0);
+//				mv.visitInsn(ICONST_0);
 				mv.visitJumpInsn(IFEQ, falseLabel);
 				mv.visitInsn(ICONST_0);
 				mv.visitJumpInsn(GOTO, endLabel);
@@ -666,6 +697,8 @@ public class CodeGen implements Visitor<Void, SlotTable> {
 
 	@Override
 	public Void visitParenthesesTerm(ParenthesesTerm parenthesesTerm, SlotTable localTable) throws Exception {
+		parenthesesTerm.getExpression().accept(this, localTable);
+
 		return null;
 	}
 

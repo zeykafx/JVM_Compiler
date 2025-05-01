@@ -75,8 +75,8 @@ public class SemanticAnalysis implements Visitor<SemType, SymbolTable> {
 	/// add predefined functions to the symbol table
 	private void addPredefinedFunctions() {
 		// add predefined functions to the symbol table
-		SemType[] paramTypesChr = {stringType};
-		FunctionSemType chr = new FunctionSemType(intType, paramTypesChr);
+		SemType[] paramTypesChr = {intType};
+		FunctionSemType chr = new FunctionSemType(stringType, paramTypesChr);
 		globalSymbolTable.addSymbol("chr", chr);
 
 		// len function definition for strings

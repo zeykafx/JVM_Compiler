@@ -28,7 +28,7 @@ public class IfStatement extends Statement {
         this.condition = condition;
         this.thenSBlock = thenBlock;
         this.elseBlock = elseBlock;
-        this.isElse = true;
+        this.isElse = elseBlock != null;
     }
 
     public Expression getCondition() {
@@ -72,7 +72,7 @@ public class IfStatement extends Statement {
         sb.append("  ".repeat(indent + 1)).append("Then:\n");
         sb.append(thenSBlock.prettyPrint(indent + 2));
 
-        if (isElse) {
+        if (isElse && elseBlock != null) {
             sb.append("\n").append("  ".repeat(indent + 1)).append("Else:\n");
             sb.append(elseBlock.prettyPrint(indent + 2));
         }

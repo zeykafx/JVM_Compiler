@@ -13,17 +13,29 @@ fun createPoint(x int, y int) Point {
 }
 
 fun main() {
-    $p Point = createPoint(3, 5);
+    p Point = createPoint(3, 5);
+    p = Point(99, 123);
+    x int = p.x;
+    p.x = 0;
+    writeln(p.x);
     $writeln(!(false));
     $writeln(len("123"));
     $writeln(chr(97) + chr(98));
     $writeln(floor(100.6));
+    $writeln("Enter a number");
+    $input int = readInt();
+    $if (input >= 10) {
+    $    writeln("You entered a number larger than 10");
+    $} else {
+    $    writeln("You entered a number smaller than 10");
+    $}
+
     writeln("Enter a number");
     input int = readInt();
-    if (input >= 10) {
-        writeln("You entered a number larger than 10");
-    } else {
-        writeln("You entered a number smaller than 10");
+    while (input < 10) {
+        write("input = ");
+        writeln(input);
+        input = input + 1;
     }
     $p.y = 4;
 

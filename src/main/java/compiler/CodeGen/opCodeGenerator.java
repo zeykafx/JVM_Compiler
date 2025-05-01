@@ -1,6 +1,5 @@
 package compiler.CodeGen;
 
-import com.beust.jcommander.Strings;
 import compiler.Parser.ASTNodes.Statements.Expressions.Expressions.BinaryExpression;
 import compiler.SemanticAnalysis.Types.SemType;
 import org.objectweb.asm.Label;
@@ -77,30 +76,30 @@ public class opCodeGenerator {
             default -> -1;
         };
     }
-
+    
     private void comparison() {
         Label trueLabel = new Label();
         Label endLabel = new Label();
 
         if (isFloat) {
-            mv.visitInsn(FSUB);
-            mv.visitJumpInsn(FCMPG, trueLabel);
-        } else {
-            int opCode = comparionIntOpCode();
-            if (opCode == -1) {
-                throw new RuntimeException("Invalid operator: " + expression.getOperator().getOperator());
-            }
-            mv.visitJumpInsn(opCode, trueLabel);
+//            mv.visitInsn(FSUB);
+            mv.visitInsn(FCMPG);
         }
 
-        mv.visitInsn(ICONST_0);
+        int opCode = comparisonIntOpCode();
+        if (opCode == -1) {
+            throw new RuntimeException("Invalid operator: " + expression.getOperator().getOperator());
+        }
+
+        mv.visitJumpInsn(opCode, trueLabel);
+        mv.visitInsn(ICONST_0); // false
         mv.visitJumpInsn(GOTO, endLabel);
         mv.visitLabel(trueLabel);
-        mv.visitInsn(ICONST_1);
+        mv.visitInsn(ICONST_1); // true
         mv.visitLabel(endLabel);
     }
 
-    private int comparionIntOpCode() {
+    private int comparisonIntOpCode() {
         return switch (expression.getOperator().getOperator()) {
             case "<" -> getLessThan();
             case "<=" -> getLessThanOrEqual();
@@ -159,26 +158,44 @@ public class opCodeGenerator {
     }
 
     private int getLessThan() {
+        if (isFloat) {
+            return IFLT;
+        }
         return IF_ICMPLT;
     }
 
     private int getLessThanOrEqual() {
+        if (isFloat) {
+            return IFLE;
+        }
         return IF_ICMPLE;
     }
 
     private int getGreaterThan() {
+        if (isFloat) {
+            return IFGT;
+        }
         return IF_ICMPGT;
     }
 
     private int getGreaterThanOrEqual() {
+        if (isFloat) {
+            return IFGT;
+        }
         return IF_ICMPGE;
     }
 
     private int getEqual() {
+        if (isFloat) {
+            return IFEQ;
+        }
         return IF_ICMPEQ;
     }
 
     private int getNotEqual() {
+        if (isFloat) {
+            return IFNE;
+        }
         return IF_ICMPNE;
     }
 }

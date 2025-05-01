@@ -12,7 +12,7 @@ public class SlotTable {
 
 	private final SlotTable parent;
 	public final HashMap<String, Integer> slots;
-	private final AtomicReference<Integer> currentSlot;
+	public final AtomicReference<Integer> currentSlot;
 	private String localFunctionName;
 
 	public SlotTable(AtomicReference<Integer> currentSlot, SlotTable parent) {
@@ -25,10 +25,10 @@ public class SlotTable {
 		return parent;
 	}
 
-	public Integer addSlot(String name) {
+	public Integer addSlot(String name, org.objectweb.asm.Type type ) {
 		slots.put(name, currentSlot.get());
-		currentSlot.set(currentSlot.get() + 1);
-		return currentSlot.get() - 1;
+		currentSlot.set(currentSlot.get() + type.getSize());
+		return currentSlot.get() - type.getSize();
 	}
 
 	public Integer lookup(String name) {

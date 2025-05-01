@@ -78,7 +78,7 @@ public class CodeGen implements Visitor<Void, SlotTable> {
 	@Override
 	public Void visitProgram(Program program, SlotTable localTable) throws Exception {
 
-		cw = new ClassWriter(ClassWriter.COMPUTE_FRAMES);
+		cw = new ClassWriter(ClassWriter.COMPUTE_FRAMES | ClassWriter.COMPUTE_MAXS);
 		cw.visit(V1_8, ACC_PUBLIC, this.className, null, "java/lang/Object", null);
 
 		mv = cw.visitMethod(ACC_PUBLIC, "<init>", "()V", null, null);
@@ -86,7 +86,7 @@ public class CodeGen implements Visitor<Void, SlotTable> {
 		mv.visitVarInsn(ALOAD, 0);
 		mv.visitMethodInsn(INVOKESPECIAL, "java/lang/Object", "<init>", "()V", false);
 		mv.visitInsn(RETURN);
-		mv.visitMaxs(-1,-1);
+		mv.visitMaxs(0,0);
 		mv.visitEnd();
 
 		mv = cw.visitMethod(ACC_PUBLIC | ACC_STATIC, "main", "([Ljava/lang/String;)V", null, null);
@@ -112,8 +112,8 @@ public class CodeGen implements Visitor<Void, SlotTable> {
 		}
 
 		mv.visitInsn(RETURN); // return void from main
+		mv.visitMaxs(0, 0); // let ASM calculate the size needed on the stack and of the slots.
 		mv.visitEnd();
-		mv.visitMaxs(-1, -1); // let ASM calculate the size needed on the stack and of the slots.
 		cw.visitEnd();
 
 		byte[] bytearray = cw.toByteArray();
@@ -179,7 +179,7 @@ public class CodeGen implements Visitor<Void, SlotTable> {
 			}
 
 			org.objectweb.asm.Type asmType = variableDeclaration.semtype.asmType();
-			int idx = localTable.addSlot(variableDeclaration.getName().lexeme);
+			int idx = localTable.addSlot(variableDeclaration.getName().lexeme, asmType);
 
 			mv.visitVarInsn(asmType.getOpcode(ISTORE), idx);
 		}
@@ -189,7 +189,14 @@ public class CodeGen implements Visitor<Void, SlotTable> {
 
 	@Override
 	public Void visitVariableAssignment(VariableAssignment variableAssignment, SlotTable localTable) throws Exception {
-		variableAssignment.getAccess().accept(this, localTable);
+//		variableAssignment.getAccess().accept(this, localTable);
+		if (variableAssignment.getAccess() instanceof RecordAccess recordAccess) {
+			recordAccess.getHeadAccess().accept(this, localTable);
+		}
+		if (variableAssignment.getAccess() instanceof ArrayAccess arrayAccess) {
+			arrayAccess.getHeadAccess().accept(this, localTable);
+		}
+
 
 		// then visit the expression
 		variableAssignment.getExpression().accept(this, localTable);
@@ -199,12 +206,12 @@ public class CodeGen implements Visitor<Void, SlotTable> {
 		// then store the results
 		switch (variableAssignment.getAccess()) {
 			case IdentifierAccess identifierAccess:
-
 				if (variableAssignment.semtype.isGlobal || variableAssignment.semtype.isConstant) {
 					SemType constSemType = constantsAndGlobals.get(identifierAccess.getIdentifier().lexeme);
 					mv.visitFieldInsn(PUTSTATIC, className, identifierAccess.getIdentifier().lexeme, constSemType.fieldDescriptor());
 				} else {
 					int index = localTable.lookup(identifierAccess.getIdentifier().lexeme);
+					System.out.println("index before storing res = " + index);
 					if (index == -1) {
 						// unexpected error : the term should be in the slot table.
 						throw new RuntimeException("Unexpected error : the variable " + identifierAccess.getIdentifier().lexeme + " is not in the slot table.");
@@ -214,6 +221,7 @@ public class CodeGen implements Visitor<Void, SlotTable> {
 				}
 				break;
 			case RecordAccess recordAccess:
+
 				RecordSemType recordSemType = (RecordSemType) recordAccess.getHeadAccess().semtype;
 				String accessDesc = recordSemType.recordFielDesc(recordAccess.getIdentifier().lexeme);
 
@@ -244,7 +252,7 @@ public class CodeGen implements Visitor<Void, SlotTable> {
 
 	@Override
 	public Void visitRecordDefinition(RecordDefinition recordDefinition, SlotTable localTable) throws Exception {
-		structCw = new ClassWriter(ClassWriter.COMPUTE_FRAMES);
+		structCw = new ClassWriter(ClassWriter.COMPUTE_FRAMES | ClassWriter.COMPUTE_MAXS);
 		structCw.visit(V1_8, ACC_PUBLIC, recordDefinition.getIdentifier().lexeme, null, "java/lang/Object", null);
 		for (RecordFieldDefinition recordField: recordDefinition.getFields()) {
 			recordField.accept(this, null);
@@ -271,7 +279,7 @@ public class CodeGen implements Visitor<Void, SlotTable> {
 		}
 
 		init.visitInsn(RETURN);
-		init.visitMaxs(-1, -1);
+		init.visitMaxs( 0, 0);
 		init.visitEnd();
 
 		structCw.visitEnd();
@@ -328,7 +336,7 @@ public class CodeGen implements Visitor<Void, SlotTable> {
 
 	@Override
 	public Void visitParamDefinition(ParamDefinition paramDefinition, SlotTable localTable) throws Exception {
-		localTable.addSlot(paramDefinition.getIdentifier().lexeme);
+		localTable.addSlot(paramDefinition.getIdentifier().lexeme, paramDefinition.semtype.asmType());
 		return null;
 	}
 
@@ -393,12 +401,12 @@ public class CodeGen implements Visitor<Void, SlotTable> {
 
 		// No need to load if we will store something there
 		// willStore is set during the semantic analysis phase.
-		if (!recordAccess.willStore) {
-			RecordSemType recordSemType = (RecordSemType) recordAccess.getHeadAccess().semtype;
-			String headAccessDescriptor = recordSemType.recordFielDesc(recordAccess.getIdentifier().lexeme);
+//		if (!recordAccess.willStore) {
+		RecordSemType recordSemType = (RecordSemType) recordAccess.getHeadAccess().semtype;
+		String headAccessDescriptor = recordSemType.recordFielDesc(recordAccess.getIdentifier().lexeme);
 
-			mv.visitFieldInsn(GETFIELD, recordSemType.identifier, recordAccess.getIdentifier().lexeme, headAccessDescriptor);
-		}
+		mv.visitFieldInsn(GETFIELD, recordSemType.identifier, recordAccess.getIdentifier().lexeme, headAccessDescriptor);
+//		}
 
 		return null;
 	}
@@ -717,9 +725,6 @@ public class CodeGen implements Visitor<Void, SlotTable> {
 	public Void visitIfStatement(IfStatement ifStatement, SlotTable localTable) throws Exception {
 		Label elseLabel = new Label();
 		Label endLabel = new Label();
-
-		ifStatement.getCondition().accept(this, localTable);
-
 		// the jump label depends on if we have an else block,
 		// if we don't, then at if the condition is not met, we jump directly to the end label
 		// otherwise, if we do have an else label and the condition is not met, we jump to the else label which marks the else block
@@ -728,9 +733,12 @@ public class CodeGen implements Visitor<Void, SlotTable> {
 			jumpLabel = elseLabel;
 		}
 
+		ifStatement.getCondition().accept(this, localTable);
+
 		mv.visitJumpInsn(IFEQ, jumpLabel);
 
 		ifStatement.getThenBlock().accept(this, localTable);
+
 		if (ifStatement.isElse()) {
 
 			mv.visitJumpInsn(GOTO, endLabel); // goto end marks the end of the then block
@@ -745,6 +753,24 @@ public class CodeGen implements Visitor<Void, SlotTable> {
 
 	@Override
 	public Void visitWhileLoop(WhileLoop whileLoop, SlotTable localTable) throws Exception {
+		Label conditionLabel = new Label();
+		Label endLabel = new Label();
+
+		// we need to visit the condition label BEFORE we visit it, because we need to visit it at every iteration of the loop
+		mv.visitLabel(conditionLabel);
+
+		whileLoop.getCondition().accept(this, localTable);
+
+		mv.visitJumpInsn(IFEQ, endLabel); // if the condition is met, we jump to the end label
+
+		// otherwise, we run one iteration of the loop
+		whileLoop.getBlock().accept(this, localTable);
+
+		// at the end of the iteration, go back to the condition label to re-evaluate the condition
+		mv.visitJumpInsn(GOTO, conditionLabel);
+
+		mv.visitLabel(endLabel);
+
 		return null;
 	}
 

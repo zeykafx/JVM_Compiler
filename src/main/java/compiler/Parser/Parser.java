@@ -237,7 +237,8 @@ public class Parser {
         Type type = new Type(symbol, false, lookAheadSymbol.line, lookAheadSymbol.column);
 
 		if (symbol.type == TokenTypes.INT || symbol.type == TokenTypes.FLOAT) {
-            type = new NumType(symbol);
+            boolean isFloat = symbol.type == TokenTypes.FLOAT;
+            type = new NumType(symbol, isFloat);
         }
 
         // Check if the type is an array

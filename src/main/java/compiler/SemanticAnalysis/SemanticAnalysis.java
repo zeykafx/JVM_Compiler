@@ -620,6 +620,8 @@ public class SemanticAnalysis implements Visitor<SemType, SymbolTable> {
             throw new ScopeError("Identifier '" + varSymbol.lexeme + "' in for loop at line "+ varSymbol.line +" was not found in symbol table");
         }
 
+		forLoop.semtype = varType;
+
 		boolean loopVarIsInt = false;
 
         // check if the variable is a number
@@ -660,13 +662,13 @@ public class SemanticAnalysis implements Visitor<SemType, SymbolTable> {
 
 	private SemType typeCheckLoopFields(SymbolTable table, boolean loopVarIsInt, Symbol fieldSymbol, String fieldName) throws TypeError {
 		if (fieldSymbol.type == INT_LITERAL || fieldSymbol.type == TokenTypes.FLOAT_LITERAL) {
-
+			String typeName = fieldSymbol.type == INT_LITERAL ? "int" : "float";
 			// if the loop var is an int and the field (start, step, stop) number is a float, we throw an error
 			if (loopVarIsInt && fieldSymbol.type == TokenTypes.FLOAT_LITERAL) {
 				throw new TypeError("The "+fieldName+" number in the for loop at line" + fieldSymbol.line + ": '"+ fieldSymbol.lexeme +"' is not an integer but the loop variable is.");
 			}
 			// otherwise we're good
-			return new SemType(fieldSymbol.type.toString());
+			return new SemType(typeName);
 
 		} else if (fieldSymbol.type == TokenTypes.IDENTIFIER) {
         	SemType fieldType = table.lookup(fieldSymbol.lexeme);
@@ -675,6 +677,7 @@ public class SemanticAnalysis implements Visitor<SemType, SymbolTable> {
 			if (loopVarIsInt && fieldType.type.equals("float")) {
 				throw new TypeError("The "+fieldName+" variable in the for loop at line " + fieldSymbol.line + ": '"+ fieldSymbol.lexeme +"' is not an integer but the loop variable is.");
 			}
+
 			// otherwise we're good (I think)
 			return fieldType;
 		} else {
@@ -965,7 +968,6 @@ public class SemanticAnalysis implements Visitor<SemType, SymbolTable> {
 	public SemType visitVariableDeclaration(VariableDeclaration variableDeclaration, SymbolTable table) throws Exception {
 		Symbol name = variableDeclaration.getName();
 		Type type = variableDeclaration.getType();
-
 		if (table.lookupSameScope(name.lexeme) != null) {
 			throw new ScopeError("Variable " + name.lexeme + " already exists in the same scope");
 		}

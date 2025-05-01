@@ -1,5 +1,7 @@
 package compiler.CodeGen;
 
+import compiler.Lexer.Symbol;
+import compiler.Lexer.TokenTypes;
 import compiler.Parser.ASTNodes.ASTNode;
 import compiler.Parser.ASTNodes.Block;
 import compiler.Parser.ASTNodes.Program;
@@ -8,6 +10,7 @@ import compiler.Parser.ASTNodes.Statements.Expressions.Access.IdentifierAccess;
 import compiler.Parser.ASTNodes.Statements.Expressions.Access.RecordAccess;
 import compiler.Parser.ASTNodes.Statements.Expressions.Expressions.ArrayExpression;
 import compiler.Parser.ASTNodes.Statements.Expressions.Expressions.BinaryExpression;
+import compiler.Parser.ASTNodes.Statements.Expressions.Expressions.Expression;
 import compiler.Parser.ASTNodes.Statements.Expressions.Expressions.UnaryExpression;
 import compiler.Parser.ASTNodes.Statements.Expressions.Operators.BinaryOperator;
 import compiler.Parser.ASTNodes.Statements.Expressions.Operators.UnaryOperator;
@@ -176,6 +179,11 @@ public class CodeGen implements Visitor<Void, SlotTable> {
 			if (variableDeclaration.hasValue()) {
 				// load on the stack if it has a value
 				variableDeclaration.getValue().accept(this, localTable);
+			} else {
+				if (variableDeclaration.semtype.equals(intType) || variableDeclaration.semtype.equals(floatType)) {
+					mv.visitLdcInsn(0);
+					implicitTypeConversion(variableDeclaration.semtype, intType);
+				}
 			}
 
 			org.objectweb.asm.Type asmType = variableDeclaration.semtype.asmType();
@@ -197,7 +205,6 @@ public class CodeGen implements Visitor<Void, SlotTable> {
 			arrayAccess.getHeadAccess().accept(this, localTable);
 		}
 
-
 		// then visit the expression
 		variableAssignment.getExpression().accept(this, localTable);
 
@@ -211,7 +218,6 @@ public class CodeGen implements Visitor<Void, SlotTable> {
 					mv.visitFieldInsn(PUTSTATIC, className, identifierAccess.getIdentifier().lexeme, constSemType.fieldDescriptor());
 				} else {
 					int index = localTable.lookup(identifierAccess.getIdentifier().lexeme);
-					System.out.println("index before storing res = " + index);
 					if (index == -1) {
 						// unexpected error : the term should be in the slot table.
 						throw new RuntimeException("Unexpected error : the variable " + identifierAccess.getIdentifier().lexeme + " is not in the slot table.");
@@ -712,7 +718,94 @@ public class CodeGen implements Visitor<Void, SlotTable> {
 
 	@Override
 	public Void visitForLoop(ForLoop forLoop, SlotTable localTable) throws Exception {
+
+		Symbol varSymbol = forLoop.getVariable();
+		boolean loopVarIsFloat = forLoop.semtype.equals(floatType);
+
+		// load the start value
+		// if it's an identifier, we load the value from the identifier and if it's a literal, we just load it
+		Symbol startSymbol = forLoop.getStart();
+		loadLoopField(startSymbol, forLoop, localTable, forLoop.startType);
+
+		loadOrStoreVarFromSymbol(forLoop, localTable, varSymbol, forLoop.semtype, true); // the varType is in forLoop.semtype
+
+		Label startLabel = new Label();
+		Label endLabel = new Label();
+
+		mv.visitLabel(startLabel);
+
+		// check the condition (i.e., that the loop variable is smaller than the end symbol/var
+		// load the loop var
+		loadOrStoreVarFromSymbol(forLoop, localTable, varSymbol, forLoop.semtype, false);
+
+		Symbol stopSymbol = forLoop.getEnd();
+		// load the end symbol/var
+		loadLoopField(stopSymbol, forLoop, localTable, forLoop.endType);
+
+		if (loopVarIsFloat) {
+			mv.visitInsn(FCMPG);
+		}
+		mv.visitJumpInsn( IFGE, endLabel);
+
+		// visit the loop body
+		forLoop.getBlock().accept(this, localTable);
+
+		// increment the loop variable
+		// load the step value
+		Symbol stepSymbol = forLoop.getStep();
+		int loopVarIdx = localTable.lookup(varSymbol.lexeme);
+		if (loopVarIdx != -1 && stepSymbol.type == TokenTypes.INT_LITERAL && forLoop.semtype.equals(intType)) {
+			// since the loop var is a local variable and the step is a constant, we can use the iinc instruction
+			mv.visitIincInsn(loopVarIdx, (Integer) stepSymbol.value);
+		} else {
+			loadOrStoreVarFromSymbol(forLoop, localTable, varSymbol, forLoop.semtype, false);
+
+			loadLoopField(stepSymbol, forLoop, localTable, forLoop.stepType);
+
+			mv.visitInsn(forLoop.semtype.asmType().getOpcode(IADD));
+			loadOrStoreVarFromSymbol(forLoop, localTable, varSymbol, forLoop.semtype, true);
+		}
+
+		// go back up to the start (before the condition check)
+		mv.visitJumpInsn(GOTO, startLabel);
+
+		// end of the loop
+		mv.visitLabel(endLabel);
+
+
 		return null;
+	}
+
+	private void loadLoopField(Symbol fieldSymbol, ForLoop forLoop, SlotTable localTable, SemType fieldSemType) {
+		if (fieldSymbol.type == TokenTypes.IDENTIFIER) {
+			loadOrStoreVarFromSymbol(forLoop, localTable, fieldSymbol, fieldSemType, false);
+		} else {
+			mv.visitLdcInsn(fieldSymbol.value);
+			implicitTypeConversion(forLoop.semtype, fieldSemType);
+		}
+	}
+
+	private void loadOrStoreVarFromSymbol(ForLoop forLoop, SlotTable localTable, Symbol symbol, SemType semtype, boolean shouldStore) {
+		String identLexeme = symbol.lexeme;
+		int index = localTable.lookup(identLexeme);
+		if (index == -1) {
+			// maybe it's a const or a global var
+			SemType constSemType = constantsAndGlobals.get(identLexeme);
+			mv.visitFieldInsn(shouldStore ? PUTSTATIC : GETSTATIC, className, identLexeme, constSemType.fieldDescriptor());
+		} else {
+			org.objectweb.asm.Type asmType = semtype.asmType();
+			mv.visitVarInsn(asmType.getOpcode(shouldStore ? ISTORE : ILOAD), index);
+		}
+	}
+
+	private Expression getFieldExpression(Symbol fieldSymbol) {
+		Expression expression;
+		if (fieldSymbol.type == TokenTypes.IDENTIFIER) {
+			expression = new IdentifierAccess(fieldSymbol, fieldSymbol.line, fieldSymbol.column);
+		} else {
+			expression = new ConstVal(fieldSymbol.value, fieldSymbol, fieldSymbol.line, fieldSymbol.column);
+		}
+		return expression;
 	}
 
 	@Override

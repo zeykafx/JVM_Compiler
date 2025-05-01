@@ -76,7 +76,7 @@ public class opCodeGenerator {
             default -> -1;
         };
     }
-    
+
     private void comparison() {
         Label trueLabel = new Label();
         Label endLabel = new Label();

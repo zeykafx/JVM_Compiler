@@ -709,11 +709,37 @@ public class CodeGen implements Visitor<Void, SlotTable> {
 
 	@Override
 	public Void visitFreeStatement(FreeStatement freeStatement, SlotTable localTable) throws Exception {
+		// Nothing to do, the garbage collector will free the object for us.
 		return null;
 	}
 
 	@Override
 	public Void visitIfStatement(IfStatement ifStatement, SlotTable localTable) throws Exception {
+		Label elseLabel = new Label();
+		Label endLabel = new Label();
+
+		ifStatement.getCondition().accept(this, localTable);
+
+		// the jump label depends on if we have an else block,
+		// if we don't, then at if the condition is not met, we jump directly to the end label
+		// otherwise, if we do have an else label and the condition is not met, we jump to the else label which marks the else block
+		Label jumpLabel = endLabel;
+		if (ifStatement.isElse()) {
+			jumpLabel = elseLabel;
+		}
+
+		mv.visitJumpInsn(IFEQ, jumpLabel);
+
+		ifStatement.getThenBlock().accept(this, localTable);
+		if (ifStatement.isElse()) {
+
+			mv.visitJumpInsn(GOTO, endLabel); // goto end marks the end of the then block
+			mv.visitLabel(elseLabel);
+			ifStatement.getElseBlock().accept(this, localTable);
+		}
+
+		mv.visitLabel(endLabel);
+
 		return null;
 	}
 

@@ -20,8 +20,11 @@ fun main() {
     $writeln(floor(100.6));
     writeln("Enter a number");
     input int = readInt();
-    write("You entered ");
-    writeln(input);
+    if (input >= 10) {
+        writeln("You entered a number larger than 10");
+    } else {
+        writeln("You entered a number smaller than 10");
+    }
     $p.y = 4;
 
     $points[0] = p;

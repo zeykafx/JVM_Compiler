@@ -204,14 +204,17 @@ public class CodeGen implements Visitor<Void, SlotTable> {
 			recordAccess.getHeadAccess().accept(this, localTable);
 //			recordAccess.accept(this, localTable);
 		}
-		if (variableAssignment.getAccess() instanceof ArrayAccess arrayAccess) {
+		if (variableAssignment.getAccess() instanceof ArrayAccess arrayAccess && !(arrayAccess.getHeadAccess().semtype.equals(stringType))) {
 			arrayAccess.accept(this, localTable);
 		}
 
-		// then visit the expression
-		variableAssignment.getExpression().accept(this, localTable);
+		// don't visit the expression if we actually have a string array indexing (e.g. myString[2] = "2")
+		if (!(variableAssignment.getAccess() instanceof ArrayAccess arrayAccess && arrayAccess.getHeadAccess().semtype.equals(stringType))) {
+			// then visit the expression
+			variableAssignment.getExpression().accept(this, localTable);
+			implicitTypeConversion(variableAssignment.getAccess().semtype, variableAssignment.getExpression().semtype);
+		}
 
-		implicitTypeConversion(variableAssignment.getAccess().semtype, variableAssignment.getExpression().semtype);
 
 		// then store the results
 		switch (variableAssignment.getAccess()) {
@@ -237,22 +240,47 @@ public class CodeGen implements Visitor<Void, SlotTable> {
 				mv.visitFieldInsn(PUTFIELD, recordSemType.identifier, recordAccess.getIdentifier().lexeme, accessDesc);
 				break;
 			case ArrayAccess arrayAccess:
-				// TODO: finish the string indexing
-//				if (arrayAccess.semtype.equals(stringType)) {
-				// ex:  str[9] = 'a';
 
-				// StringBuilder string = new StringBuilder(str);
-				// string.setCharAt(index, ch);
-				// string.toString()
+				if (arrayAccess.getHeadAccess().semtype.equals(stringType)) {
+					// ex:  str[9] = 'a';
 
-				// str = str.substring(0, index) + ch + str.substring(index +1)
+					// StringBuilder string = new StringBuilder(str);
+					// string.setCharAt(index, ch);
+					// string.toString()
+					int stringBuilderSlot = localTable.currentSlot.get()+1;
+					localTable.currentSlot.set(stringBuilderSlot + 1);
+					mv.visitTypeInsn(NEW, "java/lang/StringBuilder");
+					mv.visitInsn(DUP); // duplicate to get a ref on the stack
 
-				// String val = "123";
-				// char[] valArr = val.toCharArray();
-				// valArr[2] = '2';
-				// val = String.valueOf(valArr);
-//					return null;
-//				}
+					// load the string to pass in the StringBuilder
+
+//					mv.visitVarInsn(ALOAD, 0);
+					arrayAccess.getHeadAccess().accept(this, localTable);
+
+					mv.visitMethodInsn(INVOKESPECIAL, "java/lang/StringBuilder", "<init>", "(Ljava/lang/String;)V", false);
+					mv.visitVarInsn(ASTORE, stringBuilderSlot);
+
+					// load the string builder
+					mv.visitVarInsn(ALOAD, stringBuilderSlot);
+
+					// load the index
+					arrayAccess.getIndexExpression().accept(this, localTable);
+
+					// load the new char
+					variableAssignment.getExpression().accept(this, localTable);
+
+					mv.visitMethodInsn(INVOKEVIRTUAL, "java/lang/StringBuilder", "setCharAt", "(IC)V", false);
+
+					mv.visitVarInsn(ALOAD, stringBuilderSlot);
+					mv.visitMethodInsn(INVOKEVIRTUAL, "java/lang/StringBuilder", "toString", "()Ljava/lang/String;", false);
+
+					// load in place of the original string
+					arrayAccess.getHeadAccess().willStore = true;
+					arrayAccess.getHeadAccess().accept(this, localTable);
+
+					return null;
+				}
+
 				ArraySemType arraySemType = (ArraySemType) arrayAccess.getHeadAccess().semtype;
 				org.objectweb.asm.Type arrayAsmType = arraySemType.getElementSemType().asmType();
 				mv.visitInsn(arrayAsmType.getOpcode(IASTORE));
@@ -501,9 +529,10 @@ public class CodeGen implements Visitor<Void, SlotTable> {
 			throw new RuntimeException("Unexpected error : the variable " + identLexeme + " is not in the slot table.");
 		}
 
+		boolean shouldStore = identifierAccess.willStore;
 		SemType semtype = identifierAccess.semtype;
 		org.objectweb.asm.Type asmType = semtype.asmType();
-		mv.visitVarInsn(asmType.getOpcode(ILOAD), index);
+		mv.visitVarInsn(asmType.getOpcode(shouldStore ? ISTORE : ILOAD), index);
 
 		return null;
 	}
@@ -569,6 +598,11 @@ public class CodeGen implements Visitor<Void, SlotTable> {
 			case "chr":
 				functionCall.getParameters().getFirst().accept(this, localTable);
 				mv.visitMethodInsn(INVOKESTATIC, "java/lang/String", "valueOf", "(C)Ljava/lang/String;", false);
+				break;
+			case "ord":
+				functionCall.getParameters().getFirst().accept(this, localTable);
+				mv.visitLdcInsn(0); // load char at index 0
+				mv.visitMethodInsn(INVOKEVIRTUAL, "java/lang/String", "charAt", "(I)C", false);
 				break;
 			case "len":
 				handleLenCall(functionCall, localTable);

@@ -270,10 +270,11 @@ public class SemanticAnalysis implements Visitor<SemType, SymbolTable> {
 		SemType leftType = binaryExpression.getLeftTerm().accept(this, table);
 		SemType rightType = binaryExpression.getRightTerm().accept(this, table);
 
+
 		binaryExpression.getLeftTerm().semtype = leftType;
 		binaryExpression.getRightTerm().semtype = rightType;
 
-		if (!leftType.equals(rightType)) {
+		if (!leftType.equals(rightType) && !(leftType.equals(voidType) || rightType.equals(voidType))) {
 			// check if the types are convertible
 			// if either of the types is a float, then we can convert the other type to a float
 			if (leftType.equals(floatType) && rightType.equals(intType)) {

@@ -34,14 +34,15 @@ public class opCodeGenerator {
             isInt = true;
         }
 
-        // if left & right terms are type strings, set isString to true
-        if (expression.getLeftTerm().semtype.equals(stringType) && expression.getRightTerm().semtype.equals(stringType)) {
-            isString = true;
+
+        // if left & right terms are type strings, set isObject to true
+        if ((expression.getLeftTerm().semtype.equals(stringType) && expression.getRightTerm().semtype.equals(stringType)) || (expression.getLeftTerm().semtype.type.equals("rec") && expression.getRightTerm().semtype.type.equals("rec"))) {
+            isObject = true;
         }
     }
 
     public void generateCode() {
-        if (!isString) {
+        if (!isObject) {
             int opCode = getOpCode();
             if (opCode != -1) {
                 mv.visitInsn(opCode);
@@ -55,9 +56,37 @@ public class opCodeGenerator {
                 mv.visitMethodInsn(INVOKEVIRTUAL, "java/lang/String", "concat", "(Ljava/lang/String;)Ljava/lang/String;", false);
 
             } else if (expression.getOperator().getOperator().equals("==")) {
-                mv.visitMethodInsn(INVOKESTATIC, "java/lang/String", "equals", "(Ljava/lang/Object;)Z", false);
+
+                String path = "java/lang/";
+                String classname;
+                String descriptor = "(";
+                int access = INVOKEVIRTUAL;
+				switch (expression.semtype.type) {
+					case "int":
+						classname = "Integer";
+                        descriptor += "I";
+						break;
+					case "string":
+						classname = "String";
+                        descriptor += "Ljava/lang/Object;";
+						break;
+					case "float":
+						classname = "Float";
+                        descriptor += "F";
+						break;
+
+					default:
+                        path = "java/util/"; // java/util/Objects
+                        classname = "Objects";
+                        descriptor += "Ljava/lang/Object;Ljava/lang/Object;";
+                        access = INVOKESTATIC;
+						break;
+				}
+                descriptor += ")Z";
+
+				mv.visitMethodInsn(access, path+classname, "equals", descriptor, false);
             } else if (expression.getOperator().getOperator().equals("!=")) {
-                mv.visitMethodInsn(INVOKESTATIC, "java/lang/String", "equals", "(Ljava/lang/Object;)Z", false);
+                mv.visitMethodInsn(INVOKEVIRTUAL, "java/lang/String", "equals", "(Ljava/lang/Object;)Z", false);
                 mv.visitInsn(ICONST_1);
                 mv.visitInsn(IXOR);
             }
@@ -85,6 +114,7 @@ public class opCodeGenerator {
 //            mv.visitInsn(FSUB);
             mv.visitInsn(FCMPG);
         }
+
 
         int opCode = comparisonIntOpCode();
         if (opCode == -1) {

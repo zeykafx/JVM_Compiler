@@ -202,7 +202,6 @@ public class CodeGen implements Visitor<Void, SlotTable> {
 //		variableAssignment.getAccess().accept(this, localTable);
 		if (variableAssignment.getAccess() instanceof RecordAccess recordAccess) { // p.x = 0;
 			recordAccess.getHeadAccess().accept(this, localTable);
-//			recordAccess.accept(this, localTable);
 		}
 		if (variableAssignment.getAccess() instanceof ArrayAccess arrayAccess && !(arrayAccess.getHeadAccess().semtype.equals(stringType))) {
 			arrayAccess.accept(this, localTable);
@@ -242,7 +241,7 @@ public class CodeGen implements Visitor<Void, SlotTable> {
 			case ArrayAccess arrayAccess:
 
 				if (arrayAccess.getHeadAccess().semtype.equals(stringType)) {
-					// ex:  str[9] = 'a';
+					// ex:  str[9] = ord("A");
 
 					// StringBuilder string = new StringBuilder(str);
 					// string.setCharAt(index, ch);
@@ -254,7 +253,6 @@ public class CodeGen implements Visitor<Void, SlotTable> {
 
 					// load the string to pass in the StringBuilder
 
-//					mv.visitVarInsn(ALOAD, 0);
 					arrayAccess.getHeadAccess().accept(this, localTable);
 
 					mv.visitMethodInsn(INVOKESPECIAL, "java/lang/StringBuilder", "<init>", "(Ljava/lang/String;)V", false);
@@ -776,10 +774,18 @@ public class CodeGen implements Visitor<Void, SlotTable> {
 
 	@Override
 	public Void visitBinaryExpression(BinaryExpression binaryExpression, SlotTable localTable) throws Exception {
+//		Label endLabel = new Label();
 		binaryExpression.getLeftTerm().accept(this, localTable);
 		if (binaryExpression.getLeftTerm().semtype.toConvert) {
 			mv.visitInsn(I2F);
 		}
+//
+//		if (binaryExpression.getLeftTerm().semtype.equals(boolType)) {
+//			mv.visitInsn(DUP);
+//			mv.visitJumpInsn(binaryExpression.getOperator().getSymbol().type.equals(TokenTypes.AND) ? IFEQ : IFNE, endLabel);
+//			mv.visitInsn(POP);
+//		}
+
 		binaryExpression.getRightTerm().accept(this, localTable);
 		if (binaryExpression.getRightTerm().semtype.toConvert) {
 			mv.visitInsn(I2F);
@@ -787,6 +793,7 @@ public class CodeGen implements Visitor<Void, SlotTable> {
 
 		opCodeGenerator op = new opCodeGenerator(binaryExpression, mv);
 		op.generateCode();
+//		mv.visitLabel(endLabel);
 		return null;
 	}
 

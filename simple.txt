@@ -9,13 +9,9 @@ Point rec {
 
 
 Person rec{
-
     name string;
-
     location Point;
-
     history int[];
-
 }
 
 
@@ -32,28 +28,34 @@ fun square(v int) int {
 
 
 fun copyPoints(p Point[]) Point {
+    writeln("copyPoints called");
     return Point(p[0].x+p[1].x, p[0].y+p[1].y);
 }
 
 
 fun main() {
-    val string = "123";
-    write("Before: ");
-    writeln(val);
+    p Point = Point(1, 2);
+    p2 Point = Point(3, 42);
+    points Point[] = array [2] of Point;
+    points[0] = p;
+    points[1] = p2;
+    p3 Point = Point(4, 44);
 
-    val[2] = ord("9");
-    write("After: ");
-    writeln(val);
+    val int = 0;
+    if ((val == 123) && ((copyPoints(points)) == p3)) {
+        writeln("here");
+    }
+    $write("Before: ");
+    $writeln(val);
+
+    $val[2] = ord("9");
+    $write("After: ");
+    $writeln(val);
 
     $person Person = Person("me", Point(3,7), array [i*2] of int);  $ new record
     $write("Person: ");
     $writeln(person);
-$
-    $p Point = Point(1, 2);
-    $p2 Point = Point(3, 42);
-    $points Point[] = array [2] of Point;
-    $points[0] = p;
-    $points[1] = p2;
+
     $p3 Point = copyPoints(points);
     $$writeln(p3.x);
     $$writeln(p3.y);

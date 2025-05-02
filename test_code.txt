@@ -3,17 +3,13 @@ $Good luck
 final message string = "Hello";
 final run bool = true;
 
-final a int = 3;
-final b float = a * 2.0;
-final b bool = a == 3;
 
 Point rec {
     x int;
     y int;
 }
 
-$a int = 3;
-$c float = 5;
+a int = 3;
 
 fun square(v int) int {
     return v*v;
@@ -22,6 +18,7 @@ fun square(v int) int {
 fun main() {
     value int = readInt();
     p Point = Point(a, a+value);
+    free p;
     writeInt(square(value));
     writeln("");
     i int;

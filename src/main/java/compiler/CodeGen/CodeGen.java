@@ -5,6 +5,7 @@ import compiler.Lexer.TokenTypes;
 import compiler.Parser.ASTNodes.ASTNode;
 import compiler.Parser.ASTNodes.Block;
 import compiler.Parser.ASTNodes.Program;
+import compiler.Parser.ASTNodes.Statements.Expressions.Access.Access;
 import compiler.Parser.ASTNodes.Statements.Expressions.Access.ArrayAccess;
 import compiler.Parser.ASTNodes.Statements.Expressions.Access.IdentifierAccess;
 import compiler.Parser.ASTNodes.Statements.Expressions.Access.RecordAccess;
@@ -30,6 +31,7 @@ import org.objectweb.asm.MethodVisitor;
 
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.Map;
@@ -198,11 +200,12 @@ public class CodeGen implements Visitor<Void, SlotTable> {
 	@Override
 	public Void visitVariableAssignment(VariableAssignment variableAssignment, SlotTable localTable) throws Exception {
 //		variableAssignment.getAccess().accept(this, localTable);
-		if (variableAssignment.getAccess() instanceof RecordAccess recordAccess) {
+		if (variableAssignment.getAccess() instanceof RecordAccess recordAccess) { // p.x = 0;
 			recordAccess.getHeadAccess().accept(this, localTable);
+//			recordAccess.accept(this, localTable);
 		}
 		if (variableAssignment.getAccess() instanceof ArrayAccess arrayAccess) {
-			arrayAccess.getHeadAccess().accept(this, localTable);
+			arrayAccess.accept(this, localTable);
 		}
 
 		// then visit the expression
@@ -236,6 +239,18 @@ public class CodeGen implements Visitor<Void, SlotTable> {
 			case ArrayAccess arrayAccess:
 				// TODO: finish the string indexing
 //				if (arrayAccess.semtype.equals(stringType)) {
+				// ex:  str[9] = 'a';
+
+				// StringBuilder string = new StringBuilder(str);
+				// string.setCharAt(index, ch);
+				// string.toString()
+
+				// str = str.substring(0, index) + ch + str.substring(index +1)
+
+				// String val = "123";
+				// char[] valArr = val.toCharArray();
+				// valArr[2] = '2';
+				// val = String.valueOf(valArr);
 //					return null;
 //				}
 				ArraySemType arraySemType = (ArraySemType) arrayAccess.getHeadAccess().semtype;
@@ -287,6 +302,50 @@ public class CodeGen implements Visitor<Void, SlotTable> {
 		init.visitInsn(RETURN);
 		init.visitMaxs( 0, 0);
 		init.visitEnd();
+//
+//		// Create a toString method for the record
+//		MethodVisitor toStringmv = structCw.visitMethod(ACC_PUBLIC, "toString", "()Ljava/lang/String;", null,null);
+//		toStringmv.visitCode();
+//
+//		toStringmv.visitLdcInsn(recordDefinition.getIdentifier().lexeme +" {");
+//		toStringmv.visitVarInsn(ASTORE, 1); // store in constant pool
+//
+//		for (RecordFieldDefinition recordDef : recordDefinition.getFields()) {
+//			toStringmv.visitVarInsn(ALOAD, 1);
+//
+//			toStringmv.visitLdcInsn(recordDef.getIdentifier().lexeme + " = ");
+//			toStringmv.visitMethodInsn(INVOKEVIRTUAL, "java/lang/String", "concat", "(Ljava/lang/String;)Ljava/lang/String;", false);
+//			toStringmv.visitVarInsn(ASTORE, 1); // store in constant pool
+//
+//			toStringmv.visitVarInsn(ALOAD, 1);
+//			// load the value on the stack
+//			toStringmv.visitFieldInsn(GETFIELD, recordDefinition.getIdentifier().lexeme, recordDef.getIdentifier().lexeme, recordDef.semtype.fieldDescriptor());
+//			// transform the value to a string
+//			String className = switch (recordDef.semtype.type) {
+//				case "int" -> "Integer";
+//				case "float" -> "Float";
+//				case "bool" -> "Boolean";
+//				default -> "String";
+//			};
+//			toStringmv.visitMethodInsn(INVOKESTATIC, "java/lang/"+className, "toString", "(" + recordDef.semtype.fieldDescriptor() + ")Ljava/lang/String;", false);
+//			toStringmv.visitVarInsn(ASTORE, 1); // store in constant pool
+//
+//			toStringmv.visitVarInsn(ASTORE, 1); // store in constant pool
+//			toStringmv.visitMethodInsn(INVOKEVIRTUAL, "java/lang/String", "concat", "(Ljava/lang/String;)Ljava/lang/String;", false);
+//			toStringmv.visitVarInsn(ASTORE, 1); // store in constant pool
+//		}
+//
+//		toStringmv.visitVarInsn(ASTORE, 1); // store in constant pool
+//		toStringmv.visitMethodInsn(INVOKEVIRTUAL, "java/lang/String", "concat", "(Ljava/lang/String;)Ljava/lang/String;", false);
+//
+//		toStringmv.visitLdcInsn("\n}");
+//		toStringmv.visitVarInsn(ASTORE, 1);
+//
+//		toStringmv.visitVarInsn(ALOAD, 1);
+//		toStringmv.visitInsn(ARETURN);
+//
+//		toStringmv.visitMaxs( 0, 0);
+//		toStringmv.visitEnd();
 
 		structCw.visitEnd();
 		structs.put(recordDefinition.getIdentifier().lexeme, structCw);
@@ -421,17 +480,21 @@ public class CodeGen implements Visitor<Void, SlotTable> {
 	public Void visitArrayAccess(ArrayAccess arrayAccess, SlotTable localTable) throws Exception {
 		// ArrayAccess -> "[" Expression "]"
 
-		arrayAccess.getHeadAccess().accept(this, localTable);
-
-//		if (arrayAccess.semtype.equals(stringType)) {
-//
-//			mv.visitMethodInsn(INVOKEVIRTUAL, "java/lang/String", "toCharArray", "()[C", false);
-//			org.objectweb.asm.Type arrSemType = arrayAccess.getHeadAccess().semtype.asmType();
-//			mv.visitInsn(arrSemType.getOpcode(ISTORE));
-//			return null;
-//		}
+		Access access = arrayAccess.getHeadAccess();
+		access.accept(this, localTable);
 
 		arrayAccess.getIndexExpression().accept(this, localTable);
+
+		if (access.semtype.equals(stringType) && !arrayAccess.willStore) {
+
+			// ex : writeln(str[9]);
+
+			// for strings use string.charAt(idx)
+			mv.visitMethodInsn(INVOKEVIRTUAL, "java/lang/String", "charAt", "(I)C", false);
+//			mv.visitMethodInsn(INVOKESTATIC, "java/lang/String", "valueOf", "(C)Ljava/lang/String;", false);
+
+			return null;
+		}
 
 		if (!arrayAccess.willStore) {
 			ArraySemType arraySemType = (ArraySemType) arrayAccess.getHeadAccess().semtype;
@@ -439,7 +502,6 @@ public class CodeGen implements Visitor<Void, SlotTable> {
 			mv.visitInsn(arrayAsmType.getOpcode(IALOAD));
 		}
 
-		// note: for strings use string.charAt(idx)
 
 		return null;
 	}
@@ -573,8 +635,28 @@ public class CodeGen implements Visitor<Void, SlotTable> {
 			mv.visitLdcInsn("");
 		}
 
+		if (argSemType instanceof ArraySemType arraySemType) {
+			String desc = "(";
+
+			// HACK: if we have an array of records, mark the records desc as object so that we print their addresses
+			if (arraySemType.getElementSemType() instanceof RecordSemType) {
+				desc += "[Ljava/lang/Object;)Ljava/lang/String;"; // note the [ that was added, that is because it's a list of objects
+				// and arraySemType.fieldDescriptor() already adds it below so it's not needed there
+			} else {
+				desc += arraySemType.fieldDescriptor() +")Ljava/lang/String;";
+
+			}
+			mv.visitMethodInsn(INVOKESTATIC, "java/util/Arrays", "toString", desc, false);
+		}
+		System.out.println("argSemType = " + argSemType);
 		functionDesc.append("(");
-		functionDesc.append(argSemType.fieldDescriptor());
+		if (argSemType instanceof RecordSemType) {
+			functionDesc.append("Ljava/lang/Object;"); // prints the object as "RecordName@<hashcode>"
+		} else if (argSemType instanceof ArraySemType) {
+			functionDesc.append("Ljava/lang/String;");
+		} else {
+			functionDesc.append(argSemType.fieldDescriptor());
+		}
 		functionDesc.append(")");
 		functionDesc.append("V"); // the write functions return nothing I guess, if they returned something we'd have to handle it
 
@@ -612,11 +694,11 @@ public class CodeGen implements Visitor<Void, SlotTable> {
 
 	@Override
 	public Void visitBinaryExpression(BinaryExpression binaryExpression, SlotTable localTable) throws Exception {
-		binaryExpression.getLeftTerm().accept(this, slotTable);
+		binaryExpression.getLeftTerm().accept(this, localTable);
 		if (binaryExpression.getLeftTerm().semtype.toConvert) {
 			mv.visitInsn(I2F);
 		}
-		binaryExpression.getRightTerm().accept(this, slotTable);
+		binaryExpression.getRightTerm().accept(this, localTable);
 		if (binaryExpression.getRightTerm().semtype.toConvert) {
 			mv.visitInsn(I2F);
 		}
@@ -744,8 +826,11 @@ public class CodeGen implements Visitor<Void, SlotTable> {
 
 		if (loopVarIsFloat) {
 			mv.visitInsn(FCMPG);
+			mv.visitJumpInsn(IFGE, endLabel);
+
+		} else {
+			mv.visitJumpInsn(IF_ICMPGE, endLabel);
 		}
-		mv.visitJumpInsn(IFGE, endLabel);
 
 		// visit the loop body
 		forLoop.getBlock().accept(this, localTable);
@@ -796,16 +881,6 @@ public class CodeGen implements Visitor<Void, SlotTable> {
 			org.objectweb.asm.Type asmType = semtype.asmType();
 			mv.visitVarInsn(asmType.getOpcode(shouldStore ? ISTORE : ILOAD), index);
 		}
-	}
-
-	private Expression getFieldExpression(Symbol fieldSymbol) {
-		Expression expression;
-		if (fieldSymbol.type == TokenTypes.IDENTIFIER) {
-			expression = new IdentifierAccess(fieldSymbol, fieldSymbol.line, fieldSymbol.column);
-		} else {
-			expression = new ConstVal(fieldSymbol.value, fieldSymbol, fieldSymbol.line, fieldSymbol.column);
-		}
-		return expression;
 	}
 
 	@Override

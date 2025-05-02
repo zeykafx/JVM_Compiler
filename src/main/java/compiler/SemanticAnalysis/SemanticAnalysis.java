@@ -168,9 +168,9 @@ public class SemanticAnalysis implements Visitor<SemType, SymbolTable> {
 
 		// quick fix for strings access
 		if (headType.equals(stringType)) {
-			arrayAccess.semtype = headType;
+			arrayAccess.semtype = intType; // intType because we index into a string and get a char
 
-			return headType;
+			return arrayAccess.semtype;
 		}
 
 		if (!(headType instanceof ArraySemType arraySemType)) {

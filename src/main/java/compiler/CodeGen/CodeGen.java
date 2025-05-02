@@ -302,50 +302,98 @@ public class CodeGen implements Visitor<Void, SlotTable> {
 		init.visitInsn(RETURN);
 		init.visitMaxs( 0, 0);
 		init.visitEnd();
-//
-//		// Create a toString method for the record
-//		MethodVisitor toStringmv = structCw.visitMethod(ACC_PUBLIC, "toString", "()Ljava/lang/String;", null,null);
-//		toStringmv.visitCode();
-//
-//		toStringmv.visitLdcInsn(recordDefinition.getIdentifier().lexeme +" {");
-//		toStringmv.visitVarInsn(ASTORE, 1); // store in constant pool
-//
-//		for (RecordFieldDefinition recordDef : recordDefinition.getFields()) {
-//			toStringmv.visitVarInsn(ALOAD, 1);
-//
-//			toStringmv.visitLdcInsn(recordDef.getIdentifier().lexeme + " = ");
-//			toStringmv.visitMethodInsn(INVOKEVIRTUAL, "java/lang/String", "concat", "(Ljava/lang/String;)Ljava/lang/String;", false);
-//			toStringmv.visitVarInsn(ASTORE, 1); // store in constant pool
-//
-//			toStringmv.visitVarInsn(ALOAD, 1);
-//			// load the value on the stack
-//			toStringmv.visitFieldInsn(GETFIELD, recordDefinition.getIdentifier().lexeme, recordDef.getIdentifier().lexeme, recordDef.semtype.fieldDescriptor());
-//			// transform the value to a string
-//			String className = switch (recordDef.semtype.type) {
-//				case "int" -> "Integer";
-//				case "float" -> "Float";
-//				case "bool" -> "Boolean";
-//				default -> "String";
-//			};
-//			toStringmv.visitMethodInsn(INVOKESTATIC, "java/lang/"+className, "toString", "(" + recordDef.semtype.fieldDescriptor() + ")Ljava/lang/String;", false);
-//			toStringmv.visitVarInsn(ASTORE, 1); // store in constant pool
-//
-//			toStringmv.visitVarInsn(ASTORE, 1); // store in constant pool
-//			toStringmv.visitMethodInsn(INVOKEVIRTUAL, "java/lang/String", "concat", "(Ljava/lang/String;)Ljava/lang/String;", false);
-//			toStringmv.visitVarInsn(ASTORE, 1); // store in constant pool
-//		}
-//
-//		toStringmv.visitVarInsn(ASTORE, 1); // store in constant pool
-//		toStringmv.visitMethodInsn(INVOKEVIRTUAL, "java/lang/String", "concat", "(Ljava/lang/String;)Ljava/lang/String;", false);
-//
-//		toStringmv.visitLdcInsn("\n}");
-//		toStringmv.visitVarInsn(ASTORE, 1);
-//
-//		toStringmv.visitVarInsn(ALOAD, 1);
-//		toStringmv.visitInsn(ARETURN);
-//
-//		toStringmv.visitMaxs( 0, 0);
-//		toStringmv.visitEnd();
+
+		// toString method on the records
+		MethodVisitor toStringmv = structCw.visitMethod(ACC_PUBLIC, "toString", "()Ljava/lang/String;", null,null);
+		toStringmv.visitCode();
+
+		// the start of the string returned is the record type + {
+		toStringmv.visitLdcInsn(recordDefinition.getIdentifier().lexeme +" {");
+		toStringmv.visitVarInsn(ASTORE, 1); // store the string in slot 1
+
+
+		// add each field to the string in slot 1
+		for (RecordFieldDefinition recordDef : recordDefinition.getFields()) {
+			toStringmv.visitVarInsn(ALOAD, 1); // load the current string
+
+			// add the name of the identifier + "= "
+			toStringmv.visitLdcInsn(recordDef.getIdentifier().lexeme + "= ");
+			// concatenate the string above to the current string
+			toStringmv.visitMethodInsn(INVOKEVIRTUAL, "java/lang/String", "concat", "(Ljava/lang/String;)Ljava/lang/String;", false);
+			toStringmv.visitVarInsn(ASTORE, 1); // store this back (NOTE: this is not required, because we load it again right after, but we do this just to be safe)
+
+			toStringmv.visitVarInsn(ALOAD, 1); // load again
+			toStringmv.visitVarInsn(ALOAD, 0); // load "this"
+			// load the value of the field on the stack
+			toStringmv.visitFieldInsn(GETFIELD, recordDefinition.getIdentifier().lexeme, recordDef.getIdentifier().lexeme, recordDef.semtype.fieldDescriptor());
+
+			// transform the value to a string
+			// depending on the value, we will either call the "[Integer, Float, Boolean].toString" methods, or the record's own .toString method
+			// or if the field is an array, we call the "Arrays.toString" method, and if the elements of the array are records, then we set the field descriptor of the elements
+			// to be objects so that the "Arrays.toString" will call their ".toString" method.
+			int access = INVOKESTATIC;
+			String className = "java/lang/";
+
+			className += switch (recordDef.semtype.type) {
+				case "int" -> "Integer";
+				case "float" -> "Float";
+				case "bool" -> "Boolean";
+				case "string" -> "String";
+				default -> "unknown";
+			};
+
+			// if it's an array, call Arrays.toString
+			if (recordDef.semtype instanceof ArraySemType arraySemType) {
+				String desc = "(";
+
+				// HACK: if we have an array of records, mark the records desc as object so that it calls their .toString method
+				if (arraySemType.getElementSemType() instanceof RecordSemType recordSemType) {
+					desc += "[Ljava/lang/Object;)Ljava/lang/String;"; // note the [ that was added, that is because it's a list of objects
+					// and arraySemType.fieldDescriptor() already adds it below so it's not needed there
+				} else {
+					desc += arraySemType.fieldDescriptor() +")Ljava/lang/String;";
+				}
+				toStringmv.visitMethodInsn(INVOKESTATIC, "java/util/Arrays", "toString", desc, false);
+
+			} else if (!recordDef.semtype.equals(stringType)) {
+				String desc = "(";
+				if (recordDef.semtype instanceof RecordSemType recordSemType) {
+					desc += ")Ljava/lang/String;";
+					className = recordSemType.identifier;
+					access = INVOKEVIRTUAL;
+				} else {
+					desc += recordDef.semtype.fieldDescriptor() +")Ljava/lang/String;";
+				}
+
+				toStringmv.visitMethodInsn(access, className, "toString", desc, false);
+			}
+
+
+			toStringmv.visitMethodInsn(INVOKEVIRTUAL, "java/lang/String", "concat", "(Ljava/lang/String;)Ljava/lang/String;", false);
+
+			toStringmv.visitVarInsn(ASTORE, 1); // store in constant pool
+
+			if (recordDef.getFieldIndex() < recordDefinition.getFields().size() - 1) {
+				toStringmv.visitVarInsn(ALOAD, 1);
+				toStringmv.visitLdcInsn( ", ");
+				toStringmv.visitMethodInsn(INVOKEVIRTUAL, "java/lang/String", "concat", "(Ljava/lang/String;)Ljava/lang/String;", false);
+				toStringmv.visitVarInsn(ASTORE, 1); // store in constant pool
+			}
+
+		}
+
+		toStringmv.visitVarInsn(ALOAD, 1); // store in constant pool
+
+		toStringmv.visitLdcInsn("}");
+		toStringmv.visitMethodInsn(INVOKEVIRTUAL, "java/lang/String", "concat", "(Ljava/lang/String;)Ljava/lang/String;", false);
+
+		toStringmv.visitVarInsn(ASTORE, 1);
+
+		toStringmv.visitVarInsn(ALOAD, 1);
+		toStringmv.visitInsn(ARETURN);
+
+		toStringmv.visitMaxs( 0, 0);
+		toStringmv.visitEnd();
 
 		structCw.visitEnd();
 		structs.put(recordDefinition.getIdentifier().lexeme, structCw);
@@ -638,7 +686,7 @@ public class CodeGen implements Visitor<Void, SlotTable> {
 		if (argSemType instanceof ArraySemType arraySemType) {
 			String desc = "(";
 
-			// HACK: if we have an array of records, mark the records desc as object so that we print their addresses
+			// HACK: if we have an array of records, mark the records desc as object so that it calls their .toString method
 			if (arraySemType.getElementSemType() instanceof RecordSemType) {
 				desc += "[Ljava/lang/Object;)Ljava/lang/String;"; // note the [ that was added, that is because it's a list of objects
 				// and arraySemType.fieldDescriptor() already adds it below so it's not needed there
@@ -648,7 +696,7 @@ public class CodeGen implements Visitor<Void, SlotTable> {
 			}
 			mv.visitMethodInsn(INVOKESTATIC, "java/util/Arrays", "toString", desc, false);
 		}
-		System.out.println("argSemType = " + argSemType);
+
 		functionDesc.append("(");
 		if (argSemType instanceof RecordSemType) {
 			functionDesc.append("Ljava/lang/Object;"); // prints the object as "RecordName@<hashcode>"

@@ -38,7 +38,9 @@ fun copyPoints(p Point[]) Point {
 
 fun main() {
 
-    $d Person = Person("me", Point(3,7), array [i*9] of int);  $ new record
+    person Person = Person("me", Point(3,7), array [i*2] of int);  $ new record
+    write("Person: ");
+    writeln(person);
 
     p Point = Point(1, 2);
     p2 Point = Point(3, 42);
@@ -57,9 +59,9 @@ fun main() {
     b = a;
     a[0] = p3;
 
-    write("a (Point) :");
+    write("a (Point): ");
     writeln(a);
-    write("b (Point) :");
+    write("b (Point): ");
     writeln(b);
 
     c int[] = array [2] of int;
@@ -69,9 +71,9 @@ fun main() {
     d = c;
     c[0] = 5;
 
-    write("c (int) :");
+    write("c (int): ");
     writeln(c);
-    write("d (int) :");
+    write("d (int): ");
     writeln(d);
 
 

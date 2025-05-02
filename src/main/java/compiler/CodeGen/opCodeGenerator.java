@@ -51,44 +51,44 @@ public class opCodeGenerator {
             }
         } else {
             // +, ==, !=
-            if (expression.getOperator().getOperator().equals("+")) {
+            String op = expression.getOperator().getOperator();
+            if (op.equals("+")) {
                 // handle concatenation of strings: we use the .concat method on strings
                 mv.visitMethodInsn(INVOKEVIRTUAL, "java/lang/String", "concat", "(Ljava/lang/String;)Ljava/lang/String;", false);
-
-            } else if (expression.getOperator().getOperator().equals("==")) {
-
+            } else if (op.equals("==") || op.equals("!=")) {
                 String path = "java/lang/";
                 String classname;
                 String descriptor = "(";
                 int access = INVOKEVIRTUAL;
-				switch (expression.semtype.type) {
-					case "int":
-						classname = "Integer";
+                switch (expression.semtype.type) {
+                    case "int":
+                        classname = "Integer";
                         descriptor += "I";
-						break;
-					case "string":
-						classname = "String";
+                        break;
+                    case "string":
+                        classname = "String";
                         descriptor += "Ljava/lang/Object;";
-						break;
-					case "float":
-						classname = "Float";
+                        break;
+                    case "float":
+                        classname = "Float";
                         descriptor += "F";
-						break;
+                        break;
 
-					default:
+                    default:
                         path = "java/util/"; // java/util/Objects
                         classname = "Objects";
                         descriptor += "Ljava/lang/Object;Ljava/lang/Object;";
                         access = INVOKESTATIC;
-						break;
-				}
+                        break;
+                }
                 descriptor += ")Z";
 
-				mv.visitMethodInsn(access, path+classname, "equals", descriptor, false);
-            } else if (expression.getOperator().getOperator().equals("!=")) {
-                mv.visitMethodInsn(INVOKEVIRTUAL, "java/lang/String", "equals", "(Ljava/lang/Object;)Z", false);
-                mv.visitInsn(ICONST_1);
-                mv.visitInsn(IXOR);
+                mv.visitMethodInsn(access, path+classname, "equals", descriptor, false);
+
+                if (op.equals("!=")) {
+                    mv.visitInsn(ICONST_1);
+                    mv.visitInsn(IXOR);
+                }
             }
         }
     }

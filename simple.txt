@@ -41,10 +41,18 @@ fun main() {
     points[1] = p2;
     p3 Point = Point(4, 44);
 
-    val int = 0;
-    if ((val == 123) && ((copyPoints(points)) == p3)) {
-        writeln("here");
+    if (p3.x == 4 && p3.y == 44) {
+        writeln("hello");
     }
+
+    if (p3.x + 4 > 5) {
+        writeln("hello2");
+    }
+
+    $val string = "123";
+    $if ((val == "123") && ((copyPoints(points)) != p3)) {
+    $    writeln("here");
+    $}
     $write("Before: ");
     $writeln(val);
 

@@ -774,7 +774,6 @@ public class CodeGen implements Visitor<Void, SlotTable> {
 
 	@Override
 	public Void visitBinaryExpression(BinaryExpression binaryExpression, SlotTable localTable) throws Exception {
-//		Label endLabel = new Label();
 		binaryExpression.getLeftTerm().accept(this, localTable);
 		if (binaryExpression.getLeftTerm().semtype.toConvert) {
 			mv.visitInsn(I2F);
@@ -793,7 +792,6 @@ public class CodeGen implements Visitor<Void, SlotTable> {
 
 		opCodeGenerator op = new opCodeGenerator(binaryExpression, mv);
 		op.generateCode();
-//		mv.visitLabel(endLabel);
 		return null;
 	}
 

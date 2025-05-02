@@ -319,7 +319,31 @@ public class Parser {
             Symbol binaryOperator = match(lookAheadSymbol.type);
             BinaryOperator binaryOp = new BinaryOperator(binaryOperator, term.line, term.column);
             Term rightTerm = parseTerm();
-            return new BinaryExpression(term, binaryOp, rightTerm, term.line, term.column);
+
+            // construct a binary expression from what we already parsed
+            BinaryExpression binaryExpression = new BinaryExpression(term, binaryOp, rightTerm, term.line, term.column);
+
+			// if we see an AND token or an OR token, this means that we might have a bool expression with no parentheses around them
+			// e.g. "if  (i+4 > 10 && found == false)", previously, this would have required parentheses around i+4 and also around the resulting term > 10
+			// e.g. "if ( ((i+4) > 10) && (found == false) )"
+			if (
+					lookAheadSymbol.type == TokenTypes.AND ||
+					lookAheadSymbol.type == TokenTypes.OR ||
+					lookAheadSymbol.type == TokenTypes.GREATER_THAN ||
+					lookAheadSymbol.type == TokenTypes.GREATER_THAN_EQUAL ||
+					lookAheadSymbol.type == TokenTypes.LESS_THAN ||
+					lookAheadSymbol.type == TokenTypes.LESS_THAN_EQUAL ||
+					lookAheadSymbol.type == TokenTypes.EQUAL_EQUAL ||
+					lookAheadSymbol.type == TokenTypes.NOT_EQUAL
+			) {
+                Term binOpTerm = new ParenthesesTerm(binaryExpression, term.line, term.column);
+                Symbol otherOp = match(lookAheadSymbol.type);
+                BinaryOperator otherBinOp = new BinaryOperator(otherOp, term.line, term.column);
+                Term rightRightTerm = new ParenthesesTerm(parseExpression(), term.line, term.column);
+                return new BinaryExpression(binOpTerm, otherBinOp, rightRightTerm, term.line, term.column);
+            }
+
+            return binaryExpression;
         }
 
         // If no binary operator, return the term
@@ -620,6 +644,11 @@ public class Parser {
         match(TokenTypes.IF);
         match(TokenTypes.LEFT_PAR);
         Expression condition = parseExpression();
+//        if (lookAheadSymbol.type != TokenTypes.RIGHT_PAR) {
+//            if (lookAheadSymbol.type == TokenTypes.AND || lookAheadSymbol.type == TokenTypes.OR) {
+//
+//            }
+//        }
         match(TokenTypes.RIGHT_PAR);
         Block ifBlock = parseBlock();
         Block elseStatement = parseElseStatement();

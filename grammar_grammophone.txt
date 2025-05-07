@@ -33,8 +33,8 @@ FunctionDefinitions -> FunctionDefinition FunctionDefinitions | .
 FunctionDefinition -> "fun" "identifier" "(" Params ")" Type Block .
 # OLD: FunctionDefinition -> "fun" "identifier" "(" Params ")" Type Block
 # NEW:
-FunctionDefinition -> "fun" InstanceRef "identifier" "(" Params ")" Type Block
-        // InstanceRef ->  "(" "identifier" "recordNameIdentifier" ")" | .
+FunctionDefinition -> "fun" InstanceRef "identifier" "(" Params ")" Type Block .
+InstanceRef ->  "(" "identifier" "recordNameIdentifier" ")" | .
 
 Params -> Param ParamsTail | .
 ParamsTail -> "," Param ParamsTail | .
@@ -45,13 +45,15 @@ ElseStmt -> "else" Block | .
 
 WhileLoop -> "while" "(" Expression ")" Block .
 ForLoop -> "for" "(" ForCondition ")" Block .
+# OLD : ForCondition -> "identifier" "," Term "," Term "," Term .
+# NEW: changed to allow for methods on records
 ForCondition -> "identifier" "," Expression "," Expression "," Expression .
 
 
 IdentifierAccess -> "identifier" AccessChain .
 AccessChain -> Access AccessChain | .
 Access -> "[" Expression "]" | "." "identifier" AccessTail .
-AccessTail -> "(" ParamsCall ")" | .  # to allow for methods on records
+AccessTail -> "(" ParamsCall ")" | .  # NEW : changed to allow for methods on records
 
 Expression -> Term IsBinaryExpr | ArrayExpression | UnaryOperator Term .
 IsBinaryExpr -> BinaryOperator Term | .

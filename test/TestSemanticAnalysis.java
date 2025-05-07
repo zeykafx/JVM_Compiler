@@ -841,14 +841,17 @@ public class TestSemanticAnalysis {
         symbolTable.addSymbol("myFunction", functionSemType);
         symbolTable.addSymbol("i", intType);
 
-        Symbol startSymbol = new Symbol(TokenTypes.INT_LITERAL, "0", 0, 0, 0);
-        Symbol endSymbol = new Symbol(TokenTypes.INT_LITERAL, "10", 0, 0, 10);
-        Symbol stepSymbol = new Symbol(TokenTypes.INT_LITERAL, "1", 0, 0, 1);
+//        Symbol startSymbol = new Symbol(TokenTypes.INT_LITERAL, "0", 0, 0, 0);
+//        Symbol endSymbol = new Symbol(TokenTypes.INT_LITERAL, "10", 0, 0, 10);
+//        Symbol stepSymbol = new Symbol(TokenTypes.INT_LITERAL, "1", 0, 0, 1);
+        Expression startExpression = new ConstVal(0, new Symbol(TokenTypes.INT_LITERAL, "0", 0, 0, 0), 0, 0);
+        Expression endExpression = new ConstVal(10, new Symbol(TokenTypes.INT_LITERAL, "10", 0, 0, 10), 0, 0);
+        Expression stepExpression = new ConstVal(1, new Symbol(TokenTypes.INT_LITERAL, "1", 0, 0, 1), 0, 0);
 
         Symbol var = new Symbol(TokenTypes.IDENTIFIER, "i", 0, 0);
 
         Block block = new Block(new ArrayList<Statement>(), new ReturnStatement(null, 0, 0), 0, 0);
-        ForLoop forLoop = new ForLoop(var, startSymbol, endSymbol, stepSymbol, block, 0, 0);
+        ForLoop forLoop = new ForLoop(var, startExpression, endExpression, stepExpression, block, 0, 0);
 
         try {
             SemanticAnalysis semanticAnalysis = new SemanticAnalysis();
@@ -874,14 +877,18 @@ public class TestSemanticAnalysis {
         symbolTable.addSymbol("i", intType);
         symbolTable.addSymbol("a", intType);
 
-        Symbol startSymbol = new Symbol(TokenTypes.IDENTIFIER, "a", 0, 0);
+//        Symbol startSymbol = new Symbol(TokenTypes.IDENTIFIER, "a", 0, 0);
+//
+//        Symbol endSymbol = new Symbol(TokenTypes.INT_LITERAL, "10", 0, 0, 10);
+//        Symbol stepSymbol = new Symbol(TokenTypes.INT_LITERAL, "1", 0, 0, 1);
 
-        Symbol endSymbol = new Symbol(TokenTypes.INT_LITERAL, "10", 0, 0, 10);
-        Symbol stepSymbol = new Symbol(TokenTypes.INT_LITERAL, "1", 0, 0, 1);
+        Expression startExpression = new IdentifierAccess(new Symbol(TokenTypes.IDENTIFIER, "a", 0, 0), 0, 0);
+        Expression endExpression = new ConstVal(10, new Symbol(TokenTypes.INT_LITERAL, "10", 0, 0, 10), 0, 0);
+        Expression stepExpression = new ConstVal(1, new Symbol(TokenTypes.INT_LITERAL, "1", 0, 0, 1), 0, 0);
 
         Symbol var = new Symbol(TokenTypes.IDENTIFIER, "i", 0, 0);
         Block block = new Block(new ArrayList<Statement>(), new ReturnStatement(null, 0, 0), 0, 0);
-        ForLoop forLoop = new ForLoop(var, startSymbol, endSymbol, stepSymbol, block, 0, 0);
+        ForLoop forLoop = new ForLoop(var, startExpression, endExpression, stepExpression, block, 0, 0);
 
         try {
             SemanticAnalysis semanticAnalysis = new SemanticAnalysis();

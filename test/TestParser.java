@@ -45,9 +45,12 @@ public class TestParser {
 
         assertEquals("i", constant.getName().lexeme);
         assertEquals(TokenTypes.INT, constant.getType().symbol.type);
-        assertTrue(constant.getValue() instanceof ConstVal);
+//        assertTrue(constant.getValue() instanceof ConstVal);
+        assertTrue(constant.getValue() instanceof ParenthesesTerm);
+        ParenthesesTerm parenthesesTerm = (ParenthesesTerm) constant.getValue();
+        assertTrue(parenthesesTerm.getExpression() instanceof ConstVal);
 
-        ConstVal constVal = (ConstVal) constant.getValue();
+        ConstVal constVal = (ConstVal) parenthesesTerm.getExpression();
         assertEquals(3, constVal.getValue());
         assertEquals(TokenTypes.INT_LITERAL, constVal.getSymbol().type);
     }
@@ -394,10 +397,21 @@ public class TestParser {
         IfStatement ifStmt = (IfStatement) statement;
         assertTrue(ifStmt.getCondition() instanceof BinaryExpression);
         BinaryExpression condition = (BinaryExpression) ifStmt.getCondition();
-        assertTrue(condition.getLeftTerm() instanceof IdentifierAccess);
-        assertTrue(condition.getRightTerm() instanceof IdentifierAccess);
-        IdentifierAccess leftAccess = (IdentifierAccess) condition.getLeftTerm();
-        IdentifierAccess rightAccess = (IdentifierAccess) condition.getRightTerm();
+
+//        assertTrue(condition.getLeftTerm() instanceof IdentifierAccess);
+        // Changed: we now always wrap the terms in parentheses, this allows us to have more complex expression
+        assertTrue(condition.getLeftTerm() instanceof ParenthesesTerm);
+        ParenthesesTerm parenthesesTerm = (ParenthesesTerm) condition.getLeftTerm();
+        assertTrue(parenthesesTerm.getExpression() instanceof IdentifierAccess);
+
+//        assertTrue(condition.getRightTerm() instanceof IdentifierAccess);
+        assertTrue(condition.getRightTerm() instanceof ParenthesesTerm);
+        ParenthesesTerm parenthesesTerm2 = (ParenthesesTerm) condition.getRightTerm();
+        assertTrue(parenthesesTerm2.getExpression() instanceof IdentifierAccess);
+
+
+        IdentifierAccess leftAccess = (IdentifierAccess) parenthesesTerm.getExpression();
+        IdentifierAccess rightAccess = (IdentifierAccess) parenthesesTerm2.getExpression();
         assertEquals("a", leftAccess.getIdentifier().lexeme);
         assertEquals("b", rightAccess.getIdentifier().lexeme);
 		assertNotNull(condition.getOperator());
@@ -411,8 +425,13 @@ public class TestParser {
         Statement thenStatement = thenBlock.getReturnStatement();
         assertTrue(thenStatement instanceof ReturnStatement);
         ReturnStatement returnStmt = (ReturnStatement) thenStatement;
-        assertTrue(returnStmt.getExpression() instanceof IdentifierAccess);
-        IdentifierAccess returnAccess = (IdentifierAccess) returnStmt.getExpression();
+
+//        assertTrue(returnStmt.getExpression() instanceof IdentifierAccess);
+        assertTrue(returnStmt.getExpression() instanceof ParenthesesTerm);
+        ParenthesesTerm returnParentheses = (ParenthesesTerm) returnStmt.getExpression();
+        assertTrue(returnParentheses.getExpression() instanceof IdentifierAccess);
+
+        IdentifierAccess returnAccess = (IdentifierAccess) returnParentheses.getExpression();
         assertEquals("a", returnAccess.getIdentifier().lexeme);
 
         assertNotNull(ifStmt.getElseBlock());
@@ -421,8 +440,11 @@ public class TestParser {
         Statement elseStatement = elseBlock.getReturnStatement();
         assertTrue(elseStatement instanceof ReturnStatement);
         ReturnStatement elseReturnStmt = (ReturnStatement) elseStatement;
-        assertTrue(elseReturnStmt.getExpression() instanceof IdentifierAccess);
-        IdentifierAccess elseReturnAccess = (IdentifierAccess) elseReturnStmt.getExpression();
+//        assertTrue(elseReturnStmt.getExpression() instanceof IdentifierAccess);
+        assertTrue(elseReturnStmt.getExpression() instanceof ParenthesesTerm);
+        ParenthesesTerm elseReturnParentheses = (ParenthesesTerm) elseReturnStmt.getExpression();
+        assertTrue(elseReturnParentheses.getExpression() instanceof IdentifierAccess);
+        IdentifierAccess elseReturnAccess = (IdentifierAccess) elseReturnParentheses.getExpression();
         assertEquals("b", elseReturnAccess.getIdentifier().lexeme);
     }
 
@@ -498,10 +520,18 @@ public class TestParser {
         WhileLoop whileLoop = (WhileLoop) statement;
         assertTrue(whileLoop.getCondition() instanceof BinaryExpression);
         BinaryExpression condition = (BinaryExpression) whileLoop.getCondition();
-        assertTrue(condition.getLeftTerm() instanceof IdentifierAccess);
-        assertTrue(condition.getRightTerm() instanceof IdentifierAccess);
-        IdentifierAccess leftAccess = (IdentifierAccess) condition.getLeftTerm();
-        IdentifierAccess rightAccess = (IdentifierAccess) condition.getRightTerm();
+//        assertTrue(condition.getLeftTerm() instanceof IdentifierAccess);
+//        assertTrue(condition.getRightTerm() instanceof IdentifierAccess);
+        assertTrue(condition.getLeftTerm() instanceof ParenthesesTerm);
+        assertTrue(condition.getRightTerm() instanceof ParenthesesTerm);
+
+        ParenthesesTerm leftParentheses = (ParenthesesTerm) condition.getLeftTerm();
+        ParenthesesTerm rightParentheses = (ParenthesesTerm) condition.getRightTerm();
+        assertTrue(leftParentheses.getExpression() instanceof IdentifierAccess);
+        assertTrue(rightParentheses.getExpression() instanceof IdentifierAccess);
+
+        IdentifierAccess leftAccess = (IdentifierAccess) leftParentheses.getExpression();
+        IdentifierAccess rightAccess = (IdentifierAccess) rightParentheses.getExpression();
         assertEquals("a", leftAccess.getIdentifier().lexeme);
         assertEquals("b", rightAccess.getIdentifier().lexeme);
 		assertNotNull(condition.getOperator());
@@ -520,11 +550,21 @@ public class TestParser {
         assertTrue(assignment.getExpression() instanceof BinaryExpression);
 
         BinaryExpression binaryExpr = (BinaryExpression) assignment.getExpression();
-        assertTrue(binaryExpr.getLeftTerm() instanceof IdentifierAccess);
-        assertTrue(binaryExpr.getRightTerm() instanceof ConstVal);
-        IdentifierAccess leftAccess2 = (IdentifierAccess) binaryExpr.getLeftTerm();
+//        assertTrue(binaryExpr.getLeftTerm() instanceof IdentifierAccess);
+        assertTrue(binaryExpr.getLeftTerm() instanceof ParenthesesTerm);
+        ParenthesesTerm leftParentheses2 = (ParenthesesTerm) binaryExpr.getLeftTerm();
+        assertTrue(leftParentheses2.getExpression() instanceof IdentifierAccess);
+
+//        assertTrue(binaryExpr.getRightTerm() instanceof ConstVal);
+        assertTrue(binaryExpr.getRightTerm() instanceof ParenthesesTerm);
+        ParenthesesTerm rightParentheses2 = (ParenthesesTerm) binaryExpr.getRightTerm();
+        assertTrue(rightParentheses2.getExpression() instanceof ConstVal);
+
+        IdentifierAccess leftAccess2 = (IdentifierAccess) leftParentheses2.getExpression();
+
         assertEquals("a", leftAccess2.getIdentifier().lexeme);
-        ConstVal constVal = (ConstVal) binaryExpr.getRightTerm();
+        ConstVal constVal = (ConstVal) rightParentheses2.getExpression();
+
         assertEquals(1, constVal.getValue());
         assertEquals(TokenTypes.INT_LITERAL, constVal.getSymbol().type);
 		assertNotNull(binaryExpr.getOperator());
@@ -646,20 +686,29 @@ public class TestParser {
 		assertNotNull(forLoop.getVariable());
 
 
-		assertNotNull(forLoop.getStart());
-        Symbol start = forLoop.getStart();
-        assertEquals(0, start.value);
-        assertEquals(TokenTypes.INT_LITERAL, start.type);
+        Expression startExpression = forLoop.getStart();
+        assertNotNull(startExpression);
+        assertTrue(startExpression instanceof ParenthesesTerm);
+        ParenthesesTerm startParentheses = (ParenthesesTerm) startExpression;
+        assertTrue(startParentheses.getExpression() instanceof ConstVal);
+        ConstVal startConst = (ConstVal) startParentheses.getExpression();
+        assertEquals(0, startConst.getValue());
 
-        assertNotNull(forLoop.getEnd());
-        Symbol end = forLoop.getEnd();
-        assertEquals(10, end.value);
-        assertEquals(TokenTypes.INT_LITERAL, end.type);
+        Expression endExpression = forLoop.getEnd();
+        assertNotNull(endExpression);
+        assertTrue(endExpression instanceof ParenthesesTerm);
+        ParenthesesTerm endParentheses = (ParenthesesTerm) endExpression;
+        assertTrue(endParentheses.getExpression() instanceof ConstVal);
+        ConstVal endConst = (ConstVal) endParentheses.getExpression();
+        assertEquals(10, endConst.getValue());
 
-        assertNotNull(forLoop.getStep());
-        Symbol step = forLoop.getStep();
-        assertEquals(1, step.value);
-        assertEquals(TokenTypes.INT_LITERAL, step.type);
+        Expression stepExpression = forLoop.getStep();
+        assertNotNull(stepExpression);
+        assertTrue(stepExpression instanceof ParenthesesTerm);
+        ParenthesesTerm stepParentheses = (ParenthesesTerm) stepExpression;
+        assertTrue(stepParentheses.getExpression() instanceof ConstVal);
+        ConstVal stepConst = (ConstVal) stepParentheses.getExpression();
+        assertEquals(1, stepConst.getValue());
 
         assertNotNull(forLoop.getBlock());
         Block forBlock = (Block) forLoop.getBlock();
@@ -670,8 +719,12 @@ public class TestParser {
         assertEquals("writeln", functionCall.getIdentifier().lexeme);
         assertEquals(1, functionCall.getParameters().size());
 
-        assertTrue(functionCall.getParameters().getFirst().getParamExpression() instanceof IdentifierAccess);
-        IdentifierAccess paramAccess = (IdentifierAccess) functionCall.getParameters().getFirst().getParamExpression();
+//        assertTrue(functionCall.getParameters().getFirst().getParamExpression() instanceof IdentifierAccess);
+        assertTrue(functionCall.getParameters().getFirst().getParamExpression() instanceof ParenthesesTerm);
+        ParenthesesTerm parenthesesTerm = (ParenthesesTerm) functionCall.getParameters().getFirst().getParamExpression();
+        assertTrue(parenthesesTerm.getExpression() instanceof IdentifierAccess);
+
+        IdentifierAccess paramAccess = (IdentifierAccess) parenthesesTerm.getExpression();
         assertEquals("i", paramAccess.getIdentifier().lexeme);
         assertEquals(TokenTypes.IDENTIFIER, paramAccess.getIdentifier().type);
     }
@@ -711,8 +764,11 @@ public class TestParser {
         assertFalse(decl.isConstant());
         assertEquals("i", decl.getName().lexeme);
         assertEquals(TokenTypes.INT, decl.getType().symbol.type);
-        assertTrue(decl.getValue() instanceof ConstVal);
-        ConstVal constVal = (ConstVal) decl.getValue();
+//        assertTrue(decl.getValue() instanceof ConstVal);
+        assertTrue(decl.getValue() instanceof ParenthesesTerm);
+        ParenthesesTerm parenthesesTerm = (ParenthesesTerm) decl.getValue();
+        assertTrue(parenthesesTerm.getExpression() instanceof ConstVal);
+        ConstVal constVal = (ConstVal) parenthesesTerm.getExpression();
         assertEquals(2132, constVal.getValue());
         assertEquals(TokenTypes.INT_LITERAL, constVal.getSymbol().type);
 

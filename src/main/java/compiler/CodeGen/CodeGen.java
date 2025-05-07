@@ -124,7 +124,7 @@ public class CodeGen implements Visitor<Void, SlotTable> {
 		cw.visitEnd();
 
 		byte[] bytearray = cw.toByteArray();
-		try (FileOutputStream outputStream = new FileOutputStream(filePath + className + ".class") ) {
+		try (FileOutputStream outputStream = new FileOutputStream(filePath + className.toLowerCase() + ".class") ) {
 			outputStream.write(bytearray);
 		} catch (FileNotFoundException e) {
 			e.printStackTrace();
@@ -137,7 +137,7 @@ public class CodeGen implements Visitor<Void, SlotTable> {
 			ClassWriter structCw = entry.getValue();
 
 			byte[] structByteArray = structCw.toByteArray();
-			try (FileOutputStream outputStream = new FileOutputStream(filePath + structName + ".class") ) {
+			try (FileOutputStream outputStream = new FileOutputStream(filePath + structName.toLowerCase() + ".class") ) {
 				outputStream.write(structByteArray);
 			} catch (FileNotFoundException e) {
 				e.printStackTrace();

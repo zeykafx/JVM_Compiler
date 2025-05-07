@@ -40,6 +40,7 @@ fun (p Point) area() int {
 }
 
 
+
 fun main() {
     p Point = Point(3, 3);
     writeln(p);

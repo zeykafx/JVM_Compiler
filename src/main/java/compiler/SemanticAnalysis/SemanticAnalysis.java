@@ -21,10 +21,13 @@ import compiler.SemanticAnalysis.Types.FunctionSemType;
 import compiler.SemanticAnalysis.Types.RecordSemType;
 import compiler.SemanticAnalysis.Types.SemType;
 
+import javax.print.attribute.standard.Severity;
 import java.io.File;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.Objects;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 import static compiler.Lexer.TokenTypes.*;
 
@@ -33,6 +36,7 @@ public class SemanticAnalysis implements Visitor<SemType, SymbolTable> {
 	ASTNode rootNode;
 	SymbolTable globalSymbolTable;
 
+	boolean hasVisitedMain = false;
 
 	SemType intType = new SemType("int");
 	SemType floatType = new SemType("float");
@@ -157,8 +161,13 @@ public class SemanticAnalysis implements Visitor<SemType, SymbolTable> {
 
 		ArrayList<FunctionDefinition> functions = program.getFunctions();
 		for (FunctionDefinition function : functions) {
-
 			function.accept(this, table);
+		}
+
+		if (!hasVisitedMain) {
+			Logger logger = Logger.getLogger(getClass().getName());
+			logger.setLevel(Level.WARNING);
+			logger.warning("\033[031mNo main function was found in the program!\033[0m");
 		}
 
 		return null;
@@ -709,31 +718,6 @@ public class SemanticAnalysis implements Visitor<SemType, SymbolTable> {
 		return null;
 	}
 
-	private SemType typeCheckLoopFields(SymbolTable table, boolean loopVarIsInt, Symbol fieldSymbol, String fieldName) throws TypeError {
-		if (fieldSymbol.type == INT_LITERAL || fieldSymbol.type == TokenTypes.FLOAT_LITERAL) {
-			String typeName = fieldSymbol.type == INT_LITERAL ? "int" : "float";
-			// if the loop var is an int and the field (start, step, stop) number is a float, we throw an error
-			if (loopVarIsInt && fieldSymbol.type == TokenTypes.FLOAT_LITERAL) {
-				throw new TypeError("The "+fieldName+" number in the for loop at line" + fieldSymbol.line + ": '"+ fieldSymbol.lexeme +"' is not an integer but the loop variable is.");
-			}
-			// otherwise we're good
-			return new SemType(typeName);
-
-		} else if (fieldSymbol.type == TokenTypes.IDENTIFIER) {
-        	SemType fieldType = table.lookup(fieldSymbol.lexeme);
-
-			// if the loop var is an int and field var is a float, then we throw an error
-			if (loopVarIsInt && fieldType.type.equals("float")) {
-				throw new TypeError("The "+fieldName+" variable in the for loop at line " + fieldSymbol.line + ": '"+ fieldSymbol.lexeme +"' is not an integer but the loop variable is.");
-			}
-
-			// otherwise we're good (I think)
-			return fieldType;
-		} else {
-			throw new TypeError("Type of the '"+fieldName+"' field in the for loop at line " + fieldSymbol.line + " is not valid, it should either be a variable identifier, int, or float");
-		}
-	}
-
 	@Override
 	public SemType visitWhileLoop(WhileLoop whileLoop, SymbolTable table) throws Exception {
 		// WhileLoop -> "while" "(" Expression ")" Block .
@@ -770,6 +754,9 @@ public class SemanticAnalysis implements Visitor<SemType, SymbolTable> {
 	@Override
 	public SemType visitFunctionDefinition(FunctionDefinition functionDefinition, SymbolTable table) throws Exception {
 		Symbol name = functionDefinition.getName();
+		if (name.lexeme.equals("main")) {
+			hasVisitedMain = true;
+		}
 
 		// create local table
 		SymbolTable localTable = new SymbolTable(table, name.lexeme);

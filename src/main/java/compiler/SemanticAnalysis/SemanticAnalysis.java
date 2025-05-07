@@ -24,6 +24,7 @@ import compiler.SemanticAnalysis.Types.SemType;
 import javax.print.attribute.standard.Severity;
 import java.io.File;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.LinkedHashMap;
 import java.util.Objects;
 import java.util.logging.Level;
@@ -71,6 +72,7 @@ public class SemanticAnalysis implements Visitor<SemType, SymbolTable> {
 		}
 		catch (Exception e) {
 			System.err.println("Unexpected error during semantic analysis of the program: " + e.getMessage());
+			e.printStackTrace();
 			System.exit(2);
 
 		}
@@ -458,6 +460,10 @@ public class SemanticAnalysis implements Visitor<SemType, SymbolTable> {
 
 		if (functionCall.hasRecordAccess()) {
 			functionCall.recordAccess.semtype = functionCall.recordAccess.accept(this, table);
+		}
+
+		if (functionCall.getParameters().size() > functionSemType.getParamSemTypes().length) {
+			throw new ArgumentError("Too many arguments " + functionCall.getParameters().size() + " for function " + functionCall.getIdentifier().lexeme + " with " + functionSemType.getParamSemTypes().length + " arguments");
 		}
 
 		// for each argument/param, compared the present types to the types from the definition

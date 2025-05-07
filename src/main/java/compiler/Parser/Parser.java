@@ -194,7 +194,15 @@ public class Parser {
             );
         } else if (lookAheadSymbol.type == TokenTypes.SEMICOLON) {
             match(TokenTypes.SEMICOLON);
-            return new VariableDeclaration(identifier, type, identifier.line, identifier.column);
+            return new VariableDeclaration(
+                    identifier,
+                    type,
+                    null,
+                    isConstant,
+                    isGlobal,
+                    identifier.line,
+                    identifier.column
+            );
         } else {
             throw new SyntaxErrorException(
                 "Syntax Error: Expected '=' or ';' after variable declaration but found " +
@@ -330,14 +338,27 @@ public class Parser {
 			// e.g. "if  (i+4 > 10 && found == false)", previously, this would have required parentheses around i+4 and also around the resulting term > 10
 			// e.g. "if ( ((i+4) > 10) && (found == false) )"
 			if (
-					lookAheadSymbol.type == TokenTypes.AND ||
-					lookAheadSymbol.type == TokenTypes.OR ||
-					lookAheadSymbol.type == TokenTypes.GREATER_THAN ||
-					lookAheadSymbol.type == TokenTypes.GREATER_THAN_EQUAL ||
-					lookAheadSymbol.type == TokenTypes.LESS_THAN ||
-					lookAheadSymbol.type == TokenTypes.LESS_THAN_EQUAL ||
-					lookAheadSymbol.type == TokenTypes.EQUAL_EQUAL ||
-					lookAheadSymbol.type == TokenTypes.NOT_EQUAL
+//					lookAheadSymbol.type == TokenTypes.AND ||
+//					lookAheadSymbol.type == TokenTypes.OR ||
+//					lookAheadSymbol.type == TokenTypes.GREATER_THAN ||
+//					lookAheadSymbol.type == TokenTypes.GREATER_THAN_EQUAL ||
+//					lookAheadSymbol.type == TokenTypes.LESS_THAN ||
+//					lookAheadSymbol.type == TokenTypes.LESS_THAN_EQUAL ||
+//					lookAheadSymbol.type == TokenTypes.EQUAL_EQUAL ||
+//					lookAheadSymbol.type == TokenTypes.NOT_EQUAL
+                    lookAheadSymbol.type == TokenTypes.AND ||
+                    lookAheadSymbol.type == TokenTypes.OR ||
+                    lookAheadSymbol.type == TokenTypes.PLUS ||
+                    lookAheadSymbol.type == TokenTypes.MINUS ||
+                    lookAheadSymbol.type == TokenTypes.MULTIPLY ||
+                    lookAheadSymbol.type == TokenTypes.DIVIDE ||
+                    lookAheadSymbol.type == TokenTypes.MODULO ||
+                    lookAheadSymbol.type == TokenTypes.EQUAL_EQUAL ||
+                    lookAheadSymbol.type == TokenTypes.NOT_EQUAL ||
+                    lookAheadSymbol.type == TokenTypes.LESS_THAN ||
+                    lookAheadSymbol.type == TokenTypes.GREATER_THAN ||
+                    lookAheadSymbol.type == TokenTypes.LESS_THAN_EQUAL ||
+                    lookAheadSymbol.type == TokenTypes.GREATER_THAN_EQUAL
 			) {
                 Term binOpTerm = new ParenthesesTerm(binaryExpression, term.line, term.column);
                 Symbol otherOp = match(lookAheadSymbol.type);

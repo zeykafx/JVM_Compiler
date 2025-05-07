@@ -39,28 +39,6 @@ public class VariableDeclaration extends Statement {
 		this.hasValue = value != null;
 	}
 
-	public VariableDeclaration(Symbol name, Type type, Expression value, int line, int column) {
-		super(line, column);
-
-		this.name = name;
-		this.type = type;
-		this.value = value;
-		this.isConstant = false;
-		this.isGlobal = false;
-		this.hasValue = value != null;
-	}
-
-	public VariableDeclaration(Symbol name, Type type, int line, int column) {
-		super(line, column);
-
-		this.name = name;
-		this.type = type;
-		this.value = null;
-		this.isConstant = false;
-		this.isGlobal = false;
-		this.hasValue = false;
-	}
-
 	public Type getType() {
 		return type;
 	}
@@ -74,7 +52,7 @@ public class VariableDeclaration extends Statement {
 	}
 
 	public boolean hasValue() {
-		return hasValue;
+		return value != null;
 	}
 
 	public boolean isConstant() {

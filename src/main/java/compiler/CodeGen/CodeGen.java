@@ -169,6 +169,19 @@ public class CodeGen implements Visitor<Void, SlotTable> {
 			if (variableDeclaration.hasValue()) {
 				// visit expression
 				variableDeclaration.getValue().accept(this, slotTable);
+			} else {
+				// load null on the stack
+				if (variableDeclaration.semtype.equals(stringType) || variableDeclaration.semtype instanceof RecordSemType || variableDeclaration.semtype instanceof ArraySemType) {
+					mv.visitInsn(ACONST_NULL);
+				} else if (variableDeclaration.semtype.equals(intType)) {
+					mv.visitInsn(ICONST_0);
+				} else if (variableDeclaration.semtype.equals(floatType)) {
+					mv.visitInsn(FCONST_0);
+				} else if (variableDeclaration.semtype.equals(boolType)) {
+					mv.visitInsn(ICONST_0);
+				} else {
+					throw new RuntimeException("Unexpected type: " + variableDeclaration.semtype.type);
+				}
 			}
 
 			mv.visitFieldInsn(PUTSTATIC, className, variableDeclaration.getName().lexeme, variableDeclaration.semtype.fieldDescriptor());
@@ -184,9 +197,17 @@ public class CodeGen implements Visitor<Void, SlotTable> {
 				// load on the stack if it has a value
 				variableDeclaration.getValue().accept(this, localTable);
 			} else {
-				if (variableDeclaration.semtype.equals(intType) || variableDeclaration.semtype.equals(floatType)) {
-					mv.visitLdcInsn(0);
-					implicitTypeConversion(variableDeclaration.semtype, intType);
+				// load null on the stack
+				if (variableDeclaration.semtype.equals(stringType) || variableDeclaration.semtype instanceof RecordSemType || variableDeclaration.semtype instanceof ArraySemType) {
+					mv.visitInsn(ACONST_NULL);
+				} else if (variableDeclaration.semtype.equals(intType)) {
+					mv.visitInsn(ICONST_0);
+				} else if (variableDeclaration.semtype.equals(floatType)) {
+					mv.visitInsn(FCONST_0);
+				} else if (variableDeclaration.semtype.equals(boolType)) {
+					mv.visitInsn(ICONST_0);
+				} else {
+					throw new RuntimeException("Unexpected type: " + variableDeclaration.semtype.type);
 				}
 			}
 
@@ -547,15 +568,16 @@ public class CodeGen implements Visitor<Void, SlotTable> {
 			return null;
 		}
 
-		// if the identifier is a constant or a global, we need to visit the field
-		if (constantsAndGlobals.containsKey(identLexeme)){
+		int index = localTable.lookup(identLexeme);
+
+		// if the identifier is a constant or a global and it isn't redefined in the local scope, we need to visit the field
+		if (constantsAndGlobals.containsKey(identLexeme) && index == -1) {
 			SemType constSemType = constantsAndGlobals.get(identLexeme);
 			mv.visitFieldInsn(GETSTATIC, className, identLexeme, constSemType.fieldDescriptor());
 			return null;
 		}
 
 		// load symbol in slot table or insert it
-		int index = localTable.lookup(identLexeme);
 		if (index == -1) {
 			// unexpected error : the term should be in the slot table.
 			throw new RuntimeException("Unexpected error : the variable " + identLexeme + " is not in the slot table.");

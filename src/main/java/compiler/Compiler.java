@@ -20,12 +20,12 @@ import java.util.Arrays;
 
 public class Compiler {
 	@Parameter(description = "Target", required = true)
-	String file;
+	public String file;
 
 	@Parameter(names={"--out", "-o"}, description = "Filepath of output classfile")
-	String out;
+	public String out;
 	@Parameter(names={"--module", "-m"}, description = "Choose what module will be executed")
-	String module;
+	public String module;
 
 
 	public static void main(String[] args) {
@@ -112,13 +112,14 @@ public class Compiler {
 		analyzer.analyze(root, false);
 
 		String filename = out == null ? f.getPath() : new File(out).getPath();
-
+//		System.out.println("filename = " + filename);
 
 		String className = out == null ? f.getName() : new File(out).getName();
 		String lowercaseClassname = className;
 
 		className = className.split("\\.")[0];
 		className = className.substring(0, 1).toUpperCase() + className.substring(1);
+//		System.out.println("className = " + className);
 
 		String outFilename = "";
 		String[] filenameParts = filename.split(lowercaseClassname);
@@ -126,6 +127,7 @@ public class Compiler {
 		if (filenameParts.length >= 1) {
 			outFilename = filename.split(lowercaseClassname)[0];
 		}
+//		System.out.println("outFilename = " + outFilename);
 
 		CodeGen codeGen = new CodeGen(outFilename, className);
 		codeGen.generateCode(root);

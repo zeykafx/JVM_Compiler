@@ -39,9 +39,15 @@ fun (p Point) area() int {
     return p.x*p.y;
 }
 
-
-
 fun main() {
+    i int = 0;
+    j int = 0;
+    while ((i < 5) && (j < 3)) {
+        writeln(i);
+        i = i + 1;
+        j = j + 1;
+    }
+
     p Point = Point(3, 3);
     writeln(p);
     writeln(p.area());

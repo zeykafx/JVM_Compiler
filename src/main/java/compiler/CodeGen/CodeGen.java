@@ -55,6 +55,8 @@ public class CodeGen implements Visitor<Void, SlotTable> {
 	private ClassWriter cw;
 	private ClassWriter structCw;
 	private MethodVisitor mv;
+	private boolean isRecordMethod = false;
+	private String instanceName;
 	private boolean isMvTopLevel;
 	private final SlotTable slotTable;
 	private final Map<String, SemType> constantsAndGlobals;
@@ -305,6 +307,8 @@ public class CodeGen implements Visitor<Void, SlotTable> {
 			recordField.accept(this, null);
 		}
 
+		// ---------- init ----------
+
 		StringBuilder descriptor = new StringBuilder();
 		descriptor.append("(");
 		for (RecordFieldDefinition recordDef : recordDefinition.getFields()) {
@@ -329,14 +333,16 @@ public class CodeGen implements Visitor<Void, SlotTable> {
 		init.visitMaxs( 0, 0);
 		init.visitEnd();
 
-		// toString method on the records
+		// ---------- end of init ----------
+
+
+		// ---------- ToString method on the records ----------
 		MethodVisitor toStringmv = structCw.visitMethod(ACC_PUBLIC, "toString", "()Ljava/lang/String;", null,null);
 		toStringmv.visitCode();
 
 		// the start of the string returned is the record type + {
 		toStringmv.visitLdcInsn(recordDefinition.getIdentifier().lexeme +" {");
 		toStringmv.visitVarInsn(ASTORE, 1); // store the string in slot 1
-
 
 		// add each field to the string in slot 1
 		for (RecordFieldDefinition recordDef : recordDefinition.getFields()) {
@@ -421,9 +427,11 @@ public class CodeGen implements Visitor<Void, SlotTable> {
 		toStringmv.visitMaxs( 0, 0);
 		toStringmv.visitEnd();
 
+		// ---------- end of ToString ----------
+
 		structCw.visitEnd();
 		structs.put(recordDefinition.getIdentifier().lexeme, structCw);
-		structCw = null;
+//		structCw = null;
 		return null;
 	}
 
@@ -437,19 +445,37 @@ public class CodeGen implements Visitor<Void, SlotTable> {
 	public Void visitFunctionDefinition(FunctionDefinition functionDefinition, SlotTable localTable) throws Exception {
 
 		MethodVisitor oldMv = mv;
+		ClassWriter oldCw = cw;
 		SlotTable funcTable = localTable;
+
 		// the main function is already defined, so we skip the function definition
 		if (!functionDefinition.getName().lexeme.equals("main")) {
 			isMvTopLevel = false;
-			// NOTE: The slots of other functions start at 0, I think it's because they don't have self (?)
-			funcTable = new SlotTable(new AtomicReference<>(0), localTable);
+			isRecordMethod = functionDefinition.hasInstanceRef();
+
+			if (isRecordMethod) {
+				String recordName = functionDefinition.getInstanceRef().getSymbol().lexeme;
+				cw = structs.get(recordName); // get the structure's cw
+				instanceName = functionDefinition.getInstanceName().lexeme;
+			}
+
+			// NOTE: The slots of other functions start at 0, I think it's because they don't have self, except for record methods
+			funcTable = new SlotTable(new AtomicReference<>(isRecordMethod ? 1 : 0), localTable);
+
+//			if (isRecordMethod) {
+//				funcTable.addSlot(functionDefinition.getInstanceName().lexeme, functionDefinition.getInstanceRef().semtype.asmType());
+//			}
 
 			// generate string for descriptor
 			FunctionSemType functionSemType = (FunctionSemType) functionDefinition.semtype;
-//			String descriptor = functionSemType.fieldDescriptor();
 			String descriptor = functionSemType.asmType().getDescriptor();
 
-			mv = cw.visitMethod(ACC_PUBLIC | ACC_STATIC, functionDefinition.getName().lexeme, descriptor, null, null);
+			int access = ACC_PUBLIC;
+			if (!isRecordMethod) {
+				access |= ACC_STATIC;
+			}
+
+			mv = cw.visitMethod(access, functionDefinition.getName().lexeme, descriptor, null, null);
 			mv.visitCode();
 		}
 
@@ -468,6 +494,9 @@ public class CodeGen implements Visitor<Void, SlotTable> {
 			mv.visitMaxs(-1, -1);
 
 			mv = oldMv;
+			cw = oldCw;
+			isRecordMethod = false;
+			instanceName = null;
 			isMvTopLevel = true;
 		}
 		return null;
@@ -513,6 +542,11 @@ public class CodeGen implements Visitor<Void, SlotTable> {
 	public Void visitIdentifierAccess(IdentifierAccess identifierAccess, SlotTable localTable) throws Exception {
 		String identLexeme = identifierAccess.getIdentifier().lexeme;
 
+		if (identLexeme.equals(instanceName) && isRecordMethod && !isMvTopLevel) {
+			mv.visitVarInsn(ALOAD, 0); // load this
+			return null;
+		}
+
 		// if the identifier is a constant or a global, we need to visit the field
 		if (constantsAndGlobals.containsKey(identLexeme)){
 			SemType constSemType = constantsAndGlobals.get(identLexeme);
@@ -537,15 +571,22 @@ public class CodeGen implements Visitor<Void, SlotTable> {
 
 	@Override
 	public Void visitRecordAccess(RecordAccess recordAccess, SlotTable localTable) throws Exception {
-		recordAccess.getHeadAccess().accept(this, localTable);
+		Access headAccess = recordAccess.getHeadAccess();
+		headAccess.accept(this, localTable);
+
+		// p.x
+		// p2.x
 
 		// No need to load if we will store something there
 		// willStore is set during the semantic analysis phase.
 //		if (!recordAccess.willStore) {
-		RecordSemType recordSemType = (RecordSemType) recordAccess.getHeadAccess().semtype;
+		RecordSemType recordSemType = (RecordSemType) headAccess.semtype;
 		String headAccessDescriptor = recordSemType.recordFielDesc(recordAccess.getIdentifier().lexeme);
 
+		// handle method call on the record instance
+
 		mv.visitFieldInsn(GETFIELD, recordSemType.identifier, recordAccess.getIdentifier().lexeme, headAccessDescriptor);
+
 //		}
 
 		return null;
@@ -631,6 +672,17 @@ public class CodeGen implements Visitor<Void, SlotTable> {
 				handleWriteCall(functionCall, true, false, localTable);
 				break;
 			default:
+				int access = INVOKESTATIC;
+				String functionClass = className;
+
+				// if this is a record method, visit the identifier access to load the instance on the stack
+				if (functionCall.hasRecordAccess()) {
+					functionCall.recordAccess.accept(this, localTable);
+					access = INVOKEVIRTUAL;
+					RecordSemType recordSemType = (RecordSemType) functionCall.recordAccess.semtype;
+					functionClass = recordSemType.identifier;
+				}
+
 				for (ParamCall paramCall : functionCall.getParameters()) {
 					// push the params on the stack
 					paramCall.accept(this, localTable);
@@ -639,7 +691,7 @@ public class CodeGen implements Visitor<Void, SlotTable> {
 				FunctionSemType functionSemType = (FunctionSemType) functionCall.semtype;
 				String descriptor = functionSemType.asmType().getDescriptor();
 
-				mv.visitMethodInsn(INVOKESTATIC, className, functionCall.getIdentifier().lexeme, descriptor, false);
+				mv.visitMethodInsn(access, functionClass, functionCall.getIdentifier().lexeme, descriptor, false);
 				break;
 		}
 		return null;
@@ -774,16 +826,17 @@ public class CodeGen implements Visitor<Void, SlotTable> {
 
 	@Override
 	public Void visitBinaryExpression(BinaryExpression binaryExpression, SlotTable localTable) throws Exception {
+		Label endLabel = new Label();
 		binaryExpression.getLeftTerm().accept(this, localTable);
 		if (binaryExpression.getLeftTerm().semtype.toConvert) {
 			mv.visitInsn(I2F);
 		}
-//
-//		if (binaryExpression.getLeftTerm().semtype.equals(boolType)) {
-//			mv.visitInsn(DUP);
-//			mv.visitJumpInsn(binaryExpression.getOperator().getSymbol().type.equals(TokenTypes.AND) ? IFEQ : IFNE, endLabel);
-//			mv.visitInsn(POP);
-//		}
+
+		if (binaryExpression.getLeftTerm().semtype.equals(boolType)) {
+			// this is the short-circuit evaluation for the and/or operators
+			mv.visitInsn(DUP);
+			mv.visitJumpInsn(binaryExpression.getOperator().getSymbol().type.equals(TokenTypes.AND) ? IFEQ : IFNE, endLabel);
+		}
 
 		binaryExpression.getRightTerm().accept(this, localTable);
 		if (binaryExpression.getRightTerm().semtype.toConvert) {
@@ -792,6 +845,8 @@ public class CodeGen implements Visitor<Void, SlotTable> {
 
 		opCodeGenerator op = new opCodeGenerator(binaryExpression, mv);
 		op.generateCode();
+
+		mv.visitLabel(endLabel);
 		return null;
 	}
 
@@ -893,8 +948,12 @@ public class CodeGen implements Visitor<Void, SlotTable> {
 
 		// load the start value
 		// if it's an identifier, we load the value from the identifier and if it's a literal, we just load it
-		Symbol startSymbol = forLoop.getStart();
-		loadLoopField(startSymbol, forLoop, localTable, forLoop.startType);
+//		Symbol startSymbol = forLoop.getStart();
+//		loadLoopField(startSymbol, forLoop, localTable, forLoop.startType);
+		Expression startExpr = forLoop.getStart();
+
+		forLoop.getStart().accept(this, localTable);
+		implicitTypeConversion(forLoop.semtype, startExpr.semtype);
 
 		loadOrStoreVarFromSymbol(forLoop, localTable, varSymbol, forLoop.semtype, true); // the varType is in forLoop.semtype
 
@@ -907,9 +966,13 @@ public class CodeGen implements Visitor<Void, SlotTable> {
 		// load the loop var
 		loadOrStoreVarFromSymbol(forLoop, localTable, varSymbol, forLoop.semtype, false);
 
-		Symbol stopSymbol = forLoop.getEnd();
-		// load the end symbol/var
-		loadLoopField(stopSymbol, forLoop, localTable, forLoop.endType);
+//		Symbol stopSymbol = forLoop.getEnd();
+//		// load the end symbol/var
+//		loadLoopField(stopSymbol, forLoop, localTable, forLoop.endType);
+		Expression endExpr = forLoop.getEnd();
+		forLoop.getEnd().accept(this, localTable);
+		implicitTypeConversion(forLoop.semtype, endExpr.semtype);
+
 
 		if (loopVarIsFloat) {
 			mv.visitInsn(FCMPG);
@@ -924,15 +987,20 @@ public class CodeGen implements Visitor<Void, SlotTable> {
 
 		// increment the loop variable
 		// load the step value
-		Symbol stepSymbol = forLoop.getStep();
+//		Symbol stepSymbol = forLoop.getStep();
+		Expression step = forLoop.getStep();
+
 		int loopVarIdx = localTable.lookup(varSymbol.lexeme);
-		if (loopVarIdx != -1 && stepSymbol.type == TokenTypes.INT_LITERAL && forLoop.semtype.equals(intType)) {
+		if (loopVarIdx != -1 && step.semtype.equals(intType) && step instanceof ConstVal constStep && forLoop.semtype.equals(intType)) {
 			// since the loop var is a local variable and the step is a constant, we can use the iinc instruction
-			mv.visitIincInsn(loopVarIdx, (Integer) stepSymbol.value);
+			mv.visitIincInsn(loopVarIdx, (Integer) constStep.getSymbol().value);
 		} else {
 			loadOrStoreVarFromSymbol(forLoop, localTable, varSymbol, forLoop.semtype, false);
 
-			loadLoopField(stepSymbol, forLoop, localTable, forLoop.stepType);
+			forLoop.getStep().accept(this, localTable);
+			implicitTypeConversion(forLoop.semtype, step.semtype);
+
+//			loadLoopField(stepSymbol, forLoop, localTable, forLoop.stepType);
 
 			mv.visitInsn(forLoop.semtype.asmType().getOpcode(IADD));
 			loadOrStoreVarFromSymbol(forLoop, localTable, varSymbol, forLoop.semtype, true);

@@ -268,8 +268,8 @@ public class SemanticAnalysis implements Visitor<SemType, SymbolTable> {
 		// check if the left and right expressions are of the same SemType
 
 		SemType leftType = binaryExpression.getLeftTerm().accept(this, table);
-		SemType rightType = binaryExpression.getRightTerm().accept(this, table);
 
+		SemType rightType = binaryExpression.getRightTerm().accept(this, table);
 
 		binaryExpression.getLeftTerm().semtype = leftType;
 		binaryExpression.getRightTerm().semtype = rightType;
@@ -286,6 +286,9 @@ public class SemanticAnalysis implements Visitor<SemType, SymbolTable> {
 				leftType = floatType;
 //				binaryExpression.getLeftTerm().semtype = floatType;
 				binaryExpression.getLeftTerm().semtype.toConvert = true;
+
+//			} else if ((leftType.equals(stringType) && rightType.equals(numType)) || ((leftType.equals(numType) && rightType.equals(stringType))) {
+				// todo
 
 			} else {
 				// if the types are not convertible, throw an error
@@ -442,6 +445,10 @@ public class SemanticAnalysis implements Visitor<SemType, SymbolTable> {
 		FunctionSemType functionSemType = (FunctionSemType) table.lookup(functionIdentifierInGlobalTable);
 		if (functionSemType == null) {
 			throw new ScopeError("function "+functionIdentifierInGlobalTable+" doesn't exist");
+		}
+
+		if (functionCall.hasRecordAccess()) {
+			functionCall.recordAccess.semtype = functionCall.recordAccess.accept(this, table);
 		}
 
 		// for each argument/param, compared the present types to the types from the definition
@@ -641,24 +648,60 @@ public class SemanticAnalysis implements Visitor<SemType, SymbolTable> {
 		}
 
         // check if the start, step, and stop are of the same type as the variable
-        Symbol start = forLoop.getStart();
-		forLoop.startType = typeCheckLoopFields(table,loopVarIsInt, start, "start");;
-
-
-		Symbol step = forLoop.getStep();
-		forLoop.stepType = typeCheckLoopFields(table,loopVarIsInt, step, "step");
-
-		// check that the increment is not 0 (we only check if it is a literal, otherwise we can't check atp)
-		if (step.type == INT_LITERAL && step.value == (Integer) 0) {
-			throw new SemanticException("The step of the for loop at line " + step.line + " is 0, this loop will never make progress");
+		SemType startExpression = forLoop.getStart().accept(this, table);
+		if (!startExpression.equals(varType) && !startExpression.equals(intType) && !startExpression.equals(floatType)) {
+			throw new TypeError("The start expression in the for loop at line " + forLoop.line + " is not a number");
 		}
 
-		if (step.type == TokenTypes.FLOAT_LITERAL && step.value == (Float) 0.0f) {
-			throw new SemanticException("The step of the for loop at line " + step.line + " is 0.0 (float), this loop will never make progress");
+		SemType stepExpression = forLoop.getStep().accept(this, table);
+		if (!stepExpression.equals(varType) && !stepExpression.equals(intType) && !stepExpression.equals(floatType)) {
+			throw new TypeError("The step expression in the for loop at line " + forLoop.line + " is not a number");
 		}
 
-		Symbol end = forLoop.getEnd();
-		forLoop.endType = typeCheckLoopFields(table,loopVarIsInt, end, "end");
+		SemType stopExpression = forLoop.getEnd().accept(this, table);
+		if (!stopExpression.equals(varType) && !stopExpression.equals(intType) && !stopExpression.equals(floatType)) {
+			throw new TypeError("The stop expression in the for loop at line " + forLoop.line + " is not a number");
+		}
+
+		// check if the start, step, and stop are of the same type as the variable
+		// if the loop var is an int, then this is the most restrictive case, the start, step, and stop vars must also all be ints
+		if (varType.equals(intType)) {
+			if (startExpression.equals(floatType) || stepExpression.equals(floatType) || stopExpression.equals(floatType)) {
+				throw new TypeError("The start, step, or stop expression in the for loop at line " + forLoop.line + " is a float but the loop variable is an int");
+			}
+		} else if (varType.equals(floatType)) {
+			// if the loop var is a float, then the start, step, and stop vars can be ints (they'll be converted to floats)
+			if (startExpression.equals(intType)) {
+				startExpression = floatType;
+			}
+			if (stepExpression.equals(intType)) {
+				stepExpression = floatType;
+			}
+			if (stopExpression.equals(intType)) {
+				stopExpression = floatType;
+			}
+		} else {
+			throw new TypeError("The start, step, or stop expression in the for loop at line " + forLoop.line + " is not a number");
+		}
+
+//        Symbol start = forLoop.getStart();
+//		forLoop.startType = typeCheckLoopFields(table,loopVarIsInt, start, "start");;
+//
+//
+//		Symbol step = forLoop.getStep();
+//		forLoop.stepType = typeCheckLoopFields(table,loopVarIsInt, step, "step");
+//
+//		// check that the increment is not 0 (we only check if it is a literal, otherwise we can't check atp)
+//		if (step.type == INT_LITERAL && step.value == (Integer) 0) {
+//			throw new SemanticException("The step of the for loop at line " + step.line + " is 0, this loop will never make progress");
+//		}
+//
+//		if (step.type == TokenTypes.FLOAT_LITERAL && step.value == (Float) 0.0f) {
+//			throw new SemanticException("The step of the for loop at line " + step.line + " is 0.0 (float), this loop will never make progress");
+//		}
+//
+//		Symbol end = forLoop.getEnd();
+//		forLoop.endType = typeCheckLoopFields(table,loopVarIsInt, end, "end");
 
 		// then visit the block
 		forLoop.getBlock().accept(this, table);
@@ -730,6 +773,24 @@ public class SemanticAnalysis implements Visitor<SemType, SymbolTable> {
 
 		// create local table
 		SymbolTable localTable = new SymbolTable(table, name.lexeme);
+
+		if (functionDefinition.hasInstanceRef()) {
+			// e.g., "(p Point)"
+			// add the instanceRef to the symbol table
+
+			SemType instanceRefSemType = getSemTypeFromASTNodeType(table, functionDefinition.getInstanceRef());
+			functionDefinition.getInstanceRef().semtype = instanceRefSemType;
+
+			if (instanceRefSemType == null) {
+				throw new RecordError("The instance reference type " + functionDefinition.getInstanceRef().symbol.lexeme + " is not defined, at line " + functionDefinition.line + " and column " + functionDefinition.column);
+			}
+
+			if (!(instanceRefSemType instanceof RecordSemType)) {
+				// check that the type is a record already defined
+				throw new TypeError("The instance reference type " + functionDefinition.getInstanceRef().symbol.lexeme + " is not a record, at line " + functionDefinition.line + " and column " + functionDefinition.column);
+			}
+			localTable.addSymbol(functionDefinition.getInstanceName().lexeme, instanceRefSemType);
+		}
 
 		// add parameters to the local symbol table
 		ArrayList<SemType> paramTypes = new ArrayList<>();

@@ -13,6 +13,9 @@ import java.util.ArrayList;
 
 public class FunctionDefinition extends Statement {
 
+	private boolean hasInstanceRef;
+	private Symbol instanceName;
+	private Type instanceRef;
 	private final Symbol name;
 	private final Type returnType;
 	private SemType retSemType;
@@ -35,6 +38,14 @@ public class FunctionDefinition extends Statement {
 			this.returnType = returnType;
 			this.voidReturnType = false;
 		}
+		hasInstanceRef = false;
+	}
+
+	public FunctionDefinition(Symbol instanceName, Type instanceRef, Symbol name, Type returnType, ArrayList<ParamDefinition> paramDefinitions, Block block, int line, int column) {
+		this(name, returnType, paramDefinitions, block, line, column);
+		this.instanceName = instanceName;
+		this.instanceRef = instanceRef;
+		hasInstanceRef = true;
 	}
 
 	public Symbol getName() {
@@ -44,6 +55,7 @@ public class FunctionDefinition extends Statement {
 	public Type getReturnType() {
 		return returnType;
 	}
+
 
 	public SemType getRetSemType(){
 		return retSemType;
@@ -71,6 +83,18 @@ public class FunctionDefinition extends Statement {
 
 	public Block getBlock() {
 		return block;
+	}
+
+	public boolean hasInstanceRef() {
+		return hasInstanceRef;
+	}
+
+	public Symbol getInstanceName() {
+		return instanceName;
+	}
+
+	public Type getInstanceRef() {
+		return instanceRef;
 	}
 
 	@Override

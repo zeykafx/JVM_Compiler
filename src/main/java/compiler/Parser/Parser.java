@@ -292,7 +292,9 @@ public class Parser {
             return new ArrayExpression(sizeExpression, type, sizeExpression.line, sizeExpression.column);
         }
 
-        Term term = parseTerm();
+        Term term1 = parseTerm();
+        // if (((val) == (41)) && ((copyPoint(points)) == (p3))))
+        Term term = new ParenthesesTerm(term1, term1.line, term1.column);
 
         if (isUnaryOperator) {
             // If there was a unary operator, return a UnaryExpression
@@ -317,8 +319,9 @@ public class Parser {
         ) {
             // BinaryOperator -> "+" | "-" | "*" | "/" | "%" | "&&" | "||" | "==" | "!=" | "<" | ">" | "<=" | ">="
             Symbol binaryOperator = match(lookAheadSymbol.type);
+
             BinaryOperator binaryOp = new BinaryOperator(binaryOperator, term.line, term.column);
-            Term rightTerm = parseTerm();
+            Term rightTerm = new ParenthesesTerm(parseTerm(), binaryOp.line, binaryOp.column);
 
             // construct a binary expression from what we already parsed
             BinaryExpression binaryExpression = new BinaryExpression(term, binaryOp, rightTerm, term.line, term.column);
@@ -548,8 +551,26 @@ public class Parser {
     }
 
     public FunctionDefinition parseFunction() throws Exception {
-        // FunctionDefinition -> "fun" "identifier" "(" Params ")" Type Block
+        // OLD: FunctionDefinition -> "fun" "identifier" "(" Params ")" Type Block
+        // NEW: FunctionDefinition -> "fun" InstanceRef "identifier" "(" Params ")" Type Block
+        // InstanceRef ->  "(" "identifier" "recordNameIdentifier" ")" | .
+
         match(TokenTypes.FUN);
+
+        boolean hasInstanceRef = false;
+        Symbol instanceRefIdent = null;
+        Type instanceRefType = null;
+
+        // look for the InstanceRef (e.g., "(p Point)")
+        if (lookAheadSymbol.type == TokenTypes.LEFT_PAR) {
+            hasInstanceRef = true;
+            match(TokenTypes.LEFT_PAR);
+            instanceRefIdent = match(TokenTypes.IDENTIFIER); // match the record instance identifier (e.g., "p")
+            instanceRefType = parseType(); // match the record type (e.g., "Point")
+            match(TokenTypes.RIGHT_PAR);
+
+        }
+
         Symbol identifier = match(TokenTypes.IDENTIFIER);
         match(TokenTypes.LEFT_PAR);
         ArrayList<ParamDefinition> params = parseParamDefinitions();
@@ -560,7 +581,13 @@ public class Parser {
             returnType = parseType();
         }
         Block block = parseBlock();
-        return new FunctionDefinition(identifier, returnType, params, block, identifier.line, identifier.column);
+
+        if (hasInstanceRef) {
+            return new FunctionDefinition(instanceRefIdent, instanceRefType, identifier, returnType, params, block, identifier.line, identifier.column);
+        } else {
+            return new FunctionDefinition(identifier, returnType, params, block, identifier.line, identifier.column);
+        }
+
     }
 
     public ArrayList<ParamDefinition> parseParamDefinitions() throws Exception {
@@ -666,6 +693,11 @@ public class Parser {
 
     public ForLoop parseForLoop() throws Exception {
         // ForLoop -> "for" "(" ForCondition ")" Block .
+
+        // * NEW
+        // ForCondition -> Expression "," Expression "," Expression "," Expression .
+
+        // OLD
         // ForCondition -> "identifier" "," NumType "," NumType "," NumType .
         // NumType -> "int" | "float" .
         match(TokenTypes.FOR);
@@ -678,29 +710,32 @@ public class Parser {
 //        NumType endType = parseNumType();
 //        match(TokenTypes.COMMA);
 //        NumType stepType = parseNumType();
-        Symbol startType = parseNumLiteralOrIdent();
+//        Symbol startType = parseNumLiteralOrIdent();
+        Expression startExpr = parseExpression();
         match(TokenTypes.COMMA);
-        Symbol endType = parseNumLiteralOrIdent();
+//        Symbol endType = parseNumLiteralOrIdent();
+        Expression endExpr = parseExpression();
         match(TokenTypes.COMMA);
-        Symbol stepType = parseNumLiteralOrIdent();
-        // Check if the types are valid
-        if (startType == null || endType == null || stepType == null) {
-            throw new SyntaxErrorException(
-                "Syntax Error: Expected int or float literal or identifier but found " +
-                lookAheadSymbol.lexeme +
-                " of type " +
-                lookAheadSymbol.type +
-                " at line " +
-                lookAheadSymbol.line +
-                ", column " +
-                lookAheadSymbol.column
-            );
-        }
+//        Symbol stepType = parseNumLiteralOrIdent();
+        Expression stepExpr = parseExpression();
+//        // Check if the types are valid
+//        if (startType == null || endType == null || stepType == null) {
+//            throw new SyntaxErrorException(
+//                "Syntax Error: Expected int or float literal or identifier but found " +
+//                lookAheadSymbol.lexeme +
+//                " of type " +
+//                lookAheadSymbol.type +
+//                " at line " +
+//                lookAheadSymbol.line +
+//                ", column " +
+//                lookAheadSymbol.column
+//            );
+//        }
 
 
         match(TokenTypes.RIGHT_PAR);
         Block block = parseBlock();
-        return new ForLoop(identifier, startType, endType, stepType, block, identifier.line, identifier.column);
+        return new ForLoop(identifier, startExpr, endExpr, stepExpr, block, identifier.line, identifier.column);
     }
 
     public Symbol parseNumLiteralOrIdent() throws Exception {
@@ -761,7 +796,7 @@ public class Parser {
             }
 
             // otherwise we have a variable assignment
-            Access access = parseAccess(true, identifier);
+            Access access = (Access) parseAccess(true, identifier);
             match(TokenTypes.ASSIGN);
 
             Expression expression = parseExpression();
@@ -771,7 +806,7 @@ public class Parser {
         } else if (lookAheadSymbol.type == TokenTypes.FREE) {
             // free IdentifierAccess
             match(TokenTypes.FREE);
-            Access access = parseAccess(false, null);
+            Access access = (Access) parseAccess(false, null);
 
             return new FreeStatement((IdentifierAccess) access, access.line, access.column);
         }
@@ -791,20 +826,19 @@ public class Parser {
         return new FunctionCall(identifier, params, identifier.line, identifier.column);
     }
 
-    public Access parseAccess(boolean skipIdent, Symbol identIfSkipped)
+    public Term parseAccess(boolean skipIdent, Symbol identIfSkipped)
         throws Exception {
         // IdentifierAccess -> "identifier" AccessChain .
         // AccessChain -> Access AccessChain | .
         // Access -> "[" Expression "]" | "." "identifier" .
         // e.g.:  "people[0].locationHistory[3].y;"
-
         Symbol identifier;
         if (skipIdent) {
             identifier = identIfSkipped;
         } else {
             identifier = match(TokenTypes.IDENTIFIER);
         }
-        Access access = new IdentifierAccess(identifier, identifier.line, identifier.column);
+        Term access = new IdentifierAccess(identifier, identifier.line, identifier.column);
 
         // Parse the access chain (array indices and field accesses)
         while (
@@ -816,12 +850,25 @@ public class Parser {
                 match(TokenTypes.LEFT_SQUARE_BRACKET);
                 Expression indexExpr = parseExpression();
                 match(TokenTypes.RIGHT_SQUARE_BRACKET);
-                access = new ArrayAccess(access, indexExpr, indexExpr.line, indexExpr.column);
+				assert access instanceof Access;
+
+				access = new ArrayAccess((Access) access, indexExpr, indexExpr.line, indexExpr.column);
             } else {
                 // Field access: .identifier
                 match(TokenTypes.DOT);
                 Symbol fieldName = match(TokenTypes.IDENTIFIER);
-                access = new RecordAccess(access, fieldName, fieldName.line, fieldName.column);
+
+                if (lookAheadSymbol.type == TokenTypes.LEFT_PAR) {
+                    // Method access on a record : (Expression)
+                    FunctionCall functionCall = parseParamCall(fieldName);
+					assert access instanceof Access;
+					functionCall.setRecordAccess((Access) access);
+
+					access = functionCall;
+                } else {
+                    assert access instanceof Access;
+                    access = new RecordAccess((Access) access, fieldName, fieldName.line, fieldName.column);
+                }
             }
         }
 

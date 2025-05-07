@@ -2,6 +2,7 @@ package compiler.Parser.ASTNodes.Statements.Statements;
 
 import compiler.Lexer.Symbol;
 import compiler.Parser.ASTNodes.Block;
+import compiler.Parser.ASTNodes.Statements.Expressions.Expressions.Expression;
 import compiler.SemanticAnalysis.Errors.SemanticException;
 import compiler.SemanticAnalysis.SymbolTable;
 import compiler.SemanticAnalysis.Types.SemType;
@@ -10,21 +11,24 @@ import compiler.SemanticAnalysis.Visitor;
 public class ForLoop extends Statement {
 
 	private final Symbol variable;
-	private final Symbol start;
-	public SemType startType;
-	private final Symbol end;
-	public SemType endType;
-	private final Symbol step;
-	public SemType stepType;
+//	private final Symbol start;
+	public Expression startExpr;
+	public Expression endExpr;
+	public Expression stepExpr;
+//	public SemType startType;
+//	private final Symbol end;
+//	public SemType endType;
+//	private final Symbol step;
+//	public SemType stepType;
 	private final Block block;
 
-	public ForLoop(Symbol variable, Symbol start, Symbol end, Symbol step, Block block, int line, int column) {
+	public ForLoop(Symbol variable, Expression startExpr, Expression endExpr, Expression stepExpr, Block block, int line, int column) {
 		super(line, column);
 
 		this.variable = variable;
-		this.start = start;
-		this.end = end;
-		this.step = step;
+		this.startExpr = startExpr;
+		this.endExpr = endExpr;
+		this.stepExpr = stepExpr;
 		this.block = block;
 	}
 
@@ -32,16 +36,16 @@ public class ForLoop extends Statement {
 		return variable;
 	}
 
-	public Symbol getStart() {
-		return start;
+	public Expression getStart() {
+		return startExpr;
 	}
 
-	public Symbol getEnd() {
-		return end;
+	public Expression getEnd() {
+		return endExpr;
 	}
 
-	public Symbol getStep() {
-		return step;
+	public Expression getStep() {
+		return stepExpr;
 	}
 
 	public Block getBlock() {
@@ -50,13 +54,13 @@ public class ForLoop extends Statement {
 
 	@Override
 	public String toString() {
-		return "ForLoop [variable=" + variable + ", start=" + start + ", end=" + end + ", step=" + step + ", block="
+		return "ForLoop [variable=" + variable + ", start=" + startExpr + ", end=" + endExpr + ", step=" + stepExpr + ", block="
 				+ block + "]";
 	}
 	
 	@Override
 	public String prettyPrint(int indent) {
-        return "  ".repeat(indent) + "ForLoop:\n" +  "  ".repeat(indent+1) + "LoopVar: " + variable.lexeme + "\n" + "  ".repeat(indent+1) + "Start: " + start.lexeme + "\n" + "  ".repeat(indent+1) + "End: " + end.lexeme + "\n" + "  ".repeat(indent+1) +  "Step: " + step.lexeme + "\n" + block.prettyPrint(indent + 1);
+        return "  ".repeat(indent) + "ForLoop:\n" +  "  ".repeat(indent+1) + "LoopVar: " + variable.lexeme + "\n" + "  ".repeat(indent+1) + "Start: " + startExpr.prettyPrint(indent+1) + "\n" + "  ".repeat(indent+1) + "End: " + endExpr.prettyPrint(indent + 1) + "\n" + "  ".repeat(indent+1) +  "Step: " + stepExpr.prettyPrint(indent+1) + "\n" + block.prettyPrint(indent + 1);
     }
 
 	@Override

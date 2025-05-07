@@ -15,7 +15,6 @@ import com.beust.jcommander.Parameter;
 
 import java.io.File;
 import java.io.FileReader;
-import java.util.Arrays;
 
 
 public class Compiler {
@@ -118,7 +117,7 @@ public class Compiler {
 		String lowercaseClassname = className;
 
 		className = className.split("\\.")[0];
-		className = className.substring(0, 1).toUpperCase() + className.substring(1);
+//		className = className.substring(0, 1).toUpperCase() + className.substring(1);
 //		System.out.println("className = " + className);
 
 		String outFilename = "";

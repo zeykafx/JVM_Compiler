@@ -15,6 +15,7 @@ import com.beust.jcommander.Parameter;
 
 import java.io.File;
 import java.io.FileReader;
+import java.util.Arrays;
 
 
 public class Compiler {
@@ -105,28 +106,27 @@ public class Compiler {
 		Lexer lexer = new Lexer(reader);
 		Parser parser = new Parser(lexer);
 		ASTNode root = parser.getAST();
-		System.out.println("AST: " + root.prettyPrint(0));
+//		System.out.println("AST: " + root.prettyPrint(0));
 
 		SemanticAnalysis analyzer = new SemanticAnalysis();
 		analyzer.analyze(root, false);
 
 		String filename = out == null ? f.getPath() : new File(out).getPath();
-//		System.out.println("filename = " + filename);
+
 
 		String className = out == null ? f.getName() : new File(out).getName();
 		String lowercaseClassname = className;
 
 		className = className.split("\\.")[0];
-//		className = className.substring(0, 1).toUpperCase() + className.substring(1);
-//		System.out.println("className = " + className);
+		className = className.substring(0, 1).toUpperCase() + className.substring(1);
 
 		String outFilename = "";
 		String[] filenameParts = filename.split(lowercaseClassname);
-		if (filenameParts.length > 1) {
+
+		if (filenameParts.length >= 1) {
 			outFilename = filename.split(lowercaseClassname)[0];
 		}
 
-//		System.out.println("outFilename = " + outFilename);
 		CodeGen codeGen = new CodeGen(outFilename, className);
 		codeGen.generateCode(root);
 	}

@@ -1,16 +1,5 @@
 import static org.junit.Assert.*;
-
-import compiler.Lexer.*;
-import compiler.Parser.ASTNodes.*;
-import compiler.Parser.ASTNodes.Statements.Expressions.Access.*;
-import compiler.Parser.ASTNodes.Statements.Expressions.Expressions.*;
-import compiler.Parser.ASTNodes.Statements.Expressions.Terms.*;
-import compiler.Parser.ASTNodes.Statements.Statements.*;
-import compiler.Parser.ASTNodes.Types.Type;
-import compiler.Parser.Parser;
 import compiler.Compiler;
-import compiler.CodeGen.*;
-import compiler.SemanticAnalysis.*;
 import org.junit.Test;
 import java.io.File;
 
@@ -526,7 +515,7 @@ public class TestCodeGeneration {
         fun main() {
             i int = 5;
             j int = 10;
-            k int = i + j * 2; $ equivalent to (i + j) * 2
+            k int = ((i + j) * 2);
             writeln(k);
         }
         """;
@@ -557,8 +546,8 @@ public class TestCodeGeneration {
         fun main() {
             a bool = true;
             b bool = false;
-            c bool = a && b;
-            d bool = a || b;
+            c bool = (a && b);
+            d bool = (a || b);
             writeln(c);
             writeln(d);
         }
@@ -576,7 +565,7 @@ public class TestCodeGeneration {
         fun main() {
             a int = 5;
             b int = 10;
-            c int = a % b;
+            c int = (a % b);
             writeln(c);
         }
         """;
@@ -606,7 +595,7 @@ public class TestCodeGeneration {
         // Test simple arithmetic expression: (2 + 3) * 4
         String program = """
         fun main() {
-            writeln(2 + (3 * 4));
+            writeln((2 + (3 * 4)));
         }
         """;
         assertOutputEquals(program, "14\n");
@@ -698,7 +687,7 @@ public class TestCodeGeneration {
         String program = """
         fun main() {
             i int;
-            for (i, 0, 5 + 2, 1) {
+            for (i, 0, (5 + 2), 1) {
                 writeln(i);
             }
         }
@@ -730,6 +719,65 @@ public class TestCodeGeneration {
         3
         6
         9
+        """;
+        assertOutputEquals(program, expectedOutput);
+    }
+
+    @Test
+    public void testForLoopWithFloats() throws Exception {
+        String program = """
+        fun main() {
+            i float;
+            for (i, 0.0, 5.0, 1.0) {
+                writeln(i);
+            }
+        }
+        """;
+        String expectedOutput = """
+        0.0
+        1.0
+        2.0
+        3.0
+        4.0
+        """;
+        assertOutputEquals(program, expectedOutput);
+    }
+
+    @Test
+    public void testForLoopVarFloatWithInts() throws Exception {
+        String program = """
+        fun main() {
+            i float;
+            for (i, 0, 5, 1) {
+                writeln(i);
+            }
+        }
+        """;
+        String expectedOutput = """
+        0.0
+        1.0
+        2.0
+        3.0
+        4.0
+        """;
+        assertOutputEquals(program, expectedOutput);
+    }
+
+    @Test
+    public void testForLoopVarFloatWithMixIntsAndFloats() throws Exception {
+        String program = """
+        fun main() {
+            i float;
+            for (i, 0.0, 5, 1.5) {
+                writeln(i);
+            }
+        }
+        """;
+        String expectedOutput = """
+        0.0
+        1.5
+        3.0
+        4.5
         """;
         assertOutputEquals(program, expectedOutput);
     }
@@ -1014,7 +1062,7 @@ public class TestCodeGeneration {
         processBuilder.redirectErrorStream(true);
         Process process = processBuilder.start();
 
-        // Write input to the process
+        // write input to the process
         if (input != null && !input.isEmpty()) {
             java.io.OutputStream stdin = process.getOutputStream();
             stdin.write(input.getBytes());
@@ -1022,7 +1070,7 @@ public class TestCodeGeneration {
             stdin.close();
         }
 
-        // Read the output
+        // read the output
         java.io.BufferedReader reader = new java.io.BufferedReader(
                 new java.io.InputStreamReader(process.getInputStream()));
         StringBuilder output = new StringBuilder();

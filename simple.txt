@@ -40,6 +40,8 @@ fun (p Point) area() int {
 }
 
 fun main() {
+    writeln(ord("A"));
+
     i int = 0;
     j int = 0;
     while ((i < 5) && (j < 3)) {

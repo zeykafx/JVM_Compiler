@@ -166,23 +166,7 @@ public class CodeGen implements Visitor<Void, SlotTable> {
 					null // no initial value
 			).visitEnd();
 
-			if (variableDeclaration.hasValue()) {
-				// visit expression
-				variableDeclaration.getValue().accept(this, slotTable);
-			} else {
-				// load null on the stack
-				if (variableDeclaration.semtype.equals(stringType) || variableDeclaration.semtype instanceof RecordSemType || variableDeclaration.semtype instanceof ArraySemType) {
-					mv.visitInsn(ACONST_NULL);
-				} else if (variableDeclaration.semtype.equals(intType)) {
-					mv.visitInsn(ICONST_0);
-				} else if (variableDeclaration.semtype.equals(floatType)) {
-					mv.visitInsn(FCONST_0);
-				} else if (variableDeclaration.semtype.equals(boolType)) {
-					mv.visitInsn(ICONST_0);
-				} else {
-					throw new RuntimeException("Unexpected type: " + variableDeclaration.semtype.type);
-				}
-			}
+			loadVarDeclValue(variableDeclaration, slotTable);
 
 			mv.visitFieldInsn(PUTSTATIC, className, variableDeclaration.getName().lexeme, variableDeclaration.semtype.fieldDescriptor());
 
@@ -193,23 +177,7 @@ public class CodeGen implements Visitor<Void, SlotTable> {
 			constantsAndGlobals.put(variableDeclaration.getName().lexeme, variableDeclaration.semtype);
 
 		} else {
-			if (variableDeclaration.hasValue()) {
-				// load on the stack if it has a value
-				variableDeclaration.getValue().accept(this, localTable);
-			} else {
-				// load null on the stack
-				if (variableDeclaration.semtype.equals(stringType) || variableDeclaration.semtype instanceof RecordSemType || variableDeclaration.semtype instanceof ArraySemType) {
-					mv.visitInsn(ACONST_NULL);
-				} else if (variableDeclaration.semtype.equals(intType)) {
-					mv.visitInsn(ICONST_0);
-				} else if (variableDeclaration.semtype.equals(floatType)) {
-					mv.visitInsn(FCONST_0);
-				} else if (variableDeclaration.semtype.equals(boolType)) {
-					mv.visitInsn(ICONST_0);
-				} else {
-					throw new RuntimeException("Unexpected type: " + variableDeclaration.semtype.type);
-				}
-			}
+			loadVarDeclValue(variableDeclaration, localTable);
 
 			org.objectweb.asm.Type asmType = variableDeclaration.semtype.asmType();
 			int idx = localTable.addSlot(variableDeclaration.getName().lexeme, asmType);
@@ -218,6 +186,26 @@ public class CodeGen implements Visitor<Void, SlotTable> {
 		}
 
 		return null;
+	}
+
+	private void loadVarDeclValue(VariableDeclaration variableDeclaration, SlotTable localTable) throws Exception {
+		if (variableDeclaration.hasValue()) {
+			// load on the stack if it has a value
+			variableDeclaration.getValue().accept(this, localTable);
+		} else {
+			// load null on the stack
+			if (variableDeclaration.semtype.equals(stringType) || variableDeclaration.semtype instanceof RecordSemType || variableDeclaration.semtype instanceof ArraySemType) {
+				mv.visitInsn(ACONST_NULL);
+			} else if (variableDeclaration.semtype.equals(intType)) {
+				mv.visitInsn(ICONST_0);
+			} else if (variableDeclaration.semtype.equals(floatType)) {
+				mv.visitInsn(FCONST_0);
+			} else if (variableDeclaration.semtype.equals(boolType)) {
+				mv.visitInsn(ICONST_0);
+			} else {
+				throw new RuntimeException("Unexpected type: " + variableDeclaration.semtype.type);
+			}
+		}
 	}
 
 	@Override
@@ -264,42 +252,7 @@ public class CodeGen implements Visitor<Void, SlotTable> {
 			case ArrayAccess arrayAccess:
 
 				if (arrayAccess.getHeadAccess().semtype.equals(stringType)) {
-					// ex:  str[9] = ord("A");
-
-					// StringBuilder string = new StringBuilder(str);
-					// string.setCharAt(index, ch);
-					// string.toString()
-					int stringBuilderSlot = localTable.currentSlot.get()+1;
-					localTable.currentSlot.set(stringBuilderSlot + 1);
-					mv.visitTypeInsn(NEW, "java/lang/StringBuilder");
-					mv.visitInsn(DUP); // duplicate to get a ref on the stack
-
-					// load the string to pass in the StringBuilder
-
-					arrayAccess.getHeadAccess().accept(this, localTable);
-
-					mv.visitMethodInsn(INVOKESPECIAL, "java/lang/StringBuilder", "<init>", "(Ljava/lang/String;)V", false);
-					mv.visitVarInsn(ASTORE, stringBuilderSlot);
-
-					// load the string builder
-					mv.visitVarInsn(ALOAD, stringBuilderSlot);
-
-					// load the index
-					arrayAccess.getIndexExpression().accept(this, localTable);
-
-					// load the new char
-					variableAssignment.getExpression().accept(this, localTable);
-
-					mv.visitMethodInsn(INVOKEVIRTUAL, "java/lang/StringBuilder", "setCharAt", "(IC)V", false);
-
-					mv.visitVarInsn(ALOAD, stringBuilderSlot);
-					mv.visitMethodInsn(INVOKEVIRTUAL, "java/lang/StringBuilder", "toString", "()Ljava/lang/String;", false);
-
-					// load in place of the original string
-					arrayAccess.getHeadAccess().willStore = true;
-					arrayAccess.getHeadAccess().accept(this, localTable);
-
-					return null;
+					return stringArrayIndexingModification(variableAssignment, localTable, arrayAccess);
 				}
 
 				ArraySemType arraySemType = (ArraySemType) arrayAccess.getHeadAccess().semtype;
@@ -310,6 +263,45 @@ public class CodeGen implements Visitor<Void, SlotTable> {
 				throw new IllegalStateException("Unexpected value: " + variableAssignment.getAccess());
 		}
 
+
+		return null;
+	}
+
+	private Void stringArrayIndexingModification(VariableAssignment variableAssignment, SlotTable localTable, ArrayAccess arrayAccess) throws Exception {
+		// ex:  str[9] = ord("A");
+
+		// StringBuilder string = new StringBuilder(str);
+		// string.setCharAt(index, ch);
+		// string.toString()
+		int stringBuilderSlot = localTable.currentSlot.get()+1;
+		localTable.currentSlot.set(stringBuilderSlot + 1);
+		mv.visitTypeInsn(NEW, "java/lang/StringBuilder");
+		mv.visitInsn(DUP); // duplicate to get a ref on the stack
+
+		// load the string to pass in the StringBuilder
+
+		arrayAccess.getHeadAccess().accept(this, localTable);
+
+		mv.visitMethodInsn(INVOKESPECIAL, "java/lang/StringBuilder", "<init>", "(Ljava/lang/String;)V", false);
+		mv.visitVarInsn(ASTORE, stringBuilderSlot);
+
+		// load the string builder
+		mv.visitVarInsn(ALOAD, stringBuilderSlot);
+
+		// load the index
+		arrayAccess.getIndexExpression().accept(this, localTable);
+
+		// load the new char
+		variableAssignment.getExpression().accept(this, localTable);
+
+		mv.visitMethodInsn(INVOKEVIRTUAL, "java/lang/StringBuilder", "setCharAt", "(IC)V", false);
+
+		mv.visitVarInsn(ALOAD, stringBuilderSlot);
+		mv.visitMethodInsn(INVOKEVIRTUAL, "java/lang/StringBuilder", "toString", "()Ljava/lang/String;", false);
+
+		// load in place of the original string
+		arrayAccess.getHeadAccess().willStore = true;
+		arrayAccess.getHeadAccess().accept(this, localTable);
 
 		return null;
 	}
@@ -424,18 +416,18 @@ public class CodeGen implements Visitor<Void, SlotTable> {
 
 			toStringmv.visitMethodInsn(INVOKEVIRTUAL, "java/lang/String", "concat", "(Ljava/lang/String;)Ljava/lang/String;", false);
 
-			toStringmv.visitVarInsn(ASTORE, 1); // store in constant pool
+			toStringmv.visitVarInsn(ASTORE, 1);
 
 			if (recordDef.getFieldIndex() < recordDefinition.getFields().size() - 1) {
 				toStringmv.visitVarInsn(ALOAD, 1);
 				toStringmv.visitLdcInsn( ", ");
 				toStringmv.visitMethodInsn(INVOKEVIRTUAL, "java/lang/String", "concat", "(Ljava/lang/String;)Ljava/lang/String;", false);
-				toStringmv.visitVarInsn(ASTORE, 1); // store in constant pool
+				toStringmv.visitVarInsn(ASTORE, 1);
 			}
 
 		}
 
-		toStringmv.visitVarInsn(ALOAD, 1); // store in constant pool
+		toStringmv.visitVarInsn(ALOAD, 1);
 
 		toStringmv.visitLdcInsn("}");
 		toStringmv.visitMethodInsn(INVOKEVIRTUAL, "java/lang/String", "concat", "(Ljava/lang/String;)Ljava/lang/String;", false);
@@ -483,10 +475,6 @@ public class CodeGen implements Visitor<Void, SlotTable> {
 			// NOTE: The slots of other functions start at 0, I think it's because they don't have self, except for record methods
 			funcTable = new SlotTable(new AtomicReference<>(isRecordMethod ? 1 : 0), localTable);
 
-//			if (isRecordMethod) {
-//				funcTable.addSlot(functionDefinition.getInstanceName().lexeme, functionDefinition.getInstanceRef().semtype.asmType());
-//			}
-
 			// generate string for descriptor
 			FunctionSemType functionSemType = (FunctionSemType) functionDefinition.semtype;
 			String descriptor = functionSemType.asmType().getDescriptor();
@@ -532,7 +520,6 @@ public class CodeGen implements Visitor<Void, SlotTable> {
 	@Override
 	public Void visitStatement(Statement statement, SlotTable localTable) throws Exception {
 		throw new RuntimeException("this should never be called");
-//		return null;
 	}
 
 	@Override
@@ -570,7 +557,7 @@ public class CodeGen implements Visitor<Void, SlotTable> {
 
 		int index = localTable.lookup(identLexeme);
 
-		// if the identifier is a constant or a global and it isn't redefined in the local scope, we need to visit the field
+		// if the identifier is a constant or a global, and it isn't redefined in the local scope, we need to visit the field
 		if (constantsAndGlobals.containsKey(identLexeme) && index == -1) {
 			SemType constSemType = constantsAndGlobals.get(identLexeme);
 			mv.visitFieldInsn(GETSTATIC, className, identLexeme, constSemType.fieldDescriptor());
@@ -596,20 +583,10 @@ public class CodeGen implements Visitor<Void, SlotTable> {
 		Access headAccess = recordAccess.getHeadAccess();
 		headAccess.accept(this, localTable);
 
-		// p.x
-		// p2.x
-
-		// No need to load if we will store something there
-		// willStore is set during the semantic analysis phase.
-//		if (!recordAccess.willStore) {
 		RecordSemType recordSemType = (RecordSemType) headAccess.semtype;
 		String headAccessDescriptor = recordSemType.recordFielDesc(recordAccess.getIdentifier().lexeme);
 
-		// handle method call on the record instance
-
 		mv.visitFieldInsn(GETFIELD, recordSemType.identifier, recordAccess.getIdentifier().lexeme, headAccessDescriptor);
-
-//		}
 
 		return null;
 	}
@@ -627,10 +604,7 @@ public class CodeGen implements Visitor<Void, SlotTable> {
 
 			// ex : writeln(str[9]);
 
-			// for strings use string.charAt(idx)
 			mv.visitMethodInsn(INVOKEVIRTUAL, "java/lang/String", "charAt", "(I)C", false);
-//			mv.visitMethodInsn(INVOKESTATIC, "java/lang/String", "valueOf", "(C)Ljava/lang/String;", false);
-
 			return null;
 		}
 
@@ -647,11 +621,8 @@ public class CodeGen implements Visitor<Void, SlotTable> {
 	@Override
 	public Void visitFunctionCall(FunctionCall functionCall, SlotTable localTable) throws Exception {
 		// $ "writeInt" and "writeFloat" take an "int" and "float" as argument respectively, and return nothing or True/False if it succeeded or not (to be decided at the code generation phase; for now you can make an arbitrary choice).
-		//
 		//$ "write" and "writeln" can take anything as argument (including any primitive type). "writeln" will add an end-of-line at the end of what is written. The output is the same as the other "write" functions
-		//
 		//$ Hint: writeFloat should accept “-a” as an argument, where “a” is a float variable.
-		//
 		//$ Function calls can forward-reference functions, even in initializers of global variables, but not in constants.
 		//
 		//
@@ -747,7 +718,8 @@ public class CodeGen implements Visitor<Void, SlotTable> {
 
 		// java/lang/System.in:Ljava/io/InputStream;
 		mv.visitFieldInsn(GETSTATIC, "java/lang/System", "in", "Ljava/io/InputStream;");
-		//          7: invokespecial #15                 // Method java/util/Scanner."<init>":(Ljava/io/InputStream;)V
+
+		// 7: invokespecial #15                 // Method java/util/Scanner."<init>":(Ljava/io/InputStream;)V
 		mv.visitMethodInsn(INVOKESPECIAL, "java/util/Scanner", "<init>", "(Ljava/io/InputStream;)V", false);
 
 		String versionDesc = "()" + version.fieldDescriptor();
@@ -758,7 +730,7 @@ public class CodeGen implements Visitor<Void, SlotTable> {
 			case "string" -> methodName = "next";
 			default -> methodName = "nextLine";
 		}
-		//		12: invokevirtual #18                 // Method java/util/Scanner.next:()Ljava/lang/String;
+		// 12: invokevirtual #18   // Method java/util/Scanner.next:()Ljava/lang/String;
 		mv.visitMethodInsn(INVOKEVIRTUAL, "java/util/Scanner", methodName, versionDesc, false);
 	}
 
@@ -793,12 +765,11 @@ public class CodeGen implements Visitor<Void, SlotTable> {
 			String desc = "(";
 
 			// HACK: if we have an array of records, mark the records desc as object so that it calls their .toString method
-			if (arraySemType.getElementSemType() instanceof RecordSemType) {
+			if (arraySemType.getElementSemType() instanceof RecordSemType || arraySemType.getElementSemType().equals(stringType)) {
 				desc += "[Ljava/lang/Object;)Ljava/lang/String;"; // note the [ that was added, that is because it's a list of objects
 				// and arraySemType.fieldDescriptor() already adds it below so it's not needed there
 			} else {
 				desc += arraySemType.fieldDescriptor() +")Ljava/lang/String;";
-
 			}
 			mv.visitMethodInsn(INVOKESTATIC, "java/util/Arrays", "toString", desc, false);
 		}
@@ -882,7 +853,6 @@ public class CodeGen implements Visitor<Void, SlotTable> {
 				// heavily inspired by the code here https://github.com/norswap/sigh/blob/8301a3a988eb4ddd2667de1c8edef11e1d790709/src/norswap/sigh/bytecode/BytecodeCompiler.java#L499
 				Label falseLabel = new Label();
 				Label endLabel = new Label();
-//				mv.visitInsn(ICONST_0);
 				mv.visitJumpInsn(IFEQ, falseLabel);
 				mv.visitInsn(ICONST_0);
 				mv.visitJumpInsn(GOTO, endLabel);
@@ -968,15 +938,12 @@ public class CodeGen implements Visitor<Void, SlotTable> {
 		Symbol varSymbol = forLoop.getVariable();
 		boolean loopVarIsFloat = forLoop.semtype.equals(floatType);
 
-		// load the start value
-		// if it's an identifier, we load the value from the identifier and if it's a literal, we just load it
-//		Symbol startSymbol = forLoop.getStart();
-//		loadLoopField(startSymbol, forLoop, localTable, forLoop.startType);
+		// load the start expression on the stack
 		Expression startExpr = forLoop.getStart();
-
 		forLoop.getStart().accept(this, localTable);
 		implicitTypeConversion(forLoop.semtype, startExpr.semtype);
 
+		// load the loop variable on the stack
 		loadOrStoreVarFromSymbol(forLoop, localTable, varSymbol, forLoop.semtype, true); // the varType is in forLoop.semtype
 
 		Label startLabel = new Label();
@@ -984,18 +951,23 @@ public class CodeGen implements Visitor<Void, SlotTable> {
 
 		mv.visitLabel(startLabel);
 
-		// check the condition (i.e., that the loop variable is smaller than the end symbol/var
+		// check the condition (i.e., that the loop variable is smaller than the end symbol/var)
 		// load the loop var
 		loadOrStoreVarFromSymbol(forLoop, localTable, varSymbol, forLoop.semtype, false);
 
-//		Symbol stopSymbol = forLoop.getEnd();
-//		// load the end symbol/var
-//		loadLoopField(stopSymbol, forLoop, localTable, forLoop.endType);
+
+		// load the end expression on the stack
 		Expression endExpr = forLoop.getEnd();
 		forLoop.getEnd().accept(this, localTable);
 		implicitTypeConversion(forLoop.semtype, endExpr.semtype);
 
 
+		// compare the loop variable to the end expression
+		// if the loop variable is a float, we need to use fcmpg
+		// if the comparison is greater than or equal to, we jump to the end label
+		// NOTE: this doesn't work for negative steps because the loop variable will never be greater than the end expression
+		// Ideally we should try to figure out if the step expression is negative or not, then we should use the right comparison
+		// but it seems hard to evaluate the step expression right now
 		if (loopVarIsFloat) {
 			mv.visitInsn(FCMPG);
 			mv.visitJumpInsn(IFGE, endLabel);
@@ -1009,7 +981,6 @@ public class CodeGen implements Visitor<Void, SlotTable> {
 
 		// increment the loop variable
 		// load the step value
-//		Symbol stepSymbol = forLoop.getStep();
 		Expression step = forLoop.getStep();
 
 		int loopVarIdx = localTable.lookup(varSymbol.lexeme);
@@ -1021,8 +992,6 @@ public class CodeGen implements Visitor<Void, SlotTable> {
 
 			forLoop.getStep().accept(this, localTable);
 			implicitTypeConversion(forLoop.semtype, step.semtype);
-
-//			loadLoopField(stepSymbol, forLoop, localTable, forLoop.stepType);
 
 			mv.visitInsn(forLoop.semtype.asmType().getOpcode(IADD));
 			loadOrStoreVarFromSymbol(forLoop, localTable, varSymbol, forLoop.semtype, true);
@@ -1036,15 +1005,6 @@ public class CodeGen implements Visitor<Void, SlotTable> {
 
 
 		return null;
-	}
-
-	private void loadLoopField(Symbol fieldSymbol, ForLoop forLoop, SlotTable localTable, SemType fieldSemType) {
-		if (fieldSymbol.type == TokenTypes.IDENTIFIER) {
-			loadOrStoreVarFromSymbol(forLoop, localTable, fieldSymbol, fieldSemType, false);
-		} else {
-			mv.visitLdcInsn(fieldSymbol.value);
-			implicitTypeConversion(forLoop.semtype, fieldSemType);
-		}
 	}
 
 	private void loadOrStoreVarFromSymbol(ForLoop forLoop, SlotTable localTable, Symbol symbol, SemType semtype, boolean shouldStore) {
@@ -1070,6 +1030,7 @@ public class CodeGen implements Visitor<Void, SlotTable> {
 	public Void visitIfStatement(IfStatement ifStatement, SlotTable localTable) throws Exception {
 		Label elseLabel = new Label();
 		Label endLabel = new Label();
+
 		// the jump label depends on if we have an else block,
 		// if we don't, then at if the condition is not met, we jump directly to the end label
 		// otherwise, if we do have an else label and the condition is not met, we jump to the else label which marks the else block

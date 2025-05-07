@@ -301,7 +301,7 @@ public class TestAdditionalFeatures {
 
 //        System.out.println("tempFile.getParent() = " + tempFile.getParent());
 		String className = tempFile.getName().replace(".lang", "");
-		className = className.substring(0, 1).toUpperCase() + className.substring(1);
+//		className = className.substring(0, 1).toUpperCase() + className.substring(1);
 
 
 		// execute the compiled class and capture output

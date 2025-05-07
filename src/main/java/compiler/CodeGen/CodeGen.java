@@ -58,15 +58,14 @@ public class CodeGen implements Visitor<Void, SlotTable> {
 	private boolean isRecordMethod = false;
 	private String instanceName;
 	private boolean isMvTopLevel;
-	private final SlotTable slotTable;
+	private SlotTable slotTable;
 	private final Map<String, SemType> constantsAndGlobals;
 	private final LinkedHashMap<String, ClassWriter> structs;
 	private final String filePath;
 	private final String className;
 
 	public CodeGen(String filePath, String className) {
-
-		this.slotTable = new SlotTable(new AtomicReference<>(1), null);
+		this.slotTable = null;
 		this.constantsAndGlobals = new HashMap<>();
 		this.structs = new LinkedHashMap<>();
 		this.filePath = filePath;
@@ -98,8 +97,10 @@ public class CodeGen implements Visitor<Void, SlotTable> {
 
 		mv = cw.visitMethod(ACC_PUBLIC | ACC_STATIC, "main", "([Ljava/lang/String;)V", null, null);
 		mv.visitCode();
-		isMvTopLevel = true;
 
+		slotTable = new SlotTable(new AtomicReference<>(1), null);
+
+		// define the constants, globals, records from the main function, i.e., static fields will have their value assigned from the main function
 		// first visit the constants
 		for (VariableDeclaration constant : program.getConstants()) {
 			constant.accept(this, slotTable);
@@ -112,6 +113,20 @@ public class CodeGen implements Visitor<Void, SlotTable> {
 		for (VariableDeclaration global : program.getGlobals()) {
 			global.accept(this, slotTable);
 		}
+
+		// call the actual main function
+		mv.visitMethodInsn(INVOKESTATIC, className, "main", "()V", false);
+
+		mv.visitInsn(RETURN);
+		mv.visitMaxs(0, 0);
+
+		slotTable = new SlotTable(new AtomicReference<>(1), null);
+
+		// actual main function
+		mv = cw.visitMethod(ACC_PUBLIC | ACC_STATIC, "main", "()V", null, null);
+		mv.visitCode();
+
+		isMvTopLevel = true;
 
 		// function declarations save and restore the method visitor
 		for (FunctionDefinition function : program.getFunctions()) {
@@ -499,8 +514,13 @@ public class CodeGen implements Visitor<Void, SlotTable> {
 		// this isn't needed for the main function
 		if (!functionDefinition.getName().lexeme.equals("main")) {
 
+			if (functionDefinition.getRetSemType().equals(voidType)) {
+				// if there is no return statement, we need to return void
+				mv.visitInsn(RETURN);
+			}
+
 			mv.visitEnd();
-			mv.visitMaxs(-1, -1);
+			mv.visitMaxs(0, 0);
 
 			mv = oldMv;
 			cw = oldCw;
@@ -514,6 +534,8 @@ public class CodeGen implements Visitor<Void, SlotTable> {
 	@Override
 	public Void visitParamDefinition(ParamDefinition paramDefinition, SlotTable localTable) throws Exception {
 		localTable.addSlot(paramDefinition.getIdentifier().lexeme, paramDefinition.semtype.asmType());
+		mv.visitParameter(paramDefinition.getIdentifier().lexeme, ACC_STATIC);
+
 		return null;
 	}
 

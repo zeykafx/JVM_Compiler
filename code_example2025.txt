@@ -298,12 +298,11 @@ fun main() {
         while (value!=3) { 
 
             if (i > 10){
-
-                $ .... 
+                writeln("Hello");
 
             } else { 
 
-                $ .... 
+                write(message);
 
             } 
 

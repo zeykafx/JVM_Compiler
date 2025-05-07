@@ -818,7 +818,7 @@ public class SemanticAnalysis implements Visitor<SemType, SymbolTable> {
 		return retSemType;
 	}
 	
-	private SemType getSemTypeFromASTNodeType(SymbolTable table, Type type) {
+	private SemType getSemTypeFromASTNodeType(SymbolTable table, Type type) throws RecordError {
 		SemType retSemType;
 		if (type.isList) {
 			SemType elemSemType;
@@ -831,6 +831,9 @@ public class SemanticAnalysis implements Visitor<SemType, SymbolTable> {
 			retSemType = new ArraySemType(elemSemType);
 		} else if (type.symbol.type == RECORD) {
 			retSemType = table.lookup(type.symbol.lexeme);
+			if (retSemType == null) {
+				throw new RecordError("The record type " + type.symbol.lexeme + " is not defined, at line " + type.line + " and column " + type.column);
+			}
 		} else {
 			retSemType = new SemType(type.symbol.lexeme);
 		}

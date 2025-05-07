@@ -1,13 +1,18 @@
 $final i string = "hello";
 $final j string = "world";
 
-$final i int = 3;
+final i int = 3;
+
+
 
 Point rec {
     x int;
     y int;
 }
-
+SuperPoint rec {
+    xy Point;
+    z int;
+}
 
 Person rec{
     name string;
@@ -40,8 +45,6 @@ fun (p Point) area() int {
 }
 
 fun main() {
-    writeln(ord("A"));
-
     i int = 0;
     j int = 0;
     while ((i < 5) && (j < 3)) {

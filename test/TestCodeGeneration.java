@@ -984,6 +984,54 @@ public class TestCodeGeneration {
         assertOutputEqualsWithInput(program, "Hello\n", expectedOutput);
     }
 
+    @Test
+    public void testFunctionParamShadowingGlobalVar() throws Exception {
+        String program = """
+         a int = 33;
+    
+        fun test(a int) {
+           writeln(a);
+        }
+    
+        fun main() {
+           test(5);
+        }
+        """;
+        String expectedOutput = """
+        5
+        """;
+        assertOutputEquals(program, expectedOutput);
+    }
+
+    @Test
+    public void testComplexAccess() throws Exception {
+        String program = """
+        Point rec {
+            x int;
+            y int;
+        }
+        Person rec {
+            name string;
+            age int;
+            locationHistory Point[];
+        }
+        fun main() {
+            people Person[] = array [2] of Person;
+            people[0] = Person("Alice", 30, array [4] of Point);
+            people[0].locationHistory[0] = Point(1, 2);
+            people[0].locationHistory[1] = Point(3, 4);
+            people[0].locationHistory[2] = Point(5, 6);
+            people[0].locationHistory[3] = Point(7, 8);
+            i int = people[0].locationHistory[3].y;
+            writeln(i);
+        }
+        """;
+        String expectedOutput = """
+        8
+        """;
+        assertOutputEquals(program, expectedOutput);
+    }
+
 // test template:
 //    @Test
 //    public void test() throws Exception {
@@ -1017,7 +1065,7 @@ public class TestCodeGeneration {
 
 //        System.out.println("tempFile.getParent() = " + tempFile.getParent());
         String className = tempFile.getName().replace(".lang", "");
-        className = className.substring(0, 1).toUpperCase() + className.substring(1);
+//        className = className.substring(0, 1).toUpperCase() + className.substring(1);
 
         
         // execute the compiled class and capture output
@@ -1055,7 +1103,7 @@ public class TestCodeGeneration {
         compiler.run();
 
         String className = tempFile.getName().replace(".lang", "");
-        className = className.substring(0, 1).toUpperCase() + className.substring(1);
+//        className = className.substring(0, 1).toUpperCase() + className.substring(1);
 
         // execute the compiled class with input
         ProcessBuilder processBuilder = new ProcessBuilder("java", "-cp", tempFile.getParent(), className);

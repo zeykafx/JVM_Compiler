@@ -30,17 +30,52 @@ public class TestAdditionalFeatures {
     }
 
 	@Test
-	public void testMethodOnRecord2() throws Exception {
+	public void testComplexMethodOnRecord() throws Exception {
 		String program = """
+		History rec {
+		  locations Location[];
+		  visited bool[];
+		}
+		Location rec {
+		  x int;
+		  y int;
+		}
+		fun (h History) addLocation(l Location, index int) {
+		  if (index < 0 || index >= len(h.locations)) {
+			writeln("Index out of bounds");
+			return;
+		  }
+		  h.locations[index] = l;
+		  h.visited[index] = true;
+		}
+		
+		fun main() {
+		  h History = History(array [5] of Location, array [5] of bool);
+		  l Location = Location(1, 2);
+		  l2 Location = Location(3, 4);
+		  h.addLocation(l, 0);
+		  h.addLocation(l2, 1);
+		  writeln(h.locations);
+		}
+        """;
+		String expectedOutput = """
+		[Location {x: 1, y: 2}, Location {x: 3, y: 4}, null, null, null]
+        """;
+		assertOutputEquals(program, expectedOutput);
+	}
+
+	@Test
+	public void testComplexMethodOnRecord2() throws Exception {
+		String program = """
+		History rec {
+			locations Location[];
+			visited bool[];
+			length int;
+		}
 		Location rec {
 			x int;
 			y int;
 		}
-		History rec {
-			locations Location[];
-			visited bool[];
-		}
-		
 		fun (h History) addLocation(l Location, index int) {
 			if (index < 0 || index >= len(h.locations)) {
 				writeln("Index out of bounds");
@@ -48,17 +83,35 @@ public class TestAdditionalFeatures {
 			}
 			h.locations[index] = l;
 			h.visited[index] = true;
+			h.length = h.length + 1;
+		}
+		
+		fun (h History) insertLastLocation(l Location) {
+			if (h.length >= len(h.locations)) {
+				writeln("History is full");
+				return;
+			}
+			h.locations[h.length] = l;
+			h.visited[h.length] = true;
+			h.length = h.length + 1;
 		}
 		
 		fun main() {
-			h History = History(array [5] of Location, array [5] of bool);
+			h History = History(array [5] of Location, array [5] of bool, 0);
 			l Location = Location(1, 2);
+			l2 Location = Location(3, 4);
 			h.addLocation(l, 0);
-			writeln(h.locations[0]);
+			h.insertLastLocation(l2);
+			writeln(h.locations);
+			h.insertLastLocation(l2);
+			h.insertLastLocation(l2);
+			h.insertLastLocation(l2);
+			h.insertLastLocation(l2);
 		}
         """;
 		String expectedOutput = """
-		Location {x: 1, y: 2}
+		[Location {x: 1, y: 2}, Location {x: 3, y: 4}, null, null, null]
+		History is full
         """;
 		assertOutputEquals(program, expectedOutput);
 	}

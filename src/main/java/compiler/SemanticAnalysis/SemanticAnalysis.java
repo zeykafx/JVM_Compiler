@@ -21,12 +21,8 @@ import compiler.SemanticAnalysis.Types.FunctionSemType;
 import compiler.SemanticAnalysis.Types.RecordSemType;
 import compiler.SemanticAnalysis.Types.SemType;
 
-import javax.print.attribute.standard.Severity;
-import java.io.File;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.LinkedHashMap;
-import java.util.Objects;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -153,8 +149,36 @@ public class SemanticAnalysis implements Visitor<SemType, SymbolTable> {
 
 		ArrayList<RecordDefinition> records = program.getRecords();
 		for (RecordDefinition record : records) {
-			record.accept(this, table);
+			SemType semType = record.accept(this, table);
 		}
+
+//		 after the record definitions
+//		for (RecordDefinition record : records) {
+//			for (RecordFieldDefinition field : record.getFields()) {
+//				String fieldName = field.getIdentifier().lexeme;
+//
+//				if (field.semtype instanceof RecordSemType) {
+//					// get the actual semtype with all the fields filled in from the local table
+//					SemType fieldType = table.lookup(field.getType().symbol.lexeme);
+//					if (fieldType != null) {
+//						field.semtype = fieldType;
+//					}
+//				} else if (field.semtype instanceof ArraySemType arraySemType) {
+//					if (arraySemType.getElementSemType() instanceof RecordSemType recordSemType) {
+//						// get the actual semtype with all the fields filled in from the local table
+//						SemType fieldType = table.lookup(recordSemType.identifier);
+//
+//						if (fieldType != null) {
+//							field.semtype = fieldType;
+//							recordSemType.fields.replace(fieldName, fieldType);
+//						}
+//					}
+//
+//				}
+//
+//			}
+//		}
+//
 
 		ArrayList<VariableDeclaration> globals = program.getGlobals();
 		for (VariableDeclaration global : globals) {
@@ -549,7 +573,7 @@ public class SemanticAnalysis implements Visitor<SemType, SymbolTable> {
 		}
 
 		if (newRecord.getTerms().size() != recordSemType.fields.size()) {
-			throw new ArgumentError("Number of parameters in the record " + newRecord.getIdentifier().lexeme + " does not match the number of fields " + recordSemType.fields.size());
+			throw new ArgumentError("Number of parameters in the record " + newRecord.getIdentifier().lexeme + " does not match the number of fields " + recordSemType.fields.size() + " in the record instantiation at line "+newRecord.line);
 		}
 
 		// check that the types of the record fields are correct and correspond to the definition
@@ -824,6 +848,9 @@ public class SemanticAnalysis implements Visitor<SemType, SymbolTable> {
 			SemType elemSemType;
 			if (type.symbol.type == RECORD) {
 				elemSemType = table.lookup(type.symbol.lexeme);
+				if (elemSemType == null) {
+					elemSemType = new RecordSemType(new LinkedHashMap<>(), type.symbol.lexeme);
+				}
 			} else {
 				elemSemType = new SemType(type.symbol.lexeme);
 			}
@@ -1004,6 +1031,10 @@ public class SemanticAnalysis implements Visitor<SemType, SymbolTable> {
 		// then get the type of the expression
 		SemType expressionType = variableAssignment.getExpression().accept(this, table);
 
+		if (varType == null) {
+			throw new ScopeError("Something in the access chain at line " + variableAssignment.line + " is not defined, try not to define records with recursive fields (e.g., Record A { A a; } is not allowed), also try to define records in the right order");
+		}
+
 		// and check that they match
 		if (!varType.equals(expressionType)) {
 
@@ -1012,6 +1043,16 @@ public class SemanticAnalysis implements Visitor<SemType, SymbolTable> {
 			if (varType.equals(floatType) && expressionType.equals(intType)) {
 				varType.toConvert = true;
 				variableAssignment.semtype = varType;
+				return null;
+			}
+
+			// if the types are record types, we can just check the identifier and not the fields
+			if (varType instanceof RecordSemType recVarType && expressionType instanceof RecordSemType recExprType) {
+				// check that the identifiers are the same
+				if (!(recVarType.identifier.equals(recExprType.identifier))) {
+					throw new TypeError("Type of the variable '" + variableAssignment.getAccess().semtype + "' at line " + variableAssignment.line + " does not match the type of the expression '" + variableAssignment.getExpression().semtype + "'");
+				}
+				variableAssignment.semtype = expressionType;
 				return null;
 			}
 

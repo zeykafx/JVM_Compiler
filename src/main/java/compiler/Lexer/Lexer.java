@@ -303,7 +303,7 @@ public class Lexer {
 
 			default:
 				moveCurrentChar();
-				throw new Exception("Unknown character at line " + line + ", column " + column);
+				throw new Exception("Unknown character '"+currentChar+"' at line " + line + ", column " + column);
 		}
 	}
 

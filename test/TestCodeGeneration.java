@@ -87,6 +87,87 @@ public class TestCodeGeneration {
     }
 
     @Test
+    public void testRecordVarModification() throws Exception {
+        String program = """
+        Person rec {
+            name string;
+            age int;
+        }
+        
+        fun main() {
+            p Person = Person("Alice", 30);
+            writeln(p.age);
+            p.age = 31;
+            writeln(p.age);
+        }
+        """;
+        String expectedOutput = """
+        30
+        31
+        """;
+        assertOutputEquals(program, expectedOutput);
+    }
+
+    @Test
+    public void testRecordWithArrayFieldIndexing() throws Exception {
+        String program = """
+        Person rec {
+            name string;
+            age int;
+            scores int[];
+        }
+        
+        fun main() {
+            p Person = Person("Alice", 30, array [3] of int);
+            p.scores[0] = 10;
+            p.scores[1] = 20;
+            p.scores[2] = 30;
+            writeln(p.scores[0]);
+            writeln(p.scores[1]);
+            writeln(p.scores[2]);
+        }
+        """;
+        String expectedOutput = """
+        10
+        20
+        30
+        """;
+        assertOutputEquals(program, expectedOutput);
+    }
+
+    @Test
+    public void testRecordWithRecordWithArray() throws Exception {
+        String program = """
+        Person rec {
+            name string;
+            age int;
+            friends Friend[];
+            scores int[];
+        }
+        Friend rec {
+            name string;
+            age int;
+        }
+        fun main() {
+            p Person = Person("Alice", 30, array [3] of Friend, array [3] of int);
+            p.friends[0] = Friend("Bob", 25);
+            p.friends[1] = Friend("Charlie", 28);
+            p.friends[2] = Friend("Dave", 22);
+            p.scores[0] = 10;
+            p.scores[1] = 20;
+            p.scores[2] = 30;
+            writeln(p.friends);
+            writeln(p.scores);
+        }
+        """;
+        String expectedOutput = """
+        [Friend {name: "Bob", age: 25}, Friend {name: "Charlie", age: 28}, Friend {name: "Dave", age: 22}]
+        [10, 20, 30]
+        """;
+        assertOutputEquals(program, expectedOutput);
+    }
+
+    @Test
     public void testRecordWithRecordField() throws Exception {
         String program = """
         Point rec {

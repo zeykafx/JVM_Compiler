@@ -1,7 +1,7 @@
 package compiler.SemanticAnalysis.Types;
 
 public class ArraySemType extends SemType {
-	SemType elementSemType;
+	public SemType elementSemType;
 	int size;
 
 	public ArraySemType(SemType elementSemType, int size) {

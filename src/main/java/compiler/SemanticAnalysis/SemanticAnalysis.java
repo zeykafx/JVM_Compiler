@@ -153,17 +153,24 @@ public class SemanticAnalysis implements Visitor<SemType, SymbolTable> {
 		}
 
 //		 after the record definitions
-//		for (RecordDefinition record : records) {
-//			for (RecordFieldDefinition field : record.getFields()) {
-//				String fieldName = field.getIdentifier().lexeme;
-//
-//				if (field.semtype instanceof RecordSemType) {
-//					// get the actual semtype with all the fields filled in from the local table
-//					SemType fieldType = table.lookup(field.getType().symbol.lexeme);
-//					if (fieldType != null) {
-//						field.semtype = fieldType;
-//					}
-//				} else if (field.semtype instanceof ArraySemType arraySemType) {
+		for (RecordDefinition record : records) {
+			for (RecordFieldDefinition field : record.getFields()) {
+				String fieldName = field.getIdentifier().lexeme;
+
+				if (field.semtype instanceof RecordSemType) {
+					// get the actual semtype with all the fields filled in from the local table
+					SemType fieldType = table.lookup(field.getType().symbol.lexeme);
+					if (fieldType != null) {
+						field.semtype = fieldType;
+					}
+				} else if (field.semtype instanceof ArraySemType arraySemType) {
+					// get the actual semtype with all the fields filled in from the local table
+					SemType fieldType = table.lookup(arraySemType.getElementSemType().type);
+					if (fieldType != null) {
+						field.semtype = fieldType;
+//						arraySemType.setElementSemType(fieldType);
+						arraySemType.elementSemType = fieldType;
+					}
 //					if (arraySemType.getElementSemType() instanceof RecordSemType recordSemType) {
 //						// get the actual semtype with all the fields filled in from the local table
 //						SemType fieldType = table.lookup(recordSemType.identifier);
@@ -173,11 +180,11 @@ public class SemanticAnalysis implements Visitor<SemType, SymbolTable> {
 //							recordSemType.fields.replace(fieldName, fieldType);
 //						}
 //					}
-//
-//				}
-//
-//			}
-//		}
+
+				}
+
+			}
+		}
 //
 
 		ArrayList<VariableDeclaration> globals = program.getGlobals();
@@ -309,17 +316,15 @@ public class SemanticAnalysis implements Visitor<SemType, SymbolTable> {
 		binaryExpression.getLeftTerm().semtype = leftType;
 		binaryExpression.getRightTerm().semtype = rightType;
 
-		if (!leftType.equals(rightType) && !(leftType.equals(voidType) || rightType.equals(voidType))) {
+		if (!leftType.equals(rightType)) {
 			// check if the types are convertible
 			// if either of the types is a float, then we can convert the other type to a float
 			if (leftType.equals(floatType) && rightType.equals(intType)) {
 				rightType = floatType;
-//				binaryExpression.getRightTerm().semtype = floatType;
 				binaryExpression.getRightTerm().semtype.toConvert = true;
 
 			} else if (rightType.equals(floatType) && leftType.equals(intType)) {
 				leftType = floatType;
-//				binaryExpression.getLeftTerm().semtype = floatType;
 				binaryExpression.getLeftTerm().semtype.toConvert = true;
 
 //			} else if ((leftType.equals(stringType) && rightType.equals(numType)) || ((leftType.equals(numType) && rightType.equals(stringType))) {
@@ -462,11 +467,6 @@ public class SemanticAnalysis implements Visitor<SemType, SymbolTable> {
 			default -> null;
 		};
 		SemType semType = new SemType(type, true);
-//
-//		if (semType.equals(numType) || semType.equals(boolType)) {
-//			constVal.canBeStaticallyEval = true;
-//
-//		}
 
 		constVal.semtype = semType;
 		return semType;
@@ -515,6 +515,7 @@ public class SemanticAnalysis implements Visitor<SemType, SymbolTable> {
 			// if the args don't match  and the function is not defined with "any" as the type of its arguments
 			if (!argSemType.equals(paramCallSemType) && !argSemType.equals(anyType)) {
 				// the types didn't match, but if the expected type is a float and the given type is an int, we can convert it (here that means we keep going)
+				paramCall.getParamExpression().semtype.toConvert = true;
 
 				// if we can't convert the type, we throw an error: here if it's not the convertable case, we throw
 				if (argSemType.equals(floatType) && paramCallSemType.equals(intType)) {
@@ -592,7 +593,19 @@ public class SemanticAnalysis implements Visitor<SemType, SymbolTable> {
 			if (!paramCallSemType.equals(fieldSemType)) {
 				// the types didn't match, but if the expected type is a float and the given type is an int, we can convert it (here that means we keep going)
 
-				// otherwise: throw
+				// if the types are record types, we can just check the identifier and not the fields
+				if (paramCallSemType instanceof RecordSemType recVarType && fieldSemType instanceof RecordSemType recExprType) {
+					// check that the identifiers are the same
+					if (!(recVarType.identifier.equals(recExprType.identifier))) {
+						throw new ArgumentError("Type of the parameter index " + paramCall.getParamIndex() + " in the record " + newRecord.getIdentifier().lexeme + " at line "+newRecord.line+" does not match the type of the field " + fieldSemType);
+					}
+					continue;
+//					paramCall.semtype = paramCallSemType;
+//					newRecord.semtype = recordSemType;
+//					return recordSemType;
+				}
+
+//				// otherwise: throw
 				if (!(fieldSemType.equals(floatType) && paramCallSemType.equals(intType))) {
 					throw new ArgumentError("Type of the parameter index " + paramCall.getParamIndex() + " in the record " + newRecord.getIdentifier().lexeme + " at line "+newRecord.line+" does not match the type of the field " + fieldSemType);
 				}
@@ -798,9 +811,9 @@ public class SemanticAnalysis implements Visitor<SemType, SymbolTable> {
 			SemType instanceRefSemType = getSemTypeFromASTNodeType(table, functionDefinition.getInstanceRef());
 			functionDefinition.getInstanceRef().semtype = instanceRefSemType;
 
-			if (instanceRefSemType == null) {
-				throw new RecordError("The instance reference type " + functionDefinition.getInstanceRef().symbol.lexeme + " is not defined, at line " + functionDefinition.line + " and column " + functionDefinition.column);
-			}
+//			if (instanceRefSemType == null) {
+//				throw new RecordError("The instance reference type " + functionDefinition.getInstanceRef().symbol.lexeme + " is not defined, at line " + functionDefinition.line + " and column " + functionDefinition.column);
+//			}
 
 			if (!(instanceRefSemType instanceof RecordSemType)) {
 				// check that the type is a record already defined
@@ -859,7 +872,8 @@ public class SemanticAnalysis implements Visitor<SemType, SymbolTable> {
 		} else if (type.symbol.type == RECORD) {
 			retSemType = table.lookup(type.symbol.lexeme);
 			if (retSemType == null) {
-				throw new RecordError("The record type " + type.symbol.lexeme + " is not defined, at line " + type.line + " and column " + type.column);
+//				throw new RecordError("The record type " + type.symbol.lexeme + " is not defined, at line " + type.line + " and column " + type.column);
+				retSemType = new RecordSemType(new LinkedHashMap<>(), type.symbol.lexeme);
 			}
 		} else {
 			retSemType = new SemType(type.symbol.lexeme);
@@ -1092,10 +1106,10 @@ public class SemanticAnalysis implements Visitor<SemType, SymbolTable> {
 
 			SemType declType = getSemTypeFromASTNodeType(table, type);
 			if (!declType.equals(semType)) {
-
 				if (declType.equals(floatType) && semType.equals(intType)) {
 //					variableDeclaration.conversionNeeded = true;
 					semType.toConvert = true;
+
 				}
 
 				throw new TypeError("Type of the variable " + name.lexeme + " ("+ declType +") at line " + variableDeclaration.line + " does not match the type of the expression " + semType);

@@ -120,7 +120,8 @@ public class CodeGen implements Visitor<Void, SlotTable> {
 		mv.visitInsn(RETURN);
 		mv.visitMaxs(0, 0);
 
-		slotTable = new SlotTable(new AtomicReference<>(1), null);
+		// slot number starts at 0 because there are no arguments
+		slotTable = new SlotTable(new AtomicReference<>(0), null);
 
 		// actual main function
 		mv = cw.visitMethod(ACC_PUBLIC | ACC_STATIC, "main", "()V", null, null);
@@ -152,7 +153,7 @@ public class CodeGen implements Visitor<Void, SlotTable> {
 			ClassWriter structCw = entry.getValue();
 
 			byte[] structByteArray = structCw.toByteArray();
-			try (FileOutputStream outputStream = new FileOutputStream(filePath + structName.toLowerCase() + ".class") ) {
+			try (FileOutputStream outputStream = new FileOutputStream(filePath + structName + ".class") ) {
 				outputStream.write(structByteArray);
 			} catch (FileNotFoundException e) {
 				e.printStackTrace();
@@ -392,8 +393,27 @@ public class CodeGen implements Visitor<Void, SlotTable> {
 			}
 
 			toStringmv.visitVarInsn(ALOAD, 0); // load "this"
+
 			// load the value of the field on the stack
 			toStringmv.visitFieldInsn(GETFIELD, recordDefinition.getIdentifier().lexeme, recordDef.getIdentifier().lexeme, recordDef.semtype.fieldDescriptor());
+			toStringmv.visitInsn(DUP);
+
+			// check if the value is null
+			Label nullCheckLabel = new Label();
+			Label notNullLabel = new Label();
+			if (!(recordDef.semtype.equals(intType) || recordDef.semtype.equals(floatType) || recordDef.semtype.equals(boolType))) {
+				toStringmv.visitJumpInsn(IFNULL, nullCheckLabel);
+			} else {
+				if (recordDef.semtype.equals(floatType)) {
+					toStringmv.visitInsn(FCMPL);
+					toStringmv.visitJumpInsn(IFEQ, nullCheckLabel);
+				} else if (recordDef.semtype.equals(intType)) {
+					toStringmv.visitJumpInsn(IFEQ, nullCheckLabel);
+				} else if (recordDef.semtype.equals(boolType)) {
+					toStringmv.visitJumpInsn(IFNE, nullCheckLabel);
+				}
+			}
+
 
 			// transform the value to a string
 			// depending on the value, we will either call the "[Integer, Float, Boolean].toString" methods, or the record's own .toString method
@@ -422,7 +442,8 @@ public class CodeGen implements Visitor<Void, SlotTable> {
 					desc += arraySemType.fieldDescriptor() +")Ljava/lang/String;";
 				}
 				toStringmv.visitMethodInsn(INVOKESTATIC, "java/util/Arrays", "toString", desc, false);
-
+				toStringmv.visitMethodInsn(INVOKEVIRTUAL, "java/lang/String", "concat", "(Ljava/lang/String;)Ljava/lang/String;", false);
+				toStringmv.visitVarInsn(ASTORE, 1);
 			} else if (!recordDef.semtype.equals(stringType)) {
 				String desc = "(";
 				if (recordDef.semtype instanceof RecordSemType recordSemType) {
@@ -434,16 +455,38 @@ public class CodeGen implements Visitor<Void, SlotTable> {
 				}
 
 				toStringmv.visitMethodInsn(access, className, "toString", desc, false);
+				toStringmv.visitMethodInsn(INVOKEVIRTUAL, "java/lang/String", "concat", "(Ljava/lang/String;)Ljava/lang/String;", false);
+				toStringmv.visitVarInsn(ASTORE, 1);
+
 			} else {
-				// if it's a string, we just add quotes around it
+				// concatenate the string to the current string
+				toStringmv.visitMethodInsn(INVOKEVIRTUAL, "java/lang/String", "concat", "(Ljava/lang/String;)Ljava/lang/String;", false);
+				toStringmv.visitVarInsn(ASTORE, 1);
+
+				// concatenate the end quote to the current string
+				toStringmv.visitVarInsn(ALOAD, 1);
 				toStringmv.visitLdcInsn("\"");
 				toStringmv.visitMethodInsn(INVOKEVIRTUAL, "java/lang/String", "concat", "(Ljava/lang/String;)Ljava/lang/String;", false);
+				toStringmv.visitVarInsn(ASTORE, 1);
 			}
 
+			toStringmv.visitJumpInsn(GOTO, notNullLabel);
 
+			// null check label
+			toStringmv.visitLabel(nullCheckLabel);
+
+			toStringmv.visitInsn(POP);
+//			toStringmv.visitVarInsn(ALOAD, 1);
+			toStringmv.visitLdcInsn("null");
 			toStringmv.visitMethodInsn(INVOKEVIRTUAL, "java/lang/String", "concat", "(Ljava/lang/String;)Ljava/lang/String;", false);
-
 			toStringmv.visitVarInsn(ASTORE, 1);
+
+			toStringmv.visitLabel(notNullLabel);
+
+//			toStringmv.visitVarInsn(ALOAD, 1);
+//			toStringmv.visitMethodInsn(INVOKEVIRTUAL, "java/lang/String", "concat", "(Ljava/lang/String;)Ljava/lang/String;", false);
+//
+//			toStringmv.visitVarInsn(ASTORE, 1);
 
 			if (recordDef.getFieldIndex() < recordDefinition.getFields().size() - 1) {
 				toStringmv.visitVarInsn(ALOAD, 1);
@@ -723,7 +766,6 @@ public class CodeGen implements Visitor<Void, SlotTable> {
 			mv.visitInsn(arrayAsmType.getOpcode(IALOAD));
 		}
 
-
 		return null;
 	}
 
@@ -740,7 +782,7 @@ public class CodeGen implements Visitor<Void, SlotTable> {
 				functionCall.getParameters().getFirst().accept(this, localTable);
 				mv.visitMethodInsn(INVOKESTATIC, "java/lang/String", "valueOf", "(C)Ljava/lang/String;", false);
 				break;
-			case "ord":
+			case "ord": // ADDITIONAL FUNCTION
 				functionCall.getParameters().getFirst().accept(this, localTable);
 				mv.visitLdcInsn(0); // load char at index 0
 				mv.visitMethodInsn(INVOKEVIRTUAL, "java/lang/String", "charAt", "(I)C", false);
@@ -859,10 +901,10 @@ public class CodeGen implements Visitor<Void, SlotTable> {
 
 			// if the function is writeFloat, and we passed an Int, we convert the int to a float
 			// (though it worked when we called writeFloat with an int, but it would just print an int and not a float)
-			if (isFloat && argSemType.equals(intType)) {
-				implicitTypeConversion(floatType, intType);
-				argSemType = floatType;
-			}
+//			if (isFloat && argSemType.equals(intType)) {
+//				implicitTypeConversion(floatType, intType);
+//				argSemType = floatType;
+//			}
 
 		} else {
 			// if there was no arguments given in (e.g. "writeln()"), we assume that we want to print an empty string
@@ -888,6 +930,8 @@ public class CodeGen implements Visitor<Void, SlotTable> {
 			functionDesc.append("Ljava/lang/Object;"); // prints the object as "RecordName@<hashcode>"
 		} else if (argSemType instanceof ArraySemType) {
 			functionDesc.append("Ljava/lang/String;");
+		} else if (isFloat){
+			functionDesc.append("F");
 		} else {
 			functionDesc.append(argSemType.fieldDescriptor());
 		}
@@ -923,6 +967,10 @@ public class CodeGen implements Visitor<Void, SlotTable> {
 	public Void visitParamCall(ParamCall paramCall, SlotTable localTable) throws Exception {
 		// load the param on the stack
 		paramCall.getParamExpression().accept(this, localTable);
+//		implicitTypeConversion(paramCall.getParamExpression().semtype, paramCall.semtype);
+		if (paramCall.getParamExpression().semtype.toConvert) {
+			mv.visitInsn(I2F);
+		}
 		return null;
 	}
 
@@ -1083,6 +1131,37 @@ public class CodeGen implements Visitor<Void, SlotTable> {
 		} else {
 			mv.visitJumpInsn(IF_ICMPGE, endLabel);
 		}
+		// Attempt at jumping to the right comparison based on the step value
+		// 		// load the step expression on the stack, evaluate it, then if the step is negative, we need to use the right comparison
+		//		Expression step = forLoop.getStep();
+		//		Label stepLabel = new Label();
+		//
+		//		step.accept(this, localTable);
+		//		implicitTypeConversion(forLoop.semtype, step.semtype);
+		//		if (forLoop.semtype.equals(floatType)) {
+		//			mv.visitInsn(F2I);
+		//		}
+		//		mv.visitJumpInsn(IFLT, stepLabel); // if the step is negative, we need to use the right comparison
+		//
+		//		if (loopVarIsFloat) {
+		//			loadLoopVarAndStop(forLoop, localTable, varSymbol);
+		//			mv.visitInsn(FCMPG);
+		//			mv.visitJumpInsn(IFGE, endLabel);
+		//
+		//			mv.visitLabel(stepLabel);
+		//			loadLoopVarAndStop(forLoop, localTable, varSymbol);
+		//
+		//			mv.visitInsn(FCMPL);
+		//			mv.visitJumpInsn(IFLE, endLabel);
+		//		} else {
+		//			loadLoopVarAndStop(forLoop, localTable, varSymbol);
+		//			mv.visitJumpInsn(IF_ICMPGE, endLabel);
+		//
+		//			mv.visitLabel(stepLabel);
+		//			loadLoopVarAndStop(forLoop, localTable, varSymbol);
+		//			mv.visitJumpInsn(IF_ICMPLE, endLabel);
+		//		}
+
 
 		// visit the loop body
 		forLoop.getBlock().accept(this, localTable);
@@ -1114,6 +1193,7 @@ public class CodeGen implements Visitor<Void, SlotTable> {
 
 		return null;
 	}
+
 
 	private void loadOrStoreVarFromSymbol(ForLoop forLoop, SlotTable localTable, Symbol symbol, SemType semtype, boolean shouldStore) {
 		String identLexeme = symbol.lexeme;

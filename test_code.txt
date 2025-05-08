@@ -18,7 +18,6 @@ fun square(v int) int {
 fun main() {
     value int = readInt();
     p Point = Point(a, a+value);
-    p Point = Point(a, a+value);
     free p;
     writeInt(square(value));
     writeln("");

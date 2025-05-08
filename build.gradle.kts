@@ -45,6 +45,6 @@ tasks.register<Zip>("packageSource") {
 
     from(projectDir) {
         into(projectDir.name)
-        exclude(".gradle/**", ".vscode/**", ".idea/**", "build/**", ".github/**", ".git/**", ".settings/**", "bin/**", ".gitignore", ".gitattributes")
+        exclude(".gradle/**", ".vscode/**", ".idea/**", "build/**", ".github/**", ".git/**", "./tests/**", "*.class", ".settings/**", "bin/**", ".gitignore", ".gitattributes")
     }
 }

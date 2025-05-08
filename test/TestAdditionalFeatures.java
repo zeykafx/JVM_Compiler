@@ -49,8 +49,8 @@ public class TestAdditionalFeatures {
         """;
 		// toString on the records will print each field, and it will also call toString on the records
         String expectedOutput = """
-        Person {name= me, location= Point {x= 3, y= 7}, history= [0, 0, 0, 0, 0, 0, 0, 0]}
-        """;
+		Person {name: "me", location: Point {x: 3, y: 7}, history: [0, 0, 0, 0, 0, 0, 0, 0]}
+		""";
         assertOutputEquals(program, expectedOutput);
     }
 
@@ -89,7 +89,7 @@ public class TestAdditionalFeatures {
 		}
 		""";
 		String expectedOutput = """
-		[Point {x= 1, y= 2}, Point {x= 3, y= 4}, null, null]
+		[Point {x: 1, y: 2}, Point {x: 3, y: 4}, null, null]
 		""";
 		assertOutputEquals(program, expectedOutput);
 	}

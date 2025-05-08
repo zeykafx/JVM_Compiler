@@ -377,12 +377,20 @@ public class CodeGen implements Visitor<Void, SlotTable> {
 			toStringmv.visitVarInsn(ALOAD, 1); // load the current string
 
 			// add the name of the identifier + "= "
-			toStringmv.visitLdcInsn(recordDef.getIdentifier().lexeme + "= ");
+			toStringmv.visitLdcInsn(recordDef.getIdentifier().lexeme + ": ");
 			// concatenate the string above to the current string
 			toStringmv.visitMethodInsn(INVOKEVIRTUAL, "java/lang/String", "concat", "(Ljava/lang/String;)Ljava/lang/String;", false);
 			toStringmv.visitVarInsn(ASTORE, 1); // store this back (NOTE: this is not required, because we load it again right after, but we do this just to be safe)
 
 			toStringmv.visitVarInsn(ALOAD, 1); // load again
+
+			// if the element is a string, we need to add quotes around it
+			if (recordDef.semtype.equals(stringType)) {
+				toStringmv.visitLdcInsn("\"");
+				toStringmv.visitMethodInsn(INVOKEVIRTUAL, "java/lang/String", "concat", "(Ljava/lang/String;)Ljava/lang/String;", false);
+//				toStringmv.visitVarInsn(ASTORE, 1);
+			}
+
 			toStringmv.visitVarInsn(ALOAD, 0); // load "this"
 			// load the value of the field on the stack
 			toStringmv.visitFieldInsn(GETFIELD, recordDefinition.getIdentifier().lexeme, recordDef.getIdentifier().lexeme, recordDef.semtype.fieldDescriptor());
@@ -426,6 +434,10 @@ public class CodeGen implements Visitor<Void, SlotTable> {
 				}
 
 				toStringmv.visitMethodInsn(access, className, "toString", desc, false);
+			} else {
+				// if it's a string, we just add quotes around it
+				toStringmv.visitLdcInsn("\"");
+				toStringmv.visitMethodInsn(INVOKEVIRTUAL, "java/lang/String", "concat", "(Ljava/lang/String;)Ljava/lang/String;", false);
 			}
 
 

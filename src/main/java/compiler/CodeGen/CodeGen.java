@@ -457,6 +457,81 @@ public class CodeGen implements Visitor<Void, SlotTable> {
 
 		// ---------- end of ToString ----------
 
+		// ---------- Equals definition ----------
+
+		MethodVisitor equalsMv = structCw.visitMethod(ACC_PUBLIC, "equals", "(Ljava/lang/Object;)Z", null, null);
+		equalsMv.visitCode();
+
+		// if the objects are the same instance, we return true immediately
+		Label returnTrueLabel = new Label();
+		Label instanceofCheckLabel = new Label();
+		equalsMv.visitVarInsn(ALOAD, 0); // this
+		equalsMv.visitVarInsn(ALOAD, 1); // obj
+		equalsMv.visitJumpInsn(IF_ACMPEQ, returnTrueLabel);
+
+		// if the param isn't an instance of this record, return false
+		equalsMv.visitVarInsn(ALOAD, 1); // obj
+		equalsMv.visitTypeInsn(INSTANCEOF, recordDefinition.getIdentifier().lexeme);
+		Label returnFalseLabel = new Label();
+//		equalsMv.visitJumpInsn(IF_ICMPEQ, returnFalseLabel);
+		equalsMv.visitJumpInsn(IFEQ, returnFalseLabel);
+
+		// since theyu are the same type, we can cast the parameter to the record type
+		equalsMv.visitVarInsn(ALOAD, 1); // obj
+		equalsMv.visitTypeInsn(CHECKCAST, recordDefinition.getIdentifier().lexeme);
+		equalsMv.visitVarInsn(ASTORE, 2); // store cast object in slot 2
+
+		// go through and compare each field
+		for (RecordFieldDefinition recordField : recordDefinition.getFields()) {
+			// ints, floats, bools
+			// TODO: maybe do this better idk
+			if (recordField.semtype.equals(intType) || recordField.semtype.equals(floatType) || recordField.semtype.equals(boolType)) {
+				equalsMv.visitVarInsn(ALOAD, 0); // this object
+				equalsMv.visitFieldInsn(GETFIELD, recordDefinition.getIdentifier().lexeme, recordField.getIdentifier().lexeme, recordField.semtype.fieldDescriptor());
+				equalsMv.visitVarInsn(ALOAD, 2); // other object
+				equalsMv.visitFieldInsn(GETFIELD, recordDefinition.getIdentifier().lexeme, recordField.getIdentifier().lexeme, recordField.semtype.fieldDescriptor());
+
+				// subtract the two values, jump to returnFalseLabel if they are not equal
+				if (recordField.semtype.equals(floatType)) {
+					equalsMv.visitInsn(FCMPL);
+					equalsMv.visitJumpInsn(IFNE, returnFalseLabel);
+				} else {
+					equalsMv.visitJumpInsn(IF_ICMPNE, returnFalseLabel);
+				}
+			}
+			// string, arrays, record types
+			// TODO: need to check for nulls
+			else {
+//				Label nullCheckLabel = new Label();
+				equalsMv.visitVarInsn(ALOAD, 0); // this
+				equalsMv.visitFieldInsn(GETFIELD, recordDefinition.getIdentifier().lexeme, recordField.getIdentifier().lexeme, recordField.semtype.fieldDescriptor());
+
+//				equalsMv.visitJumpInsn(IFNULL, returnFalseLabel);
+
+				equalsMv.visitVarInsn(ALOAD, 2); // other object
+				equalsMv.visitFieldInsn(GETFIELD, recordDefinition.getIdentifier().lexeme, recordField.getIdentifier().lexeme, recordField.semtype.fieldDescriptor());
+				equalsMv.visitMethodInsn(INVOKESTATIC, "java/util/Objects", "equals", "(Ljava/lang/Object;Ljava/lang/Object;)Z", false);
+				equalsMv.visitJumpInsn(IFEQ, returnFalseLabel);
+			}
+		}
+
+		// return true if all fields are equal
+		equalsMv.visitLabel(returnTrueLabel);
+		equalsMv.visitInsn(ICONST_1);
+		equalsMv.visitInsn(IRETURN);
+
+		// return false
+		equalsMv.visitLabel(returnFalseLabel);
+		equalsMv.visitInsn(ICONST_0);
+		equalsMv.visitInsn(IRETURN);
+
+		equalsMv.visitMaxs(0, 0);
+		equalsMv.visitEnd();
+
+		// ---------- end of Equals ----------
+
+
+
 		structCw.visitEnd();
 		structs.put(recordDefinition.getIdentifier().lexeme, structCw);
 //		structCw = null;
@@ -857,7 +932,6 @@ public class CodeGen implements Visitor<Void, SlotTable> {
 		if (binaryExpression.getRightTerm().semtype.toConvert) {
 			mv.visitInsn(I2F);
 		}
-
 		opCodeGenerator op = new opCodeGenerator(binaryExpression, mv);
 		op.generateCode();
 

@@ -111,6 +111,30 @@ public class TestCodeGeneration {
         assertOutputEquals(program, "Alice\n30\n10\n20\n");
     }
 
+//    @Test
+//    public void testMultipleRecords() throws Exception {
+//        String program = """
+//        Point rec {
+//            x int;
+//            y int;
+//        }
+//
+//        Person rec {
+//            name string;
+//            age int;
+//            location Point;
+//        }
+//
+//        fun main() {
+//
+//        }
+//        """;
+//        String expectedOutput = """
+//
+//        """;
+//        assertOutputEquals(program, expectedOutput);
+//    }
+
     @Test
     public void testConstsGlobalRecs() throws Exception {
         String program = """

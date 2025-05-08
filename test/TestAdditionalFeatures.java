@@ -163,6 +163,214 @@ public class TestAdditionalFeatures {
 	}
 
 	@Test
+	public void testStringEquality() throws Exception {
+		String program = """
+		fun main() {
+			hello string = "Hello";
+			hello2 string = "Hello";
+			if (hello == hello2) {
+				writeln("Hello World");
+			} else {
+				writeln(":(");
+			}
+		}
+		""";
+		String expectedOutput = """
+		Hello World
+		""";
+		assertOutputEquals(program, expectedOutput);
+	}
+
+	@Test
+	public void testIntEquality() throws Exception {
+		String program = """
+		fun main() {
+			i int = 5;
+			j int = 5;
+			if (i == j) {
+				writeln("Equal");
+			} else {
+				writeln("Not Equal");
+			}
+		}
+		""";
+		String expectedOutput = """
+		Equal
+		""";
+		assertOutputEquals(program, expectedOutput);
+	}
+
+	@Test
+	public void testFloatEquality() throws Exception {
+		String program = """
+		fun main() {
+			i float = 5.0;
+			j float = 5.0;
+			if (i == j) {
+				writeln("Equal");
+			} else {
+				writeln("Not Equal");
+			}
+		}
+		""";
+		String expectedOutput = """
+		Equal
+		""";
+		assertOutputEquals(program, expectedOutput);
+	}
+
+	@Test
+	public void testRecordEquality() throws Exception {
+		String program = """
+		Point rec {
+			x int;
+			y int;
+		}
+		fun main() {
+			p1 Point = Point(1, 2);
+			p2 Point = Point(1, 2);
+			if (p1 == p2) {
+				writeln("Equal");
+			} else {
+				writeln("Not Equal");
+			}
+		}
+		""";
+		String expectedOutput = """
+		Equal
+		""";
+		assertOutputEquals(program, expectedOutput);
+	}
+
+	@Test
+	public void testRecordEqualInArray() throws Exception {
+		String program = """
+		Point rec {
+			x int;
+			y int;
+		}
+		fun main() {
+			points Point[] = array [2] of Point;
+			points[0] = Point(1, 2);
+			points[1] = Point(3, 4);
+			
+			points2 Point[] = array [2] of Point;
+			points2[0] = Point(1, 2);
+			points2[1] = Point(3, 4);
+			if (points == points2) {
+				writeln("Equal");
+			} else {
+				writeln("Not Equal");
+			}
+		}
+		""";
+		String expectedOutput = """
+		Equal
+		""";
+		assertOutputEquals(program, expectedOutput);
+	}
+
+	@Test
+	public void testArrayOfIntsEquality() throws Exception {
+		String program = """
+		fun main() {
+			arr1 int[] = array [2] of int;
+			arr1[0] = 1;
+			arr1[1] = 2;
+			
+			arr2 int[] = array [2] of int;
+			arr2[0] = 1;
+			arr2[1] = 2;
+			
+			if (arr1 == arr2) {
+				writeln("Equal");
+			} else {
+				writeln("Not Equal");
+			}
+		}
+		""";
+		String expectedOutput = """
+		Equal
+		""";
+		assertOutputEquals(program, expectedOutput);
+	}
+
+	@Test
+	public void testArrayOfStringsEquality() throws Exception {
+		String program = """
+		fun main() {
+			arr1 string[] = array [2] of string;
+			arr1[0] = "hello";
+			arr1[1] = "world";
+			
+			arr2 string[] = array [2] of string;
+			arr2[0] = "hello";
+			arr2[1] = "world";
+			
+			if (arr1 == arr2) {
+				writeln("Equal");
+			} else {
+				writeln("Not Equal");
+			}
+		}
+		""";
+		String expectedOutput = """
+		Equal
+		""";
+		assertOutputEquals(program, expectedOutput);
+	}
+
+	@Test
+	public void testArrayOfBooleansEquality() throws Exception {
+		String program = """
+		fun main() {
+			arr1 bool[] = array [2] of bool;
+			arr1[0] = true;
+			arr1[1] = false;
+			
+			arr2 bool[] = array [2] of bool;
+			arr2[0] = true;
+			arr2[1] = false;
+			
+			if (arr1 == arr2) {
+				writeln("Equal");
+			} else {
+				writeln("Not Equal");
+			}
+		}
+		""";
+		String expectedOutput = """
+		Equal
+		""";
+		assertOutputEquals(program, expectedOutput);
+	}
+
+	@Test
+	public void testArrayOfFloatsEquality() throws Exception {
+		String program = """
+		fun main() {
+			arr1 float[] = array [2] of float;
+			arr1[0] = 1.0;
+			arr1[1] = 2.0;
+			
+			arr2 float[] = array [2] of float;
+			arr2[0] = 1.0;
+			arr2[1] = 2.0;
+			
+			if (arr1 == arr2) {
+				writeln("Equal");
+			} else {
+				writeln("Not Equal");
+			}
+		}
+		""";
+		String expectedOutput = """
+		Equal
+		""";
+		assertOutputEquals(program, expectedOutput);
+	}
+
+	@Test
 	public void testComplexBinaryExpression() throws Exception {
 		String program = """
         fun main() {

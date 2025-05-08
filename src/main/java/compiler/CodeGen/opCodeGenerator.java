@@ -1,9 +1,13 @@
 package compiler.CodeGen;
 
 import compiler.Parser.ASTNodes.Statements.Expressions.Expressions.BinaryExpression;
+import compiler.SemanticAnalysis.Types.ArraySemType;
+import compiler.SemanticAnalysis.Types.RecordSemType;
 import compiler.SemanticAnalysis.Types.SemType;
 import org.objectweb.asm.Label;
 import org.objectweb.asm.MethodVisitor;
+
+import java.util.Arrays;
 
 import static org.objectweb.asm.Opcodes.*;
 
@@ -15,9 +19,10 @@ public class opCodeGenerator {
     boolean isInt = false;
     boolean isString = false;
     boolean isBool;
-    boolean isObject;
+    boolean isObject = false;
 
     SemType intType = new SemType("int");
+    SemType arrType = new SemType("array");
     SemType floatType = new SemType("float");
     SemType boolType = new SemType("bool");
     SemType stringType = new SemType("string");
@@ -34,9 +39,12 @@ public class opCodeGenerator {
             isInt = true;
         }
 
-
         // if left & right terms are type strings, set isObject to true
-        if ((expression.getLeftTerm().semtype.equals(stringType) && expression.getRightTerm().semtype.equals(stringType)) || (expression.getLeftTerm().semtype.type.equals("rec") && expression.getRightTerm().semtype.type.equals("rec"))) {
+        if (
+                (expression.getLeftTerm().semtype.equals(stringType) && expression.getRightTerm().semtype.equals(stringType))
+                || (expression.getLeftTerm().semtype.type.equals("rec") && expression.getRightTerm().semtype.type.equals("rec"))
+                || (expression.getLeftTerm().semtype.type.equals("array") && expression.getRightTerm().semtype.type.equals("array"))
+        ) {
             isObject = true;
         }
     }
@@ -60,27 +68,45 @@ public class opCodeGenerator {
                 String classname;
                 String descriptor = "(";
                 int access = INVOKEVIRTUAL;
-                switch (expression.semtype.type) {
-                    case "int":
-                        classname = "Integer";
-                        descriptor += "I";
-                        break;
-                    case "string":
-                        classname = "String";
-                        descriptor += "Ljava/lang/Object;";
-                        break;
-                    case "float":
-                        classname = "Float";
-                        descriptor += "F";
-                        break;
 
-                    default:
-                        path = "java/util/"; // java/util/Objects
-                        classname = "Objects";
-                        descriptor += "Ljava/lang/Object;Ljava/lang/Object;";
-                        access = INVOKESTATIC;
-                        break;
+                if (expression.getLeftTerm().semtype.type.equals("array")) {
+                    path = "java/util/"; // java/util/Arrays
+                    classname = "Arrays";
+                    // make the descriptor for the array fit the element types
+                    String fieldDescriptor = handleArraysToString();
+                    descriptor += "["+fieldDescriptor+"["+fieldDescriptor;
+                    access = INVOKESTATIC;
+                } else {
+                    switch (expression.semtype.type) {
+                        case "int":
+                            classname = "Integer";
+                            descriptor += "I";
+                            break;
+                        case "string":
+                            classname = "String";
+                            descriptor += "Ljava/lang/Object;";
+                            break;
+                        case "float":
+                            classname = "Float";
+                            descriptor += "F";
+                            break;
+                        case "array":
+                            path = "java/util/"; // java/util/Arrays
+                            classname = "Arrays";
+                            // make the descriptor for the array fit the element types
+                            String fieldDescriptor = handleArraysToString();
+                            descriptor += "["+fieldDescriptor+"["+fieldDescriptor;
+                            access = INVOKESTATIC;
+                            break;
+                        default:
+                            path = "java/util/"; // java/util/Objects
+                            classname = "Objects";
+                            descriptor += "Ljava/lang/Object;Ljava/lang/Object;";
+                            access = INVOKESTATIC;
+                            break;
+                    }
                 }
+
                 descriptor += ")Z";
 
                 mv.visitMethodInsn(access, path+classname, "equals", descriptor, false);
@@ -91,6 +117,17 @@ public class opCodeGenerator {
                 }
             }
         }
+    }
+
+    private String handleArraysToString() {
+        ArraySemType arraySemType = (ArraySemType) expression.getLeftTerm().semtype;
+        SemType elementType = arraySemType.getElementSemType();
+        String fieldDescriptor = elementType.fieldDescriptor();
+        if (elementType instanceof RecordSemType recordSemType || elementType instanceof ArraySemType || elementType.equals(stringType)) {
+            // if the element type is a record, we need to use the record's field descriptor
+            fieldDescriptor = "Ljava/lang/Object;";
+        }
+        return fieldDescriptor;
     }
 
     public int getOpCode(){

@@ -45,19 +45,19 @@ fun (p Point) area() int {
 }
 
 fun main() {
-    i int = 0;
-    j int = 0;
-    while ((i < 5) && (j < 3)) {
-        writeln(i);
-        i = i + 1;
-        j = j + 1;
-    }
+
 
     p Point = Point(3, 3);
     writeln(p);
     writeln(p.area());
 
-    $p2 Point = Point(3, 42);
+    p2 SuperPoint = SuperPoint(Point(3, 3), 5);
+    if (p == p2.xy) {
+        writeln("p == p2");
+    } else {
+        writeln("p != p2");
+    }
+
     $points Point[] = array [2] of Point;
     $points[0] = p;
     $points[1] = p2;

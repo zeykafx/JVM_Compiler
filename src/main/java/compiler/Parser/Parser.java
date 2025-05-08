@@ -816,12 +816,18 @@ public class Parser {
                 return parseVariableDeclaration(false, true, identifier, false);
             }
 
-            // otherwise we have a variable assignment
-            Access access = (Access) parseAccess(true, identifier);
+
+            // access could be a function call, or an access (identifier, record, array)
+            Term access = parseAccess(true, identifier);
+            if (access instanceof FunctionCall) {
+                // Function call
+                return (FunctionCall) access;
+            }
+
             match(TokenTypes.ASSIGN);
 
             Expression expression = parseExpression();
-            return new VariableAssignment(access, expression, access.line, access.column);
+            return new VariableAssignment((Access) access, expression, access.line, access.column);
         } else if (lookAheadSymbol.type == TokenTypes.RECORD) {
             return parseRecord();
         } else if (lookAheadSymbol.type == TokenTypes.FREE) {

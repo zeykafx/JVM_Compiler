@@ -30,6 +30,40 @@ public class TestAdditionalFeatures {
     }
 
 	@Test
+	public void testMethodOnRecord2() throws Exception {
+		String program = """
+		Location rec {
+			x int;
+			y int;
+		}
+		History rec {
+			locations Location[];
+			visited bool[];
+		}
+		
+		fun (h History) addLocation(l Location, index int) {
+			if (index < 0 || index >= len(h.locations)) {
+				writeln("Index out of bounds");
+				return;
+			}
+			h.locations[index] = l;
+			h.visited[index] = true;
+		}
+		
+		fun main() {
+			h History = History(array [5] of Location, array [5] of bool);
+			l Location = Location(1, 2);
+			h.addLocation(l, 0);
+			writeln(h.locations[0]);
+		}
+        """;
+		String expectedOutput = """
+		Location {x: 1, y: 2}
+        """;
+		assertOutputEquals(program, expectedOutput);
+	}
+
+	@Test
     public void testRecordToString() throws Exception {
         String program = """
 		final i int = 4;
@@ -53,6 +87,64 @@ public class TestAdditionalFeatures {
 		""";
         assertOutputEquals(program, expectedOutput);
     }
+
+	@Test
+	public void recursiveRecordTest() throws Exception {
+		String program = """
+        Person rec {
+            name string;
+            age int;
+            contact Person;
+        }
+        
+        fun main() {
+            nullPerson Person;
+            john Person = Person("John", 25, nullPerson);
+            bob Person = Person("Bob", 24, john);
+            alice Person = Person("Alice", 23, bob);
+            writeln(alice);
+        }
+        """;
+		String expectedOutput = """
+        Person {name: "Alice", age: 23, contact: Person {name: "Bob", age: 24, contact: Person {name: "John", age: 25, contact: null}}}
+        """;
+		assertOutputEquals(program, expectedOutput);
+	}
+
+	@Test
+	public void testRecursiveRecordWithRecordArray() throws Exception {
+		String program = """
+        Person rec {
+            name string;
+            age int;
+            bestFriend Person;
+            friends Friend[];
+            scores int[];
+        }
+        Friend rec {
+            name string;
+            age int;
+        }
+        fun main() {
+            nullPerson Person;
+            bestFriend Person = Person("Bob", 33, nullPerson, array [3] of Friend, array [3] of int);
+            p Person = Person("Alice", 30, bestFriend, array [3] of Friend, array [3] of int);
+            p.friends[0] = Friend("Bob", 25);
+            p.friends[1] = Friend("Charlie", 28);
+            p.friends[2] = Friend("Dave", 22);
+            p.scores[0] = 10;
+            p.scores[1] = 20;
+            p.scores[2] = 30;
+            writeln(p.friends);
+            writeln(p.scores);
+        }
+        """;
+		String expectedOutput = """
+        [Friend {name: "Bob", age: 25}, Friend {name: "Charlie", age: 28}, Friend {name: "Dave", age: 22}]
+        [10, 20, 30]
+        """;
+		assertOutputEquals(program, expectedOutput);
+	}
 
 	@Test
 	public void testArraysToString() throws Exception {
